@@ -11,7 +11,8 @@ import {
   Waves,
   Thermometer,
   Activity,
-  Gauge
+  Gauge,
+  Radio
 } from 'lucide-react';
 import { SuspectVessel, VectorMatch, SpillProperties, SpillGeoFeature, MetoceanData } from '../types';
 import { downloadPdfReportUrl } from '../lib/api';
@@ -258,7 +259,44 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           </button>
         </div>
 
-        {/* 4. Qdrant Historical Matches */}
+        {/* 4. Live AIS NMEA Telemetry Feed */}
+        <div className="p-3 sm:p-3.5 bg-[#1c1f2a] rounded-xl border border-[#3b494c]/30 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Radio className="w-3.5 h-3.5 text-[#4ade80] animate-pulse" />
+              <h3 className="font-mono text-xs font-bold text-white uppercase">
+                Live AIS NMEA Feed
+              </h3>
+            </div>
+            <span className="text-[9px] font-mono text-[#4ade80] font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-ping"></span>
+              STREAMING
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+            {suspects.map((s) => (
+              <div key={s.mmsi} className="p-2 bg-[#171b26] rounded-lg border border-[#3b494c]/20 font-mono text-[10px]">
+                <div className="flex items-center justify-between text-white font-bold">
+                  <span className="truncate max-w-[160px]">{s.name}</span>
+                  <span className="text-[#00daf3]">{s.speed_knots} kts @ {s.heading_degrees}°</span>
+                </div>
+                <div className="flex justify-between text-[#849396] text-[9px] mt-0.5">
+                  <span>MMSI: {s.mmsi} {s.imo_number ? `| IMO: ${s.imo_number}` : ''}</span>
+                  <span className="text-white">{s.last_lat.toFixed(3)}°N, {s.last_lon.toFixed(3)}°E</span>
+                </div>
+                {s.linked_spill && (
+                  <div className="mt-1 pt-1 border-t border-[#ff3b30]/30 text-[9px] text-[#ffb4ab] font-bold flex justify-between">
+                    <span>⚠️ Linked Detection:</span>
+                    <span>{s.linked_spill.detection_date} • {s.linked_spill.detection_time_utc}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 5. Qdrant Historical Matches */}
         <div className="p-3 sm:p-3.5 bg-[#1c1f2a] rounded-xl border border-[#3b494c]/30 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">

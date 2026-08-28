@@ -26,29 +26,47 @@ export interface SpillFeatureCollection {
   features: SpillGeoFeature[];
 }
 
+export interface LinkedSpillInfo {
+  id: string;
+  detection_date: string;
+  detection_time_utc: string;
+  volume_liters: number;
+  confidence_score: number;
+  slick_type: string;
+  distance_km: number;
+}
+
 export interface Vessel {
   mmsi: number;
+  imo_number?: number;
   name: string;
   flag: string;
   vessel_type: string;
   length_meters: number;
+  draught_meters?: number;
   call_sign?: string;
   destination?: string;
+  nav_status?: string;
+  cargo_type?: string;
+  linked_spill?: LinkedSpillInfo;
   current_position?: {
     latitude: number;
     longitude: number;
     speed_knots: number;
     heading_degrees: number;
     timestamp?: string;
+    rate_of_turn?: number;
   };
 }
 
 export interface SuspectVessel {
   mmsi: number;
+  imo_number?: number;
   name: string;
   flag: string;
   vessel_type: string;
   length_meters: number;
+  draught_meters?: number;
   call_sign?: string;
   destination?: string;
   distance_meters: number;
@@ -58,6 +76,7 @@ export interface SuspectVessel {
   heading_degrees: number;
   last_lat: number;
   last_lon: number;
+  linked_spill?: LinkedSpillInfo;
   trajectory?: [number, number, string][]; // [lon, lat, timestamp]
 }
 

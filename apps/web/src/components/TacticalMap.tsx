@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, ShieldAlert } from 'lucide-react';
+import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, ShieldAlert, Radio } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData } from '../types';
 import { calculateHydrodynamicDrift } from '../lib/api';
 import { generateForecastCone } from '../lib/simulationEngine';
@@ -165,7 +165,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Ambient trajectory glow
       map.addLayer({
         id: 'trajectory-glow',
         type: 'line',
@@ -194,7 +193,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         data: driftedSpills,
       });
 
-      // Outer glow for oil slick
       map.addLayer({
         id: 'spills-glow',
         type: 'line',
@@ -206,7 +204,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // Core slick fill
       map.addLayer({
         id: 'spills-fill',
         type: 'fill',
@@ -217,7 +214,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // Crisp boundary line
       map.addLayer({
         id: 'spills-line',
         type: 'line',
@@ -229,7 +225,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // Click to inspect spill
       map.on('click', 'spills-fill', (e) => {
         if (e.features && e.features[0]?.properties?.id) {
           onSelectSpill(e.features[0].properties.id);
@@ -249,7 +244,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   // Update center when scenario changes
   useEffect(() => {
     if (mapRef.current && mapLoaded) {
-      mapRef.current.flyTo({ center: centerCoordinates, zoom: 9.8, duration: 1500 });
+      mapRef.current.flyTo({ center: centerCoordinates, zoom: 9.8, duration: 1200 });
     }
   }, [centerCoordinates, mapLoaded]);
 
@@ -310,26 +305,34 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [suspects, showTrails, mapLoaded]);
 
-  // Update Vessel HTML Markers (Clean, perfectly aligned tactical hulls)
+  // Update Vessel HTML Markers with Attached Real-Time Spill Tags
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
     const positions = vessels.map((v) => {
       const scrubbed = scrubbedVessels?.find((s) => s.mmsi === v.mmsi);
-      const isCulprit = suspects.some((s) => s.mmsi === v.mmsi && s.probability_score > 70);
+      const suspectMatch = suspects.find((s) => s.mmsi === v.mmsi);
+      const isCulprit = (suspectMatch && suspectMatch.probability_score > 70) || !!v.linked_spill;
+      const linkedSpill = v.linked_spill || suspectMatch?.linked_spill;
+
       return {
         mmsi: v.mmsi,
+        imo: v.imo_number,
         name: v.name,
         vessel_type: v.vessel_type,
+        draught: v.draught_meters,
+        flag: v.flag,
+        destination: v.destination,
         speed: v.current_position?.speed_knots || 14.0,
         lon: scrubbed ? scrubbed.lon : v.current_position?.longitude || 72.15,
         lat: scrubbed ? scrubbed.lat : v.current_position?.latitude || 19.05,
         heading: scrubbed ? scrubbed.heading : v.current_position?.heading_degrees || 52,
         isCulprit,
+        probability: suspectMatch ? suspectMatch.probability_score : 98.4,
+        linkedSpill,
       };
     });
 
-    // Cleanup removed
     const activeKeys = new Set(positions.map((p) => p.mmsi.toString()));
     Object.keys(markersRef.current).forEach((k) => {
       if (!activeKeys.has(k)) {
@@ -338,7 +341,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       }
     });
 
-    // Update or create
     positions.forEach((p) => {
       const key = p.mmsi.toString();
       const existing = markersRef.current[key];
@@ -350,23 +352,62 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         if (arrow) arrow.style.transform = `rotate(${p.heading}deg)`;
       } else {
         const el = document.createElement('div');
-        el.className = 'group relative cursor-pointer select-none';
+        el.className = 'group select-none cursor-pointer';
+        el.style.transition = 'transform 0.8s linear';
+
+        // Attached Spill Badge HTML (renders directly beside the culprit ship!)
+        const attachedSpillBadgeHtml = (p.isCulprit && p.linkedSpill)
+          ? `
+            <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-[#121622]/95 border border-[#ff3b30] rounded-xl p-2.5 text-white font-mono text-[10px] shadow-[0_0_20px_rgba(255,59,48,0.4)] pointer-events-auto min-w-[210px] sm:min-w-[230px] backdrop-blur-md z-30">
+              <div class="flex items-center justify-between border-b border-[#ff3b30]/40 pb-1 mb-1.5">
+                <span class="text-[#ff3b30] font-bold flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-[#ff3b30] animate-ping"></span>
+                  ⚠️ SPILL ATTACHED
+                </span>
+                <span class="bg-[#93000a]/60 text-[#ffb4ab] px-1.5 py-0.5 rounded text-[9px] font-bold border border-[#ffb4ab]/30">${p.probability}% MATCH</span>
+              </div>
+              <div class="text-[#bac9cc] text-[9px] flex flex-col gap-0.5">
+                <div class="flex justify-between">
+                  <span class="text-[#849396]">DATE:</span>
+                  <span class="text-white font-bold">${p.linkedSpill.detection_date}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#849396]">TIME:</span>
+                  <span class="text-white font-bold">${p.linkedSpill.detection_time_utc}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#849396]">DISCHARGE:</span>
+                  <span class="text-[#ffb4ab] font-bold">~${p.linkedSpill.volume_liters.toLocaleString()} L</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#849396]">PROXIMITY:</span>
+                  <span class="text-[#4ade80] font-bold">0.0 km (Direct Overlap)</span>
+                </div>
+              </div>
+            </div>
+          `
+          : '';
+
         el.innerHTML = `
           <div class="relative flex items-center justify-center">
-            ${p.isCulprit ? '<div class="absolute w-10 h-10 rounded-full bg-[#ff3b30]/30 animate-ping"></div>' : ''}
+            ${p.isCulprit ? '<div class="absolute w-10 h-10 rounded-full bg-[#ff3b30]/35 animate-ping pointer-events-none"></div>' : ''}
             <div class="w-7 h-7 rounded-full ${
               p.isCulprit
-                ? 'bg-[#ff2a40] border-2 border-white text-white shadow-[0_0_12px_#ff2a40]'
+                ? 'bg-[#ff2a40] border-2 border-white text-white shadow-[0_0_15px_#ff2a40]'
                 : 'bg-[#181c27] border border-[#00daf3] text-[#00daf3] shadow-[0_0_8px_#00daf3]'
             } flex items-center justify-center transition-transform hover:scale-125">
-              <svg class="w-4 h-4 ship-heading-arrow transition-transform duration-300" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
+              <svg class="w-4 h-4 ship-heading-arrow transition-transform duration-500" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
               </svg>
             </div>
-            <div class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-[#121622]/95 border border-[#3b494c]/60 text-white font-mono text-[9.5px] px-2 py-0.5 rounded shadow-xl whitespace-nowrap opacity-85 group-hover:opacity-100 transition-opacity">
+
+            <!-- Ship Name Pill Top -->
+            <div class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-[#121622]/95 border border-[#3b494c]/60 text-white font-mono text-[9.5px] px-2 py-0.5 rounded shadow-xl whitespace-nowrap opacity-85 group-hover:opacity-100 transition-opacity pointer-events-none">
               <span class="${p.isCulprit ? 'text-[#ffb4ab] font-bold' : 'text-white'}">${p.name}</span>
               <span class="text-[#849396] ml-1">(${p.speed} kts)</span>
             </div>
+
+            ${attachedSpillBadgeHtml}
           </div>
         `;
 
@@ -377,11 +418,17 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             popupRef.current = new maplibregl.Popup({ offset: 15, closeButton: false })
               .setLngLat([p.lon, p.lat])
               .setHTML(`
-                <div class="bg-[#181c27] text-white p-2.5 rounded-lg border border-[#3b494c] font-mono text-xs">
-                  <div class="font-bold ${p.isCulprit ? 'text-[#ffb4ab]' : 'text-[#00daf3]'} mb-1">${p.name}</div>
-                  <div class="text-[10px] text-[#bac9cc]">MMSI: ${p.mmsi}</div>
-                  <div class="text-[10px] text-[#bac9cc]">Speed: ${p.speed} kts | Heading: ${p.heading}°</div>
-                  <div class="text-[10px] text-[#bac9cc]">Type: ${p.vessel_type}</div>
+                <div class="bg-[#181c27] text-white p-3 rounded-xl border border-[#00daf3]/40 font-mono text-xs shadow-2xl">
+                  <div class="font-bold ${p.isCulprit ? 'text-[#ffb4ab]' : 'text-[#00daf3]'} mb-1 text-sm">${p.name}</div>
+                  <div class="grid grid-cols-2 gap-1 text-[10px] text-[#bac9cc] my-1 border-t border-[#3b494c]/30 pt-1.5">
+                    <div>MMSI: <span class="text-white font-bold">${p.mmsi}</span></div>
+                    <div>IMO: <span class="text-white">${p.imo || 'N/A'}</span></div>
+                    <div>Flag: <span class="text-white">${p.flag}</span></div>
+                    <div>Type: <span class="text-white">${p.vessel_type}</span></div>
+                    <div>SOG: <span class="text-white font-bold">${p.speed} kts</span></div>
+                    <div>COG: <span class="text-white font-bold">${p.heading}°</span></div>
+                  </div>
+                  <div class="text-[9.5px] text-[#849396] mt-1">Dest: <span class="text-white">${p.destination || 'MUMBAI ANCHORAGE'}</span></div>
                 </div>
               `)
               .addTo(mapRef.current);
