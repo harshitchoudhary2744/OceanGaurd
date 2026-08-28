@@ -77,7 +77,8 @@ export function App() {
   useEffect(() => {
     let ws: WebSocket | null = null;
     try {
-      ws = new WebSocket('ws://localhost:8000/ws/telemetry');
+      const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws/telemetry';
+      ws = new WebSocket(wsUrl);
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
