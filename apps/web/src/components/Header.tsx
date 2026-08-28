@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Satellite, Upload, FileText, RefreshCw, Eye, Menu, X, Compass } from 'lucide-react';
 import { downloadPdfReportUrl } from '../lib/api';
 
+import { SuspectVessel, SpillGeoFeature } from '../types';
+
 interface HeaderProps {
   selectedSpillId: string;
+  spillFeature?: SpillGeoFeature | null;
+  suspects?: SuspectVessel[];
   onOpenUploadModal: () => void;
   onOpenForensicModal: () => void;
   activeScenario: string;
@@ -14,6 +18,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   selectedSpillId,
+  spillFeature,
+  suspects,
   onOpenUploadModal,
   onOpenForensicModal,
   activeScenario,
@@ -38,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
   const handleExportPdf = async () => {
     try {
       setIsExporting(true);
-      const url = await downloadPdfReportUrl(selectedSpillId);
+      const url = await downloadPdfReportUrl(selectedSpillId, spillFeature, suspects);
       const a = document.createElement('a');
       a.href = url;
       a.download = `OceanGuard_Forensic_${selectedSpillId}.pdf`;

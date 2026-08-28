@@ -29,7 +29,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     if (!spill) return;
     try {
       setIsExporting(true);
-      const url = await downloadPdfReportUrl(spill.id);
+      const url = await downloadPdfReportUrl(spill.id, selectedSpill, suspects);
       const a = document.createElement('a');
       a.href = url;
       a.download = `OceanGuard_Forensic_${spill.id}.pdf`;

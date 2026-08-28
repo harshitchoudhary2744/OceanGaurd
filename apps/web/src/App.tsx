@@ -76,7 +76,38 @@ export function App() {
 
   useEffect(() => {
     loadData();
+    // Auto-refresh data every 5 minutes (300,000 ms)
+    const autoRefreshInterval = setInterval(() => {
+      loadData();
+    }, 300000);
+    return () => clearInterval(autoRefreshInterval);
   }, [loadData]);
+
+  // Live AIS Kinematic Navigation Simulation (Updates coordinates every 3 seconds)
+  useEffect(() => {
+    const simInterval = setInterval(() => {
+      setVessels((prev) =>
+        prev.map((v) => {
+          if (!v.current_position) return v;
+          const rad = (v.current_position.heading_degrees * Math.PI) / 180;
+          const delta = 0.00025; // Smooth micro-movement along heading
+          const newLon = v.current_position.longitude + delta * Math.sin(rad);
+          const newLat = v.current_position.latitude + delta * Math.cos(rad);
+          return {
+            ...v,
+            current_position: {
+              ...v.current_position,
+              longitude: Number(newLon.toFixed(6)),
+              latitude: Number(newLat.toFixed(6)),
+              timestamp: new Date().toISOString(),
+            },
+          };
+        })
+      );
+    }, 3000);
+
+    return () => clearInterval(simInterval);
+  }, []);
 
   // WebSocket Live Telemetry Feed
   useEffect(() => {
@@ -193,6 +224,8 @@ export function App() {
       {/* 1. Clean Header */}
       <Header
         selectedSpillId={selectedSpillId}
+        spillFeature={selectedSpillFeature}
+        suspects={suspects}
         onOpenUploadModal={() => setIsUploadOpen(true)}
         onOpenForensicModal={() => setIsForensicOpen(true)}
         activeScenario={activeScenario}

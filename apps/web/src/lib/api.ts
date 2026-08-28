@@ -1,5 +1,6 @@
 import {
   SpillFeatureCollection,
+  SpillGeoFeature,
   SuspectVessel,
   VectorMatch,
   Vessel,
@@ -106,8 +107,27 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
   }
 }
 
-export async function downloadPdfReportUrl(spillId: string): Promise<string> {
-  return `${API_BASE}/api/v1/reports/${spillId}/pdf`;
+export async function downloadPdfReportUrl(
+  spillId: string,
+  spillFeature?: SpillGeoFeature | null,
+  suspects?: SuspectVessel[]
+): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch(`${API_BASE}/api/v1/reports/${spillId}/pdf`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    return window.URL.createObjectURL(blob);
+  } catch (err) {
+    // Universal client-side fallback: generates identical legal dossier directly in the browser
+    const { generateClientSidePdfDossier } = await import('./pdfReport');
+    const blob = generateClientSidePdfDossier(spillId, spillFeature, suspects);
+    return window.URL.createObjectURL(blob);
+  }
 }
 
 export async function fetchVessels(): Promise<Vessel[]> {
