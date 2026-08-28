@@ -64,8 +64,8 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none">
-      <div className="w-full max-w-lg bg-[#1c1f2a] border border-[#00daf3]/40 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm select-none">
+      <div className="w-full max-w-lg bg-[#1c1f2a] border border-[#00daf3]/40 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-4 border-b border-[#3b494c]/30 flex items-center justify-between bg-[#171b26]">
           <div className="flex items-center gap-2.5">

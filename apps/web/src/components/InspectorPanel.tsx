@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Radar, FileDown, ShieldAlert, Sparkles, Database } from 'lucide-react';
+import { Radar, FileDown, ShieldAlert, Sparkles, Database, X } from 'lucide-react';
 import { SpillGeoFeature, SuspectVessel, VectorMatch } from '../types';
 import { downloadPdfReportUrl } from '../lib/api';
 
@@ -9,6 +9,8 @@ interface InspectorPanelProps {
   vectorMatches: VectorMatch[];
   onSelectVessel: (mmsi: number) => void;
   selectedVesselMmsi?: number | null;
+  onClose?: () => void;
+  isMobileModal?: boolean;
 }
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({
@@ -17,6 +19,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   vectorMatches,
   onSelectVessel,
   selectedVesselMmsi,
+  onClose,
+  isMobileModal = false,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const spill = selectedSpill?.properties;
@@ -42,21 +46,32 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   return (
     <aside className="w-full h-full tactical-glass border-l border-[#3b494c]/30 flex flex-col overflow-y-auto select-none">
       {/* Header */}
-      <div className="p-4 border-b border-[#3b494c]/20 flex items-center justify-between sticky top-0 bg-[#181c27] z-10">
+      <div className="p-3.5 sm:p-4 border-b border-[#3b494c]/20 flex items-center justify-between sticky top-0 bg-[#181c27] z-10">
         <div className="flex items-center gap-2">
           <Radar className="w-4 h-4 text-[#00daf3]" />
           <h2 className="font-mono text-xs font-bold text-white uppercase tracking-wider">
             Incident Inspector
           </h2>
         </div>
-        <span className="px-2 py-0.5 rounded bg-[#93000a]/30 border border-[#ffb4ab]/30 text-[#ffb4ab] font-mono text-[10px] font-bold">
-          {spill?.id || 'INC-IND-2024-01'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="px-2 py-0.5 rounded bg-[#93000a]/30 border border-[#ffb4ab]/30 text-[#ffb4ab] font-mono text-[10px] font-bold">
+            {spill?.id || 'INC-IND-2024-01'}
+          </span>
+          {isMobileModal && onClose && (
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-[#262a35] text-[#bac9cc] hover:text-white"
+              aria-label="Close inspector panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="p-4 flex flex-col gap-4">
+      <div className="p-3 sm:p-4 flex flex-col gap-3 sm:gap-4 pb-20 lg:pb-4">
         {/* 1. Incident Summary Card */}
-        <div className="p-3.5 bg-[#1c1f2a] rounded-xl border border-[#3b494c]/30">
+        <div className="p-3 sm:p-3.5 bg-[#1c1f2a] rounded-xl border border-[#3b494c]/30">
           <div className="flex items-center justify-between mb-2.5">
             <span className="font-mono text-xs font-bold text-white">SAR Satellite Incident</span>
             <div className="flex items-center gap-1 text-[11px] font-mono text-[#00daf3]">
@@ -65,7 +80,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 text-xs font-mono">
+          <div className="grid grid-cols-2 gap-2 text-xs font-mono">
             <div className="p-2 bg-[#171b26] rounded-lg">
               <span className="text-[10px] text-[#849396] block">SPILL AREA</span>
               <span className="font-bold text-[#ffb4ab] text-sm">{spill?.area_sq_km || 5.40} sq km</span>
@@ -76,14 +91,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
           </div>
 
-          <div className="mt-2.5 pt-2 border-t border-[#3b494c]/20 text-[10px] font-mono text-[#bac9cc] flex justify-between">
+          <div className="mt-2.5 pt-2 border-t border-[#3b494c]/20 text-[10px] font-mono text-[#bac9cc] flex justify-between flex-wrap gap-1">
             <span>Sensor: Sentinel-1 C-Band</span>
             <span>{spill?.center ? `${spill.center[1]}° N, ${spill.center[0]}° E` : '19.050° N, 72.150° E'}</span>
           </div>
         </div>
 
         {/* 2. Culprit Suspects Card */}
-        <div className="p-3.5 bg-[#1c1f2a] rounded-xl border border-[#3b494c]/30 flex flex-col gap-2.5">
+        <div className="p-3 sm:p-3.5 bg-[#1c1f2a] rounded-xl border border-[#3b494c]/30 flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <ShieldAlert className="w-4 h-4 text-[#ffb4ab]" />
@@ -138,7 +153,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           <button
             onClick={handleDownloadPdf}
             disabled={isExporting}
-            className="w-full mt-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#00e5ff] text-[#00363d] hover:bg-[#9cf0ff] font-mono text-xs font-bold transition-all disabled:opacity-60"
+            className="w-full mt-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-[#00e5ff] text-[#00363d] hover:bg-[#9cf0ff] font-mono text-xs font-bold transition-all disabled:opacity-60 shadow-sm"
           >
             <FileDown className="w-3.5 h-3.5" />
             <span>{isExporting ? 'Generating PDF...' : 'Download Legal Evidence PDF'}</span>
@@ -146,7 +161,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         </div>
 
         {/* 3. Qdrant Historical Matches */}
-        <div className="p-3.5 bg-[#1c1f2a] rounded-xl border border-[#3b494c]/30 flex flex-col gap-2">
+        <div className="p-3 sm:p-3.5 bg-[#1c1f2a] rounded-xl border border-[#3b494c]/30 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Database className="w-3.5 h-3.5 text-[#00daf3]" />

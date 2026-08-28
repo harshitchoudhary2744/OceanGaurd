@@ -5,6 +5,7 @@ import { InspectorPanel } from './components/InspectorPanel';
 import { TimeScrubber } from './components/TimeScrubber';
 import { UploadSarModal } from './components/UploadSarModal';
 import { ForensicModal } from './components/ForensicModal';
+import { Map as MapIcon, ShieldAlert, Ship, Database } from 'lucide-react';
 
 import {
   SpillFeatureCollection,
@@ -37,6 +38,10 @@ export function App() {
   const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(419000123);
   const [activeScenario, setActiveScenario] = useState('arabian_sea');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Mobile Bottom Sheet / Active Tab
+  const [mobileActiveTab, setMobileActiveTab] = useState<'map' | 'threat' | 'suspects' | 'vectors'>('map');
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Time Scrubber State (-360 to 0)
   const [timeOffsetMinutes, setTimeOffsetMinutes] = useState<number>(0);
@@ -92,94 +97,99 @@ export function App() {
                     current_position: {
                       latitude: tick.latitude,
                       longitude: tick.longitude,
-                      speed_knots: tick.speed_knots,
                       heading_degrees: tick.heading_degrees,
-                      timestamp: tick.timestamp
-                    }
+                      speed_knots: tick.speed_knots,
+                      timestamp_utc: tick.timestamp_utc,
+                    },
                   };
                 }
                 return v;
               })
             );
           }
-        } catch (e) {}
+        } catch (err) {
+          console.error("WS Parse error", err);
+        }
       };
-      ws.onerror = () => {};
-    } catch (e) {}
+    } catch (err) {
+      console.warn("WebSocket stream unavailable, using simulated kinematic replay");
+    }
 
     return () => {
       if (ws) ws.close();
     };
   }, []);
 
-  const selectedSpillFeature = useMemo<SpillGeoFeature | null>(() => {
-    return spills.features.find((f) => f.properties.id === selectedSpillId) || spills.features[0] || null;
-  }, [spills, selectedSpillId]);
+  // Handle Scenario Switcher
+  const handleScenarioChange = (scenario: string) => {
+    setActiveScenario(scenario);
+    if (scenario === 'arabian_sea') {
+      setSelectedSpillId('INC-IND-2024-01');
+      setSelectedVesselMmsi(419000123);
+    } else {
+      setSelectedSpillId('INC-IND-2024-02');
+      setSelectedVesselMmsi(419000456);
+    }
+  };
 
-  const mapCenter = useMemo<[number, number]>(() => {
-    if (activeScenario === 'bay_of_bengal') return [80.750, 13.250]; // Chennai / Bay of Bengal
-    return [72.150, 19.050]; // Arabian Sea / Mumbai High Sector
-  }, [activeScenario]);
-
-  // Scrubber Interpolation
+  // Interpolated Vessel Positions based on Time Scrubber (-360 to 0)
   const scrubbedVessels = useMemo(() => {
     if (timeOffsetMinutes === 0) return undefined;
-    const progress = (timeOffsetMinutes + 360) / 360;
+
+    const progressRatio = (timeOffsetMinutes + 360) / 360;
 
     return vessels.map((v) => {
-      const susp = suspects.find((s) => s.mmsi === v.mmsi);
-      if (susp?.trajectory && susp.trajectory.length > 1) {
-        const traj = susp.trajectory;
-        const indexFloat = progress * (traj.length - 1);
-        const idx = Math.min(Math.floor(indexFloat), traj.length - 2);
-        const localProg = indexFloat - idx;
-        const p1 = traj[idx];
-        const p2 = traj[idx + 1];
+      const isCulprit = suspects.some((s) => s.mmsi === v.mmsi && s.probability_score > 70);
+      const cur = v.current_position;
+      if (!cur) return { mmsi: v.mmsi, lon: 72.15, lat: 19.05, heading: 135 };
 
-        return {
-          mmsi: v.mmsi,
-          lon: p1[0] + localProg * (p2[0] - p1[0]),
-          lat: p1[1] + localProg * (p2[1] - p1[1]),
-          heading: susp.heading_degrees
-        };
-      }
+      const baseLon = isCulprit ? 72.02 : cur.longitude - 0.15;
+      const baseLat = isCulprit ? 18.95 : cur.latitude - 0.10;
 
-      const baseLat = v.current_position?.latitude || 19.05;
-      const baseLon = v.current_position?.longitude || 72.15;
-      const d = (1.0 - progress) * 0.25;
+      const interpLon = baseLon + (cur.longitude - baseLon) * progressRatio;
+      const interpLat = baseLat + (cur.latitude - baseLat) * progressRatio;
+
       return {
         mmsi: v.mmsi,
-        lon: baseLon - d,
-        lat: baseLat - d,
-        heading: v.current_position?.heading_degrees || 135.0
+        lon: Number(interpLon.toFixed(6)),
+        lat: Number(interpLat.toFixed(6)),
+        heading: cur.heading_degrees,
       };
     });
   }, [timeOffsetMinutes, vessels, suspects]);
 
+  // Selected Spill Feature
+  const selectedSpillFeature = useMemo<SpillGeoFeature | null>(() => {
+    return spills.features.find((f) => f.properties.id === selectedSpillId) || spills.features[0] || null;
+  }, [spills, selectedSpillId]);
+
+  // Active Map Center
+  const mapCenter = useMemo<[number, number]>(() => {
+    if (selectedSpillFeature?.properties?.center) {
+      return selectedSpillFeature.properties.center;
+    }
+    return activeScenario === 'bay_of_bengal' ? [80.750, 13.250] : [72.150, 19.050];
+  }, [selectedSpillFeature, activeScenario]);
+
+  // Handle Detection from Upload
   const handleDetectionComplete = (result: SARInferenceResponse) => {
     if (result.geojson_feature) {
       setSpills((prev) => ({
-        type: 'FeatureCollection',
-        features: [result.geojson_feature, ...prev.features]
+        ...prev,
+        features: [result.geojson_feature, ...prev.features],
       }));
       setSelectedSpillId(result.geojson_feature.properties.id);
-      if (result.ranked_suspects?.length) {
-        setSuspects(result.ranked_suspects);
-      }
+    }
+    if (result.ranked_suspects?.length) {
+      setSuspects(result.ranked_suspects);
+      setSelectedVesselMmsi(result.ranked_suspects[0].mmsi);
     }
   };
 
-  const handleScenarioChange = (scenario: string) => {
-    setActiveScenario(scenario);
-    if (scenario === 'bay_of_bengal') {
-      setSelectedSpillId('INC-IND-2024-02');
-    } else {
-      setSelectedSpillId('INC-IND-2024-01');
-    }
-  };
+  const primaryCulprit = suspects.find((s) => s.probability_score > 70) || suspects[0];
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0f131d] text-[#dfe2f1] overflow-hidden">
+    <div className="flex flex-col h-screen w-screen bg-[#0f131d] text-[#dfe2f1] overflow-hidden select-none">
       {/* 1. Clean Header */}
       <Header
         selectedSpillId={selectedSpillId}
@@ -191,7 +201,7 @@ export function App() {
         isRefreshing={isRefreshing}
       />
 
-      {/* 2. Main Stage (Map 75% | Inspector 25%) */}
+      {/* 2. Main Stage */}
       <main className="flex-1 flex overflow-hidden relative">
         {/* Map Container */}
         <div className="flex-1 h-full relative">
@@ -200,11 +210,28 @@ export function App() {
             vessels={vessels}
             suspects={suspects}
             selectedSpillId={selectedSpillId}
-            onSelectSpill={setSelectedSpillId}
-            onSelectVessel={setSelectedVesselMmsi}
+            onSelectSpill={(id) => {
+              setSelectedSpillId(id);
+              if (window.innerWidth < 1024) setIsMobileDrawerOpen(true);
+            }}
+            onSelectVessel={(mmsi) => {
+              setSelectedVesselMmsi(mmsi);
+              if (window.innerWidth < 1024) setIsMobileDrawerOpen(true);
+            }}
             scrubbedVessels={scrubbedVessels}
             centerCoordinates={mapCenter}
           />
+
+          {/* Mobile Quick Suspect Pill */}
+          <div className="lg:hidden absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
+            <button
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#181c27]/90 backdrop-blur-md border border-[#ffb4ab]/40 text-xs font-mono shadow-lg text-white"
+            >
+              <span className="w-2 h-2 rounded-full bg-[#ff3b30] animate-pulse"></span>
+              <span className="font-bold text-[#ffb4ab]">{primaryCulprit ? `${primaryCulprit.probability_score}% Suspect: ${primaryCulprit.name}` : 'Threat Details'}</span>
+            </button>
+          </div>
 
           {/* Floating Time Scrubber */}
           <TimeScrubber
@@ -217,8 +244,8 @@ export function App() {
           />
         </div>
 
-        {/* Inspector Sidebar */}
-        <div className="w-[360px] xl:w-[400px] h-full shrink-0">
+        {/* Desktop Inspector Sidebar (hidden on screens < lg) */}
+        <div className="hidden lg:block w-[360px] xl:w-[400px] h-full shrink-0">
           <InspectorPanel
             selectedSpill={selectedSpillFeature}
             suspects={suspects}
@@ -227,16 +254,90 @@ export function App() {
             selectedVesselMmsi={selectedVesselMmsi}
           />
         </div>
+
+        {/* Mobile Expandable Drawer / Modal */}
+        {isMobileDrawerOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end">
+            <div className="bg-[#181c27] border-t border-[#3b494c]/40 rounded-t-2xl max-h-[80vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
+              {/* Drag handle bar */}
+              <div className="w-12 h-1.5 bg-[#3b494c]/60 rounded-full mx-auto my-2" />
+              <InspectorPanel
+                selectedSpill={selectedSpillFeature}
+                suspects={suspects}
+                vectorMatches={vectorMatches}
+                onSelectVessel={setSelectedVesselMmsi}
+                selectedVesselMmsi={selectedVesselMmsi}
+                onClose={() => setIsMobileDrawerOpen(false)}
+                isMobileModal={true}
+              />
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* 3. SAR Ingest Modal */}
+      {/* 3. Mobile Bottom Navigation Bar (< lg) */}
+      <nav className="lg:hidden h-14 bg-[#121622] border-t border-[#3b494c]/30 flex items-center justify-around z-30 shrink-0 px-2">
+        <button
+          onClick={() => {
+            setMobileActiveTab('map');
+            setIsMobileDrawerOpen(false);
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
+            !isMobileDrawerOpen && mobileActiveTab === 'map' ? 'text-[#00e5ff] font-bold' : 'text-[#849396]'
+          }`}
+        >
+          <MapIcon className="w-4 h-4" />
+          <span>Map</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setMobileActiveTab('threat');
+            setIsMobileDrawerOpen(true);
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
+            isMobileDrawerOpen && mobileActiveTab === 'threat' ? 'text-[#ffb4ab] font-bold' : 'text-[#849396]'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4" />
+          <span>Threat</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setMobileActiveTab('suspects');
+            setIsMobileDrawerOpen(true);
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
+            isMobileDrawerOpen && mobileActiveTab === 'suspects' ? 'text-[#00daf3] font-bold' : 'text-[#849396]'
+          }`}
+        >
+          <Ship className="w-4 h-4" />
+          <span>Suspects ({suspects.length})</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setMobileActiveTab('vectors');
+            setIsMobileDrawerOpen(true);
+          }}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
+            isMobileDrawerOpen && mobileActiveTab === 'vectors' ? 'text-[#00daf3] font-bold' : 'text-[#849396]'
+          }`}
+        >
+          <Database className="w-4 h-4" />
+          <span>Vectors</span>
+        </button>
+      </nav>
+
+      {/* 4. SAR Ingest Modal */}
       <UploadSarModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
         onDetectionComplete={handleDetectionComplete}
       />
 
-      {/* 4. Forensic SAR Side-by-Side Modal */}
+      {/* 5. Forensic SAR Side-by-Side Modal */}
       <ForensicModal
         isOpen={isForensicOpen}
         onClose={() => setIsForensicOpen(false)}
