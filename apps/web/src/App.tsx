@@ -31,6 +31,8 @@ import {
   DEFAULT_METOCEAN
 } from './lib/mockData';
 
+import { globalSimulation } from './lib/simulationEngine';
+
 export function App() {
   const [spills, setSpills] = useState<SpillFeatureCollection>(INITIAL_SPILLS);
   const [vessels, setVessels] = useState<Vessel[]>(INITIAL_VESSELS);
@@ -56,7 +58,17 @@ export function App() {
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isForensicOpen, setIsForensicOpen] = useState<boolean>(false);
 
-  // Data Loading
+  // 1. Continuous 24/7 Autonomous Simulation Hook (Works seamlessly offline)
+  useEffect(() => {
+    const unsubscribe = globalSimulation.subscribe((simState) => {
+      setVessels(simState.vessels);
+      setSuspects(simState.suspects);
+      setMetocean(simState.metocean);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Data Loading from Backend (with silent offline fallback)
   const loadData = useCallback(async () => {
     setIsRefreshing(true);
     try {
@@ -74,7 +86,7 @@ export function App() {
       if (vectorData?.length) setVectorMatches(vectorData);
       if (metoceanData) setMetocean(metoceanData);
     } catch (e) {
-      console.warn("API fallback mode:", e);
+      // Offline fallback already actively running via globalSimulation
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
     }
@@ -82,38 +94,12 @@ export function App() {
 
   useEffect(() => {
     loadData();
-    // Auto-refresh data every 5 minutes (300,000 ms)
+    // Auto-sync polling every 5 minutes
     const autoRefreshInterval = setInterval(() => {
       loadData();
     }, 300000);
     return () => clearInterval(autoRefreshInterval);
   }, [loadData]);
-
-  // Live AIS Kinematic Navigation Simulation (Updates coordinates every 3 seconds)
-  useEffect(() => {
-    const simInterval = setInterval(() => {
-      setVessels((prev) =>
-        prev.map((v) => {
-          if (!v.current_position) return v;
-          const rad = (v.current_position.heading_degrees * Math.PI) / 180;
-          const delta = 0.00025; // Smooth micro-movement along heading
-          const newLon = v.current_position.longitude + delta * Math.sin(rad);
-          const newLat = v.current_position.latitude + delta * Math.cos(rad);
-          return {
-            ...v,
-            current_position: {
-              ...v.current_position,
-              longitude: Number(newLon.toFixed(6)),
-              latitude: Number(newLat.toFixed(6)),
-              timestamp: new Date().toISOString(),
-            },
-          };
-        })
-      );
-    }, 3000);
-
-    return () => clearInterval(simInterval);
-  }, []);
 
   // WebSocket Live Telemetry Feed
   useEffect(() => {
@@ -160,6 +146,7 @@ export function App() {
   // Handle Scenario Switcher
   const handleScenarioChange = (scenario: string) => {
     setActiveScenario(scenario);
+    globalSimulation.setScenario(scenario);
     if (scenario === 'arabian_sea') {
       setSelectedSpillId('INC-IND-2024-01');
       setSelectedVesselMmsi(419000123);

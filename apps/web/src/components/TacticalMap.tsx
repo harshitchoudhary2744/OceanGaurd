@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass } from 'lucide-react';
+import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, ShieldAlert } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData } from '../types';
 import { calculateHydrodynamicDrift } from '../lib/api';
+import { generateForecastCone } from '../lib/simulationEngine';
 
 interface TacticalMapProps {
   spills: SpillFeatureCollection;
@@ -32,11 +33,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
+  const popupRef = useRef<maplibregl.Popup | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
 
-  // Hydrodynamically Drifted Spills based on Time Scrubber (-360 to +360)
+  // Hydrodynamically Drifted Spills based on Time Scrubber
   const driftedSpills = useMemo<SpillFeatureCollection>(() => {
     if (timeOffsetMinutes === 0) return spills;
     return {
@@ -55,19 +57,23 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, [spills, timeOffsetMinutes, metocean]);
 
-  // +6h Hydrodynamic Forecast Cone
+  // Realistic +6h Hydrodynamic Forecast Dispersal Fan Cone
   const forecastConeFeature = useMemo(() => {
     const activeSpill = spills.features.find((f) => f.properties.id === selectedSpillId) || spills.features[0];
     if (!activeSpill) return null;
 
-    const baseCoords = activeSpill.geometry.coordinates[0];
-    const forecastCoords = calculateHydrodynamicDrift(baseCoords, 360, metocean); // +6 hours
+    const centroid = activeSpill.properties.center || [72.145, 19.048];
+    const driftDir = metocean?.net_drift_direction_deg || 69.3;
+    const driftSpeed = metocean?.net_drift_speed_kts || 1.95;
+
+    const coneCoords = generateForecastCone(centroid[0], centroid[1], driftDir, driftSpeed, 6);
+
     return {
       type: "Feature" as const,
-      properties: { name: "+6h Metocean Drift Projection" },
+      properties: { name: "+6h Dispersal Envelope" },
       geometry: {
         type: "Polygon" as const,
-        coordinates: [forecastCoords],
+        coordinates: [coneCoords],
       },
     };
   }, [spills, selectedSpillId, metocean]);
@@ -112,14 +118,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             minzoom: 0,
             maxzoom: 19,
             paint: {
-              'raster-opacity': 0.7,
+              'raster-opacity': 0.75,
             },
           },
         ],
       },
       center: centerCoordinates,
-      zoom: 9.5,
-      pitch: 30,
+      zoom: 9.8,
       attributionControl: false,
     });
 
@@ -127,48 +132,19 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       setMapLoaded(true);
       mapRef.current = map;
 
-      // Add Spills GeoJSON Source
-      map.addSource('spills-source', {
-        type: 'geojson',
-        data: driftedSpills,
-      });
-
-      // Spills Fill
-      map.addLayer({
-        id: 'spills-fill',
-        type: 'fill',
-        source: 'spills-source',
-        paint: {
-          'fill-color': '#ff3b30',
-          'fill-opacity': 0.45,
-        },
-      });
-
-      // Spills Outline
-      map.addLayer({
-        id: 'spills-line',
-        type: 'line',
-        source: 'spills-source',
-        paint: {
-          'line-color': '#ffb4ab',
-          'line-width': 2.5,
-        },
-      });
-
-      // Forecast Source
+      // 1. Forecast Cone Layer (+6h Envelope)
       map.addSource('forecast-source', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Forecast Fill & Line
       map.addLayer({
         id: 'forecast-fill',
         type: 'fill',
         source: 'forecast-source',
         paint: {
           'fill-color': '#00e5ff',
-          'fill-opacity': 0.15,
+          'fill-opacity': 0.12,
         },
       });
 
@@ -178,30 +154,82 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'forecast-source',
         paint: {
           'line-color': '#00e5ff',
-          'line-width': 1.5,
-          'line-dasharray': [3, 2],
+          'line-width': 1.8,
+          'line-dasharray': [4, 3],
         },
       });
 
-      // Trajectory Source
+      // 2. Trajectory Source & Dashed Red Intercept Track
       map.addSource('culprit-trajectory', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
       });
 
-      // Trajectory Dashed Line
+      // Ambient trajectory glow
+      map.addLayer({
+        id: 'trajectory-glow',
+        type: 'line',
+        source: 'culprit-trajectory',
+        paint: {
+          'line-color': '#ff3b30',
+          'line-width': 6,
+          'line-opacity': 0.25,
+        },
+      });
+
       map.addLayer({
         id: 'trajectory-dashed',
         type: 'line',
         source: 'culprit-trajectory',
         paint: {
-          'line-color': '#ff3b30',
+          'line-color': '#ff5c6d',
           'line-width': 2.5,
-          'line-dasharray': [2, 2],
+          'line-dasharray': [3, 2],
         },
       });
 
-      // Slick Click
+      // 3. Spills GeoJSON Source
+      map.addSource('spills-source', {
+        type: 'geojson',
+        data: driftedSpills,
+      });
+
+      // Outer glow for oil slick
+      map.addLayer({
+        id: 'spills-glow',
+        type: 'line',
+        source: 'spills-source',
+        paint: {
+          'line-color': '#ff3b30',
+          'line-width': 8,
+          'line-opacity': 0.35,
+        },
+      });
+
+      // Core slick fill
+      map.addLayer({
+        id: 'spills-fill',
+        type: 'fill',
+        source: 'spills-source',
+        paint: {
+          'fill-color': '#ff2a40',
+          'fill-opacity': 0.65,
+        },
+      });
+
+      // Crisp boundary line
+      map.addLayer({
+        id: 'spills-line',
+        type: 'line',
+        source: 'spills-source',
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 2.0,
+          'line-opacity': 0.9,
+        },
+      });
+
+      // Click to inspect spill
       map.on('click', 'spills-fill', (e) => {
         if (e.features && e.features[0]?.properties?.id) {
           onSelectSpill(e.features[0].properties.id);
@@ -221,7 +249,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   // Update center when scenario changes
   useEffect(() => {
     if (mapRef.current && mapLoaded) {
-      mapRef.current.flyTo({ center: centerCoordinates, zoom: 9.5, duration: 1500 });
+      mapRef.current.flyTo({ center: centerCoordinates, zoom: 9.8, duration: 1500 });
     }
   }, [centerCoordinates, mapLoaded]);
 
@@ -282,7 +310,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [suspects, showTrails, mapLoaded]);
 
-  // Update Vessel HTML Markers
+  // Update Vessel HTML Markers (Clean, perfectly aligned tactical hulls)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
@@ -292,9 +320,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       return {
         mmsi: v.mmsi,
         name: v.name,
+        vessel_type: v.vessel_type,
+        speed: v.current_position?.speed_knots || 14.0,
         lon: scrubbed ? scrubbed.lon : v.current_position?.longitude || 72.15,
         lat: scrubbed ? scrubbed.lat : v.current_position?.latitude || 19.05,
-        heading: scrubbed ? scrubbed.heading : v.current_position?.heading_degrees || 135,
+        heading: scrubbed ? scrubbed.heading : v.current_position?.heading_degrees || 52,
         isCulprit,
       };
     });
@@ -323,19 +353,40 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         el.className = 'group relative cursor-pointer select-none';
         el.innerHTML = `
           <div class="relative flex items-center justify-center">
-            ${p.isCulprit ? '<div class="absolute w-8 h-8 rounded-full bg-[#ff3b30]/30 animate-ping"></div>' : ''}
-            <div class="w-6 h-6 rounded-full ${p.isCulprit ? 'bg-[#ff3b30] border-2 border-white text-white' : 'bg-[#181c27] border border-[#00daf3] text-[#00daf3]'} flex items-center justify-center shadow-lg transition-transform hover:scale-125">
-              <svg class="w-3.5 h-3.5 ship-heading-arrow transition-transform duration-300" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
+            ${p.isCulprit ? '<div class="absolute w-10 h-10 rounded-full bg-[#ff3b30]/30 animate-ping"></div>' : ''}
+            <div class="w-7 h-7 rounded-full ${
+              p.isCulprit
+                ? 'bg-[#ff2a40] border-2 border-white text-white shadow-[0_0_12px_#ff2a40]'
+                : 'bg-[#181c27] border border-[#00daf3] text-[#00daf3] shadow-[0_0_8px_#00daf3]'
+            } flex items-center justify-center transition-transform hover:scale-125">
+              <svg class="w-4 h-4 ship-heading-arrow transition-transform duration-300" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
               </svg>
             </div>
-            <div class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-[#181c27]/95 border border-[#3b494c]/50 text-white font-mono text-[9px] px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap shadow-md opacity-80 group-hover:opacity-100">
-              ${p.name}
+            <div class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-[#121622]/95 border border-[#3b494c]/60 text-white font-mono text-[9.5px] px-2 py-0.5 rounded shadow-xl whitespace-nowrap opacity-85 group-hover:opacity-100 transition-opacity">
+              <span class="${p.isCulprit ? 'text-[#ffb4ab] font-bold' : 'text-white'}">${p.name}</span>
+              <span class="text-[#849396] ml-1">(${p.speed} kts)</span>
             </div>
           </div>
         `;
 
-        el.addEventListener('click', () => onSelectVessel(p.mmsi));
+        el.addEventListener('click', () => {
+          onSelectVessel(p.mmsi);
+          if (mapRef.current) {
+            if (popupRef.current) popupRef.current.remove();
+            popupRef.current = new maplibregl.Popup({ offset: 15, closeButton: false })
+              .setLngLat([p.lon, p.lat])
+              .setHTML(`
+                <div class="bg-[#181c27] text-white p-2.5 rounded-lg border border-[#3b494c] font-mono text-xs">
+                  <div class="font-bold ${p.isCulprit ? 'text-[#ffb4ab]' : 'text-[#00daf3]'} mb-1">${p.name}</div>
+                  <div class="text-[10px] text-[#bac9cc]">MMSI: ${p.mmsi}</div>
+                  <div class="text-[10px] text-[#bac9cc]">Speed: ${p.speed} kts | Heading: ${p.heading}°</div>
+                  <div class="text-[10px] text-[#bac9cc]">Type: ${p.vessel_type}</div>
+                </div>
+              `)
+              .addTo(mapRef.current);
+          }
+        });
 
         const marker = new maplibregl.Marker({ element: el })
           .setLngLat([p.lon, p.lat])
@@ -351,13 +402,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Floating Metocean Live Vector Overlay (Top-Right) */}
-      <div className="absolute top-3 right-3 z-20 tactical-glass rounded-xl p-2.5 sm:p-3 border border-[#00e5ff]/30 shadow-xl flex flex-col gap-2 select-none max-w-[200px] sm:max-w-[240px]">
+      <div className="absolute top-3 right-3 z-20 tactical-glass rounded-xl p-2.5 sm:p-3 border border-[#00e5ff]/30 shadow-2xl flex flex-col gap-2 select-none max-w-[200px] sm:max-w-[240px]">
         <div className="flex items-center justify-between border-b border-[#3b494c]/30 pb-1.5">
           <div className="flex items-center gap-1.5 text-white font-mono text-[11px] font-bold">
             <Compass className="w-3.5 h-3.5 text-[#00daf3] animate-spin-slow" />
             <span>METOCEAN VECTORS</span>
           </div>
-          <span className="text-[9px] font-mono text-[#4ade80] font-bold">LIVE</span>
+          <span className="text-[9px] font-mono text-[#4ade80] font-bold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span>
+            LIVE
+          </span>
         </div>
 
         <div className="grid grid-cols-2 gap-1.5 font-mono text-[10px]">
@@ -369,7 +423,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             </div>
             <span className="font-bold text-white text-xs mt-0.5">{metocean?.wind_speed_kts || 16.2} kts</span>
             <span className="text-[9px] text-[#bac9cc] mt-0.5 flex items-center gap-0.5">
-              <span style={{ transform: `rotate(${(metocean?.wind_direction_deg || 245) + 180}deg)` }} className="inline-block text-[#00daf3]">↑</span>
+              <span style={{ transform: `rotate(${(metocean?.wind_direction_deg || 245) + 180}deg)` }} className="inline-block text-[#00daf3] font-bold">↑</span>
               <span>{metocean?.wind_direction_deg || 245}° {metocean?.wind_cardinal || 'WSW'}</span>
             </span>
           </div>
@@ -382,7 +436,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             </div>
             <span className="font-bold text-white text-xs mt-0.5">{metocean?.current_speed_kts || 1.4} kts</span>
             <span className="text-[9px] text-[#bac9cc] mt-0.5 flex items-center gap-0.5">
-              <span style={{ transform: `rotate(${metocean?.current_direction_deg || 65}deg)` }} className="inline-block text-[#00daf3]">↑</span>
+              <span style={{ transform: `rotate(${metocean?.current_direction_deg || 65}deg)` }} className="inline-block text-[#00daf3] font-bold">↑</span>
               <span>{metocean?.current_direction_deg || 65}° {metocean?.current_cardinal || 'ENE'}</span>
             </span>
           </div>
@@ -396,7 +450,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       </div>
 
       {/* Map Control Buttons */}
-      <div className="absolute top-20 sm:top-36 left-3 z-20 flex flex-col gap-1.5">
+      <div className="absolute top-20 sm:top-28 left-3 z-20 flex flex-col gap-1.5">
         <button
           onClick={() => mapRef.current?.zoomIn()}
           className="w-8 h-8 rounded-lg bg-[#181c27]/90 hover:bg-[#262a35] border border-[#3b494c]/40 text-white flex items-center justify-center shadow-lg transition-colors"
@@ -412,7 +466,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           <Minus className="w-4 h-4" />
         </button>
         <button
-          onClick={() => mapRef.current?.flyTo({ center: centerCoordinates, zoom: 9.5, duration: 1000 })}
+          onClick={() => mapRef.current?.flyTo({ center: centerCoordinates, zoom: 9.8, duration: 1000 })}
           className="w-8 h-8 rounded-lg bg-[#181c27]/90 hover:bg-[#262a35] border border-[#3b494c]/40 text-[#00daf3] flex items-center justify-center shadow-lg transition-colors"
           title="Center on Incident"
         >
@@ -422,7 +476,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           onClick={() => setShowTrails(!showTrails)}
           className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-colors ${
             showTrails
-              ? 'bg-[#00e5ff]/20 border-[#00e5ff] text-[#00e5ff]'
+              ? 'bg-[#ff3b30]/20 border-[#ff3b30] text-[#ffb4ab]'
               : 'bg-[#181c27]/90 border-[#3b494c]/40 text-[#849396]'
           }`}
           title="Toggle Culprit Trajectory Trail"
@@ -436,7 +490,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               ? 'bg-[#00e5ff]/20 border-[#00e5ff] text-[#00e5ff]'
               : 'bg-[#181c27]/90 border-[#3b494c]/40 text-[#849396]'
           }`}
-          title="Toggle +6h Metocean Drift Forecast Cone"
+          title="Toggle +6h Metocean Drift Forecast Envelope"
         >
           <Eye className="w-4 h-4" />
         </button>
@@ -445,8 +499,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {/* Legend */}
       <div className="absolute bottom-20 sm:bottom-4 left-4 z-20 tactical-glass rounded-lg px-3 py-1.5 border border-[#3b494c]/30 flex items-center gap-3 text-[10px] font-mono text-[#bac9cc] select-none shadow-lg">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#ff3b30] opacity-75"></span>
-          <span>Active Slick</span>
+          <span className="w-2.5 h-2.5 rounded-sm bg-[#ff2a40] border border-white"></span>
+          <span>Active Oil Slick</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[#00daf3]"></span>
@@ -454,11 +508,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-3 border-t border-dashed border-[#ff3b30]"></span>
-          <span>Trajectory</span>
+          <span>Discharge Track</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#00e5ff]/30 border border-[#00e5ff]"></span>
-          <span>+6h Drift</span>
+          <span className="w-2.5 h-2.5 rounded-sm bg-[#00e5ff]/20 border border-[#00e5ff] border-dashed"></span>
+          <span>+6h Forecast</span>
         </div>
       </div>
     </div>
