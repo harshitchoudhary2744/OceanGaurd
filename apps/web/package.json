@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port 3000 --host",
     "build": "tsc && vite build",
-    "preview": "vite preview --port 3000"
+    "preview": "vite preview --host"
   },
   "dependencies": {
     "clsx": "^2.1.1",
