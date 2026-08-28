@@ -39,22 +39,39 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       style: {
         version: 8,
         sources: {
-          'carto-dark': {
+          'esri-dark': {
             type: 'raster',
             tiles: [
-              'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
-              'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+              'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            attribution: 'Esri, DeLorme, NAVTEQ',
+          },
+          'esri-labels': {
+            type: 'raster',
+            tiles: [
+              'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
             ],
             tileSize: 256,
           },
         },
         layers: [
           {
-            id: 'carto-dark-layer',
+            id: 'esri-dark-layer',
             type: 'raster',
-            source: 'carto-dark',
+            source: 'esri-dark',
             minzoom: 0,
             maxzoom: 19,
+          },
+          {
+            id: 'esri-labels-layer',
+            type: 'raster',
+            source: 'esri-labels',
+            minzoom: 0,
+            maxzoom: 19,
+            paint: {
+              'raster-opacity': 0.7,
+            },
           },
         ],
       },
