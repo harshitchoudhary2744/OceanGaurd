@@ -113,6 +113,7 @@ def health_check():
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "database_connected": is_db_available(),
         "qdrant_connected": vector_service._connected,
+        "qdrant_endpoint": vector_service._endpoint_info,
         "pytorch_unet_available": sar_pipeline.model is not None,
         "active_spills_count": len(_FIXTURE_DATA.get("spills", []))
     }

@@ -1,11 +1,41 @@
 """
 Qdrant Vector Database Integration for Historical Spill Similarity Search
 Stores morphological shape embeddings (area, perimeter, eccentricity, signature) and performs Cosine ANN search.
+Supports both Qdrant Cloud (Cluster Endpoint with API Key) and local Qdrant container instances with standalone fallback.
 """
 import os
 import math
 import logging
 from typing import List, Dict, Any, Optional
+
+logger = logging.getLogger("oceanguard.vector_search")
+
+# Auto-load environment variables from .env files if available
+def _load_env_files():
+    search_paths = [
+        os.path.join(os.getcwd(), ".env"),
+        os.path.join(os.getcwd(), "apps", "api", ".env"),
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"),
+        os.path.join(os.path.dirname(__file__), "..", ".env"),
+        os.path.join(os.getcwd(), ".env.example"),
+    ]
+    for path in search_paths:
+        abs_path = os.path.abspath(path)
+        if os.path.exists(abs_path):
+            try:
+                with open(abs_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            key, val = line.split("=", 1)
+                            key = key.strip()
+                            val = val.strip().strip("'\"")
+                            if key and key not in os.environ:
+                                os.environ[key] = val
+            except Exception as e:
+                logger.debug(f"Could not read env file {abs_path}: {e}")
+
+_load_env_files()
 
 try:
     from qdrant_client import QdrantClient
@@ -14,8 +44,8 @@ try:
 except ImportError:
     HAS_QDRANT = False
 
-logger = logging.getLogger("oceanguard.vector_search")
-
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+QDRANT_CLUSTER_ENDPOINT = os.getenv("QDRANT_CLUSTER_ENDPOINT") or os.getenv("QDRANT_URL")
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
 QDRANT_PORT = int(os.getenv("QDRANT_PORT", "6333"))
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION", "spill_signatures")
@@ -91,8 +121,9 @@ def cosine_similarity(v1: List[float], v2: List[float]) -> float:
 
 class QdrantVectorService:
     def __init__(self):
-        self.client = None
-        self._connected = False
+        self.client: Optional[Any] = None
+        self._connected: bool = False
+        self._endpoint_info: str = "Uninitialized"
         self._init_qdrant()
 
     def _init_qdrant(self):
@@ -101,10 +132,28 @@ class QdrantVectorService:
             return
 
         try:
-            self.client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT, timeout=2.0)
-            # Check or create collection
+            if QDRANT_CLUSTER_ENDPOINT:
+                logger.info(f"Connecting to Qdrant Cloud Cluster: {QDRANT_CLUSTER_ENDPOINT}")
+                self.client = QdrantClient(
+                    url=QDRANT_CLUSTER_ENDPOINT,
+                    api_key=QDRANT_API_KEY,
+                    timeout=5.0
+                )
+                self._endpoint_info = f"Qdrant Cloud ({QDRANT_CLUSTER_ENDPOINT})"
+            else:
+                logger.info(f"Connecting to local Qdrant instance: {QDRANT_HOST}:{QDRANT_PORT}")
+                self.client = QdrantClient(
+                    host=QDRANT_HOST,
+                    port=QDRANT_PORT,
+                    api_key=QDRANT_API_KEY,
+                    timeout=2.0
+                )
+                self._endpoint_info = f"Local Qdrant ({QDRANT_HOST}:{QDRANT_PORT})"
+
+            # Verify collection existence or create
             collections = self.client.get_collections().collections
             names = [c.name for c in collections]
+
             if COLLECTION_NAME not in names:
                 self.client.create_collection(
                     collection_name=COLLECTION_NAME,
@@ -113,9 +162,19 @@ class QdrantVectorService:
                         distance=qmodels.Distance.COSINE
                     )
                 )
+                logger.info(f"Created Qdrant collection '{COLLECTION_NAME}' (dim={VECTOR_DIM}, Cosine).")
                 self._seed_qdrant_records()
+            else:
+                # Check point count
+                try:
+                    count_info = self.client.count(collection_name=COLLECTION_NAME)
+                    if count_info.count == 0:
+                        self._seed_qdrant_records()
+                except Exception:
+                    pass
+
             self._connected = True
-            logger.info(f"Connected to Qdrant vector database on {QDRANT_HOST}:{QDRANT_PORT}.")
+            logger.info(f"Successfully connected to Qdrant vector database [{self._endpoint_info}].")
         except Exception as e:
             logger.warning(f"Could not connect to live Qdrant ({e}). Standalone cosine vector engine active.")
             self._connected = False
@@ -144,6 +203,7 @@ class QdrantVectorService:
                 )
             )
         self.client.upsert(collection_name=COLLECTION_NAME, points=points)
+        logger.info(f"Seeded {len(points)} historical oil spill signatures into Qdrant collection '{COLLECTION_NAME}'.")
 
     def extract_embedding(self, metrics: Dict[str, float]) -> List[float]:
         """Convert physical morphology metrics into normalized 8D vector embedding"""
@@ -168,14 +228,24 @@ class QdrantVectorService:
         # Try Qdrant live query first
         if self._connected and self.client:
             try:
-                hits = self.client.search(
-                    collection_name=COLLECTION_NAME,
-                    query_vector=query_vector,
-                    limit=top_k
-                )
+                # Support both modern query_points and legacy search methods
+                if hasattr(self.client, "query_points"):
+                    res = self.client.query_points(
+                        collection_name=COLLECTION_NAME,
+                        query=query_vector,
+                        limit=top_k
+                    )
+                    hits = res.points
+                else:
+                    hits = self.client.search(
+                        collection_name=COLLECTION_NAME,
+                        query_vector=query_vector,
+                        limit=top_k
+                    )
+
                 results = []
                 for h in hits:
-                    p = h.payload
+                    p = dict(h.payload or {})
                     p["similarity_score"] = round(float(h.score) * 100.0, 1)
                     results.append(p)
                 return results
