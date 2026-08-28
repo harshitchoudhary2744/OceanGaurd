@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Satellite, Upload, FileText, RefreshCw, Eye, Menu, X, Compass } from 'lucide-react';
 import { downloadPdfReportUrl } from '../lib/api';
 
-import { SuspectVessel, SpillGeoFeature } from '../types';
+import { SuspectVessel, SpillGeoFeature, MetoceanData } from '../types';
 
 interface HeaderProps {
   selectedSpillId: string;
@@ -14,6 +14,7 @@ interface HeaderProps {
   onScenarioChange: (scenario: string) => void;
   onRefresh: () => void;
   isRefreshing?: boolean;
+  metocean?: MetoceanData;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,7 +26,8 @@ export const Header: React.FC<HeaderProps> = ({
   activeScenario,
   onScenarioChange,
   onRefresh,
-  isRefreshing
+  isRefreshing,
+  metocean
 }) => {
   const [utcTime, setUtcTime] = useState<string>('');
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -76,10 +78,13 @@ export const Header: React.FC<HeaderProps> = ({
             INDIA EEZ
           </span>
 
-          {/* Live Sentinel Indicator */}
-          <div className="hidden md:flex items-center gap-2 ml-2 pl-4 border-l border-[#3b494c]/30 text-xs font-mono text-[#bac9cc]">
-            <span className="w-2 h-2 rounded-full bg-[#4ade80] shadow-[0_0_8px_#4ade80] animate-pulse"></span>
-            <span>Sentinel-1 SAR: ACTIVE</span>
+          {/* Live Metocean Environmental Ticker */}
+          <div className="hidden xl:flex items-center gap-2.5 ml-2 pl-3 border-l border-[#3b494c]/30 text-xs font-mono text-[#bac9cc]">
+            <span className="text-[#00daf3]">💨 {metocean?.wind_speed_kts || 16.2} kts {metocean?.wind_cardinal || 'WSW'}</span>
+            <span className="text-[#3b494c]">|</span>
+            <span className="text-[#00e5ff]">🌊 {metocean?.current_speed_kts || 1.4} kts {metocean?.current_cardinal || 'ENE'}</span>
+            <span className="text-[#3b494c]">|</span>
+            <span className="text-[#ffb4ab]">🌡️ {metocean?.sea_surface_temp_c || 28.4}°C</span>
           </div>
 
           <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-[#bac9cc]">

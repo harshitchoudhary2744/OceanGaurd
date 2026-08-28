@@ -298,3 +298,39 @@ export const INITIAL_VECTOR_MATCHES: VectorMatch[] = [
     similarity_score: 87.3
   }
 ];
+
+export const DEFAULT_METOCEAN: Record<string, import('../types').MetoceanData> = {
+  arabian_sea: {
+    wind_speed_kts: 16.2,
+    wind_direction_deg: 245.0,
+    current_speed_kts: 1.4,
+    current_direction_deg: 65.0,
+    sea_surface_temp_c: 28.4,
+    significant_wave_height_m: 1.8,
+    weathering_evaporation_pct: 22.5,
+    weathering_emulsification_pct: 34.0,
+    net_drift_speed_kts: 1.95,
+    net_drift_direction_deg: 69.3,
+    wind_cardinal: "WSW",
+    current_cardinal: "ENE",
+    sar_backscatter_quality: "OPTIMAL (High Radar Contrast)",
+    sea_state: "Slight to Moderate (Beaufort 4)"
+  },
+  bay_of_bengal: {
+    wind_speed_kts: 12.8,
+    wind_direction_deg: 190.0,
+    current_speed_kts: 1.1,
+    current_direction_deg: 40.0,
+    sea_surface_temp_c: 29.1,
+    significant_wave_height_m: 1.4,
+    weathering_evaporation_pct: 26.0,
+    weathering_emulsification_pct: 31.5,
+    net_drift_speed_kts: 1.52,
+    net_drift_direction_deg: 48.2,
+    wind_cardinal: "S",
+    current_cardinal: "NE",
+    sar_backscatter_quality: "OPTIMAL (High Radar Contrast)",
+    sea_state: "Smooth to Slight (Beaufort 3)"
+  }
+};
+

@@ -13,19 +13,22 @@ import {
   Vessel,
   SuspectVessel,
   VectorMatch,
-  SARInferenceResponse
+  SARInferenceResponse,
+  MetoceanData
 } from './types';
 import {
   fetchSpills,
   fetchCorrelations,
   fetchVectorMatches,
-  fetchVessels
+  fetchVessels,
+  fetchMetoceanData
 } from './lib/api';
 import {
   INITIAL_SPILLS,
   INITIAL_VESSELS,
   INITIAL_SUSPECTS,
-  INITIAL_VECTOR_MATCHES
+  INITIAL_VECTOR_MATCHES,
+  DEFAULT_METOCEAN
 } from './lib/mockData';
 
 export function App() {
@@ -33,6 +36,7 @@ export function App() {
   const [vessels, setVessels] = useState<Vessel[]>(INITIAL_VESSELS);
   const [suspects, setSuspects] = useState<SuspectVessel[]>(INITIAL_SUSPECTS);
   const [vectorMatches, setVectorMatches] = useState<VectorMatch[]>(INITIAL_VECTOR_MATCHES);
+  const [metocean, setMetocean] = useState<MetoceanData>(DEFAULT_METOCEAN.arabian_sea);
 
   const [selectedSpillId, setSelectedSpillId] = useState('INC-IND-2024-01');
   const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(419000123);
@@ -56,23 +60,25 @@ export function App() {
   const loadData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const [spillsData, vesselsData, suspectsData, vectorData] = await Promise.all([
+      const [spillsData, vesselsData, suspectsData, vectorData, metoceanData] = await Promise.all([
         fetchSpills(),
         fetchVessels(),
         fetchCorrelations(selectedSpillId),
-        fetchVectorMatches(selectedSpillId)
+        fetchVectorMatches(selectedSpillId),
+        fetchMetoceanData(activeScenario)
       ]);
 
       if (spillsData?.features?.length) setSpills(spillsData);
       if (vesselsData?.length) setVessels(vesselsData);
       if (suspectsData?.length) setSuspects(suspectsData);
       if (vectorData?.length) setVectorMatches(vectorData);
+      if (metoceanData) setMetocean(metoceanData);
     } catch (e) {
       console.warn("API fallback mode:", e);
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
     }
-  }, [selectedSpillId]);
+  }, [selectedSpillId, activeScenario]);
 
   useEffect(() => {
     loadData();
@@ -232,6 +238,7 @@ export function App() {
         onScenarioChange={handleScenarioChange}
         onRefresh={loadData}
         isRefreshing={isRefreshing}
+        metocean={metocean}
       />
 
       {/* 2. Main Stage */}
@@ -253,6 +260,8 @@ export function App() {
             }}
             scrubbedVessels={scrubbedVessels}
             centerCoordinates={mapCenter}
+            timeOffsetMinutes={timeOffsetMinutes}
+            metocean={metocean}
           />
 
           {/* Mobile Quick Suspect Pill */}
@@ -280,11 +289,13 @@ export function App() {
         {/* Desktop Inspector Sidebar (hidden on screens < lg) */}
         <div className="hidden lg:block w-[360px] xl:w-[400px] h-full shrink-0">
           <InspectorPanel
-            selectedSpill={selectedSpillFeature}
+            spill={selectedSpillFeature?.properties}
+            spillFeature={selectedSpillFeature}
             suspects={suspects}
             vectorMatches={vectorMatches}
             onSelectVessel={setSelectedVesselMmsi}
-            selectedVesselMmsi={selectedVesselMmsi}
+            selectedVesselMmsi={selectedVesselMmsi ?? undefined}
+            metocean={metocean}
           />
         </div>
 
@@ -295,13 +306,15 @@ export function App() {
               {/* Drag handle bar */}
               <div className="w-12 h-1.5 bg-[#3b494c]/60 rounded-full mx-auto my-2" />
               <InspectorPanel
-                selectedSpill={selectedSpillFeature}
+                spill={selectedSpillFeature?.properties}
+                spillFeature={selectedSpillFeature}
                 suspects={suspects}
                 vectorMatches={vectorMatches}
                 onSelectVessel={setSelectedVesselMmsi}
-                selectedVesselMmsi={selectedVesselMmsi}
+                selectedVesselMmsi={selectedVesselMmsi ?? undefined}
                 onClose={() => setIsMobileDrawerOpen(false)}
                 isMobileModal={true}
+                metocean={metocean}
               />
             </div>
           </div>

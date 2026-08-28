@@ -89,3 +89,20 @@ export interface SARInferenceResponse {
   primary_suspect?: SuspectVessel;
   ranked_suspects: SuspectVessel[];
 }
+
+export interface MetoceanData {
+  wind_speed_kts: number;
+  wind_direction_deg: number;
+  current_speed_kts: number;
+  current_direction_deg: number;
+  sea_surface_temp_c: number;
+  significant_wave_height_m: number;
+  weathering_evaporation_pct: number;
+  weathering_emulsification_pct: number;
+  net_drift_speed_kts: number;
+  net_drift_direction_deg: number;
+  wind_cardinal: string;
+  current_cardinal: string;
+  sar_backscatter_quality: string;
+  sea_state: string;
+}

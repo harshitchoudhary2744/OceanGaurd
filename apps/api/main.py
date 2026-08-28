@@ -33,7 +33,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 
 from apps.api.db.session import get_db, is_db_available
 from apps.api.db.models import Vessel, AISTelemetry, OilSpill, Correlation
-from apps.api.ml.segmentation import sar_pipeline
+from apps.api.ml.segmentation import sar_pipeline, metocean_engine
 from apps.api.services.correlation import correlation_engine
 from apps.api.services.vector_search import vector_service
 from apps.api.services.pdf_generator import generate_forensic_pdf_report
@@ -446,16 +446,43 @@ def get_vessels_fleet():
     return {"vessels": results}
 
 
-@app.get("/api/v1/telemetry")
-def get_telemetry_history(
-    mmsi: Optional[int] = Query(None),
-    hours: int = Query(6)
+@app.get("/api/v1/metocean")
+def get_metocean_telemetry(sector: str = Query("arabian_sea")):
+    """
+    Returns real-time metocean factors (Wind, Ocean current, Sea Surface Temp, Wave Height, Net Drift Vector).
+    """
+    return metocean_engine.get_metocean_conditions(sector)
+
+
+@app.get("/api/v1/spills/{spill_id}/drift")
+def get_spill_drift_trajectory(
+    spill_id: str,
+    time_offset_minutes: float = Query(0.0, description="Time offset in minutes (-360 to +360)")
 ):
-    """Returns time-series AIS points for timeline scrubbing"""
-    all_tel = _FIXTURE_DATA.get("telemetry", [])
-    if mmsi:
-        return {"telemetry": [t for t in all_tel if t["mmsi"] == mmsi]}
-    return {"telemetry": all_tel}
+    """
+    Calculates hydrodynamic advection and Fay spreading for the oil slick over time.
+    """
+    target_spill = None
+    for s in _FIXTURE_DATA.get("spills", []):
+        if s["id"].lower() == spill_id.lower():
+            target_spill = s
+            break
+    if not target_spill and _FIXTURE_DATA.get("spills"):
+        target_spill = _FIXTURE_DATA["spills"][0]
+
+    if not target_spill:
+        raise HTTPException(status_code=404, detail="Spill incident not found")
+
+    base_poly = target_spill["polygon_coordinates"]
+    drifted_poly = metocean_engine.calculate_drifted_polygon(base_poly, time_offset_minutes)
+
+    return {
+        "spill_id": spill_id,
+        "time_offset_minutes": time_offset_minutes,
+        "drifted_polygon": drifted_poly,
+        "metocean": metocean_engine.get_metocean_conditions("arabian_sea" if "01" in spill_id else "bay_of_bengal")
+    }
+
 
 
 # -------------------------------------------------------------
