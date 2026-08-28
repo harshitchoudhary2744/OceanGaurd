@@ -29,14 +29,14 @@ export const Header: React.FC<HeaderProps> = ({
   isRefreshing,
   metocean
 }) => {
-  const [utcTime, setUtcTime] = useState<string>('');
+  const [istTime, setIstTime] = useState<string>('');
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const updateTime = () => {
       const d = new Date();
-      setUtcTime(d.toUTCString().slice(17, 25) + ' UTC');
+      setIstTime(d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST');
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
@@ -151,10 +151,10 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{isExporting ? 'Generating...' : 'PDF Audit'}</span>
           </button>
 
-          {/* UTC Clock */}
+          {/* IST Clock */}
           <div className="pl-3 border-l border-slate-800 text-right font-mono">
-            <div className="text-xs font-bold text-cyan-400">{utcTime}</div>
-            <div className="text-[9.5px] text-slate-500">LIVE RADAR</div>
+            <div className="text-xs font-bold text-cyan-400">{istTime}</div>
+            <div className="text-[9.5px] text-slate-500">LIVE IST RADAR</div>
           </div>
         </div>
 

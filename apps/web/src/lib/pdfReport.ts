@@ -13,8 +13,8 @@ export function generateClientSidePdfDossier(
   });
 
   const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10);
-  const timeStr = now.toUTCString().slice(17, 25) + ' UTC';
+  const dateStr = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+  const timeStr = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
 
   const isMumbai = spillId.includes('01') || spillId.includes('IND');
   const sectorName = isMumbai ? 'Arabian Sea • Mumbai High Sector' : 'Bay of Bengal • Chennai-Ennore Sector';
@@ -131,7 +131,7 @@ export function generateClientSidePdfDossier(
   doc.text(`• Minimum Centroid Distance: ${primarySuspect.distance_meters} m (DIRECT OVERPASS)`, col2, y);
   y += 5.5;
 
-  doc.text(`• Intercept Time: 22:45:00 UTC (T-6h Analysis)`, col1, y);
+  doc.text(`• Intercept Time: ${isMumbai ? '04:15:00' : '03:55:00'} IST (T-6h Analysis)`, col1, y);
   doc.text(`• Transit Speed & Heading: ${primarySuspect.speed_knots} kts at ${primarySuspect.heading_degrees}°`, col2, y);
   y += 8;
 

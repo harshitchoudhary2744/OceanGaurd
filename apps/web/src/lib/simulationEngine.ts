@@ -308,8 +308,8 @@ export class AutonomousSimulationEngine {
     this.elapsedSeconds = 0;
     const isMumbai = scenario === 'arabian_sea';
     const now = new Date();
-    const formattedDate = now.toISOString().slice(0, 10);
-    const detectionTimeUtc = new Date(now.getTime() - (isMumbai ? 42 : 60) * 60000).toUTCString().slice(17, 25);
+    const formattedDate = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const detectionTimeIst = new Date(now.getTime() - (isMumbai ? 42 : 60) * 60000).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
 
     if (isMumbai) {
       this.baseSpillOrigin = [72.145, 19.048];
@@ -337,7 +337,7 @@ export class AutonomousSimulationEngine {
       const linkedSpillMHO: LinkedSpillInfo = {
         id: "INC-IND-2024-01",
         detection_date: formattedDate,
-        detection_time_utc: `${detectionTimeUtc} UTC`,
+        detection_time_utc: `${detectionTimeIst} IST`,
         volume_liters: 58000,
         confidence_score: 98.4,
         slick_type: "Heavy Fuel Oil (HFO-380)",
@@ -556,7 +556,7 @@ export class AutonomousSimulationEngine {
       const linkedSpillEnnore: LinkedSpillInfo = {
         id: "INC-IND-2024-02",
         detection_date: formattedDate,
-        detection_time_utc: `${detectionTimeUtc} UTC`,
+        detection_time_utc: `${detectionTimeIst} IST`,
         volume_liters: 22000,
         confidence_score: 96.2,
         slick_type: "Marine Diesel / Bunker Fuel",
@@ -692,7 +692,7 @@ export class AutonomousSimulationEngine {
   // 1-Second Continuous Tick (Deterministic Navigation + Live Slick Hydrodynamic Advection)
   private tick() {
     this.elapsedSeconds += 1;
-    const nowUtc = new Date().toUTCString().slice(17, 25);
+    const nowIst = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
     const isArabian = this.currentScenario === 'arabian_sea';
     const totalMinutesElapsed = (this.elapsedSeconds / 60.0);
 
@@ -770,7 +770,7 @@ export class AutonomousSimulationEngine {
     const primary = updatedVessels[0];
     const newLog: TelemetryPacket = {
       id: `pkt-${Date.now()}`,
-      time_utc: nowUtc,
+      time_utc: nowIst,
       mmsi: primary.mmsi,
       vessel: primary.name,
       sog_knots: primary.current_position?.speed_knots || 14.8,

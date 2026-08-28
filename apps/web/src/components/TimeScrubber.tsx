@@ -35,7 +35,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
 
   const baseDate = new Date();
   const currentDate = new Date(baseDate.getTime() + timeOffsetMinutes * 60 * 1000);
-  const formattedTime = currentDate.toUTCString().slice(17, 25) + ' UTC';
+  const formattedTime = currentDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
   const absMins = Math.abs(timeOffsetMinutes);
   const tMinusHours = Math.floor(absMins / 60);
   const tMinusMins = absMins % 60;
