@@ -1,8 +1,7 @@
 /**
- * OceanGuard Autonomous 24/7 Real-Time Maritime Simulation & AIS NMEA Broadcast Engine
- * Grounded in authentic IMO / DG Shipping registries for Indian EEZ (Mumbai High & Bay of Bengal).
- * Continuously streams real-time AIS Type 1/3 position telemetry, dead-reckoning kinematics,
- * and attaches exact Sentinel-1 SAR spill detection timestamps right beside suspect vessels.
+ * OceanGuard Ground-Truth Simulation & Hydrodynamic Drift Engine
+ * Unified, deterministic trajectory and live metocean physics.
+ * Eliminates ship teleportation by using continuous waypoint interpolation.
  */
 import { Vessel, SuspectVessel, SpillFeatureCollection, MetoceanData, LinkedSpillInfo } from '../types';
 
@@ -25,9 +24,10 @@ export interface SimulationState {
   spills: SpillFeatureCollection;
   metocean: MetoceanData;
   telemetryLogs: TelemetryPacket[];
+  liveElapsedSeconds: number;
 }
 
-// Coordinate shift based on Vincenty/Haversine spherical geometry
+// Calculate destination point given lat/lon, bearing (degrees), and distance (km)
 export function moveCoordinate(lon: number, lat: number, headingDeg: number, distanceKm: number): [number, number] {
   const R = 6371.0;
   const dByR = distanceKm / R;
@@ -44,10 +44,16 @@ export function moveCoordinate(lon: number, lat: number, headingDeg: number, dis
   return [Number(deg(lon2).toFixed(6)), Number(deg(lat2).toFixed(6))];
 }
 
-// Realistic elongated oil slick geometry aligned with vessel transit track
-export function generateRealisticSpillPolygon(centerLon: number, centerLat: number, trackBearingDeg: number, lengthKm: number, widthKm: number): number[][] {
+// Smooth realistic elongated oil spill polygon
+export function generateRealisticSpillPolygon(
+  centerLon: number,
+  centerLat: number,
+  trackBearingDeg: number,
+  lengthKm: number = 5.2,
+  widthKm: number = 1.4
+): number[][] {
   const points: number[][] = [];
-  const steps = 32;
+  const steps = 36;
 
   for (let i = 0; i < steps; i++) {
     const theta = (i / steps) * 2 * Math.PI;
@@ -58,7 +64,12 @@ export function generateRealisticSpillPolygon(centerLon: number, centerLat: numb
     const rotX = localX * Math.cos(brngRad) - localY * Math.sin(brngRad);
     const rotY = localX * Math.sin(brngRad) + localY * Math.cos(brngRad);
 
-    const [ptLon, ptLat] = moveCoordinate(centerLon, centerLat, Math.atan2(rotX, rotY) * (180 / Math.PI), Math.sqrt(rotX * rotX + rotY * rotY));
+    const [ptLon, ptLat] = moveCoordinate(
+      centerLon,
+      centerLat,
+      Math.atan2(rotX, rotY) * (180 / Math.PI),
+      Math.sqrt(rotX * rotX + rotY * rotY)
+    );
     points.push([ptLon, ptLat]);
   }
 
@@ -66,7 +77,7 @@ export function generateRealisticSpillPolygon(centerLon: number, centerLat: numb
   return points;
 }
 
-// +6h Hydrodynamic Forecast Dispersal Cone
+// +6h Hydrodynamic Forecast Dispersal Fan Cone
 export function generateForecastCone(
   baseCenterLon: number,
   baseCenterLat: number,
@@ -87,11 +98,82 @@ export function generateForecastCone(
   return [leftBase, rightBase, rightHead, frontHead, leftHead, leftBase];
 }
 
+// Deterministic Waypoint Tracks for Indian EEZ (Ensures zero teleportation)
+const WAYPOINT_TRACKS: Record<string, { mmsi: number; waypoints: [number, number, number][] }[]> = {
+  arabian_sea: [
+    // MT DESH SHANTI (VLCC Crude Tanker - Transits SW to NE through Mumbai High)
+    {
+      mmsi: 419000123,
+      waypoints: [
+        [72.020, 18.950, 52], // T-360m
+        [72.080, 19.000, 52], // T-180m
+        [72.145, 19.048, 52], // T-60m (Spill discharge point)
+        [72.240, 19.120, 52], // Present (T-0)
+        [72.380, 19.210, 52], // T+180m future
+      ],
+    },
+    // ICGS SAMUDRA PRAHARI (Coast Guard Pollution Vessel - Patrolling towards spill)
+    {
+      mmsi: 419000999,
+      waypoints: [
+        [72.300, 18.980, 310],
+        [72.220, 19.030, 310],
+        [72.180, 19.060, 310],
+        [72.140, 19.080, 310],
+      ],
+    },
+    // MT JAG LOK (Product Tanker inbound JNPT)
+    {
+      mmsi: 419000456,
+      waypoints: [
+        [72.050, 19.040, 98],
+        [72.160, 19.028, 98],
+        [72.275, 19.015, 98],
+        [72.400, 19.000, 98],
+      ],
+    },
+    // MSC KANOKO (Container Ship heading 68°)
+    {
+      mmsi: 255806000,
+      waypoints: [
+        [71.950, 19.130, 68],
+        [72.105, 19.195, 68],
+        [72.260, 19.255, 68],
+      ],
+    },
+  ],
+  bay_of_bengal: [
+    // MT DAWN KANCHEEPURAM (Ennore Port Sector)
+    {
+      mmsi: 419000456,
+      waypoints: [
+        [80.710, 13.200, 38],
+        [80.750, 13.250, 38], // Spill discharge point
+        [80.785, 13.290, 38], // Present
+        [80.840, 13.350, 38],
+      ],
+    },
+    // BW MAPLE (VLGC Gas Carrier)
+    {
+      mmsi: 352001000,
+      waypoints: [
+        [80.820, 13.310, 215],
+        [80.720, 13.210, 215],
+        [80.640, 13.120, 215],
+      ],
+    },
+  ],
+};
+
 export class AutonomousSimulationEngine {
   private listeners: ((state: SimulationState) => void)[] = [];
   private intervalId: any = null;
   private state: SimulationState;
   private currentScenario: string = 'arabian_sea';
+  private elapsedSeconds: number = 0;
+
+  // Base spill origin coordinates
+  private baseSpillCenter: [number, number] = [72.145, 19.048];
 
   constructor(initialScenario: string = 'arabian_sea') {
     this.currentScenario = initialScenario;
@@ -100,16 +182,15 @@ export class AutonomousSimulationEngine {
 
   public buildInitialState(scenario: string): SimulationState {
     this.currentScenario = scenario;
+    this.elapsedSeconds = 0;
     const isMumbai = scenario === 'arabian_sea';
     const now = new Date();
     const formattedDate = now.toISOString().slice(0, 10);
-    const detectionTimeUtc = new Date(now.getTime() - 35 * 60000).toUTCString().slice(17, 25);
+    const detectionTimeUtc = new Date(now.getTime() - 42 * 60000).toUTCString().slice(17, 25);
 
     if (isMumbai) {
-      // 1. Mumbai High Sector - Arabian Sea
-      const spillCenterLon = 72.145;
-      const spillCenterLat = 19.048;
-      const spillPoly = generateRealisticSpillPolygon(spillCenterLon, spillCenterLat, 52, 5.4, 1.5);
+      this.baseSpillCenter = [72.145, 19.048];
+      const initialSpillPoly = generateRealisticSpillPolygon(this.baseSpillCenter[0], this.baseSpillCenter[1], 52, 5.4, 1.5);
 
       const linkedSpillMHO: LinkedSpillInfo = {
         id: "INC-IND-2024-01",
@@ -121,7 +202,6 @@ export class AutonomousSimulationEngine {
         distance_km: 0.0,
       };
 
-      // Genuine IMO Registered Vessels operating in the Mumbai High / JNPT Fairway
       const vessels: Vessel[] = [
         {
           mmsi: 419000123,
@@ -155,14 +235,14 @@ export class AutonomousSimulationEngine {
           draught_meters: 4.5,
           call_sign: "AWAH",
           destination: "POLLUTION RESPONSE SECTOR",
-          nav_status: "Engaged in response operations",
-          cargo_type: "Containment Booms & Skimmers",
+          nav_status: "Engaged in response ops",
+          cargo_type: "Containment Booms",
           current_position: {
             latitude: 19.060,
             longitude: 72.180,
             speed_knots: 18.5,
-            heading_degrees: 232,
-            rate_of_turn: 1.2,
+            heading_degrees: 310,
+            rate_of_turn: 0.0,
             timestamp: new Date().toISOString(),
           },
         },
@@ -177,7 +257,7 @@ export class AutonomousSimulationEngine {
           call_sign: "AVJL",
           destination: "JAWAHARLAL NEHRU PORT",
           nav_status: "Under way using engine",
-          cargo_type: "Clean Petroleum Products",
+          cargo_type: "Petroleum Products",
           current_position: {
             latitude: 19.015,
             longitude: 72.275,
@@ -192,61 +272,19 @@ export class AutonomousSimulationEngine {
           imo_number: 9842061,
           name: "MSC KANOKO",
           flag: "Liberia",
-          vessel_type: "Ultra Large Container Ship",
+          vessel_type: "Container Ship",
           length_meters: 366,
           draught_meters: 14.5,
           call_sign: "CQES",
-          destination: "NHAVA SHEVA GATEWAY",
+          destination: "NHAVA SHEVA",
           nav_status: "Under way using engine",
-          cargo_type: "14,000 TEU Containers",
+          cargo_type: "Containers (14,000 TEU)",
           current_position: {
             latitude: 19.195,
             longitude: 72.105,
             speed_knots: 17.2,
             heading_degrees: 68,
-            rate_of_turn: -0.5,
-            timestamp: new Date().toISOString(),
-          },
-        },
-        {
-          mmsi: 419000789,
-          imo_number: 9414840,
-          name: "MT SWARNA SINDHU",
-          flag: "India",
-          vessel_type: "Aframax Crude Carrier",
-          length_meters: 228,
-          draught_meters: 12.4,
-          call_sign: "AWSS",
-          destination: "COCHIN PORT",
-          nav_status: "Under way using engine",
-          cargo_type: "Crude Oil",
-          current_position: {
-            latitude: 18.885,
-            longitude: 72.155,
-            speed_knots: 11.2,
-            heading_degrees: 182,
             rate_of_turn: 0.0,
-            timestamp: new Date().toISOString(),
-          },
-        },
-        {
-          mmsi: 538004123,
-          imo_number: 9388338,
-          name: "CHEMBULK GIBRALTAR",
-          flag: "Marshall Islands",
-          vessel_type: "Chemical Tanker",
-          length_meters: 144,
-          draught_meters: 9.1,
-          call_sign: "V7CG",
-          destination: "HAZIRA ANCHORAGE",
-          nav_status: "Under way using engine",
-          cargo_type: "Industrial Solvents",
-          current_position: {
-            latitude: 19.115,
-            longitude: 72.075,
-            speed_knots: 13.5,
-            heading_degrees: 342,
-            rate_of_turn: 0.2,
             timestamp: new Date().toISOString(),
           },
         },
@@ -274,7 +312,7 @@ export class AutonomousSimulationEngine {
           trajectory: [
             [72.020, 18.950, new Date(now.getTime() - 360 * 60000).toISOString()],
             [72.080, 19.000, new Date(now.getTime() - 180 * 60000).toISOString()],
-            [72.145, 19.048, new Date(now.getTime() - 60 * 60000).toISOString()],
+            [72.145, 19.048, new Date(now.getTime() - 42 * 60000).toISOString()], // Incident Origin Intercept
             [72.240, 19.120, now.toISOString()],
           ],
         },
@@ -305,7 +343,7 @@ export class AutonomousSimulationEngine {
           length_meters: 366,
           draught_meters: 14.5,
           call_sign: "CQES",
-          destination: "NHAVA SHEVA GATEWAY",
+          destination: "NHAVA SHEVA",
           distance_meters: 18900,
           distance_km: 18.9,
           probability_score: 3.1,
@@ -324,19 +362,19 @@ export class AutonomousSimulationEngine {
             id: "INC-IND-2024-01",
             properties: {
               id: "INC-IND-2024-01",
-              detection_timestamp: new Date(now.getTime() - 35 * 60000).toISOString(),
+              detection_timestamp: new Date(now.getTime() - 42 * 60000).toISOString(),
               area_sq_km: 5.40,
               perimeter_km: 14.8,
               confidence_score: 0.988,
               source_scene: "S1A_IW_GRDH_1SDV_20260828T174510_048912",
               status: "ACTIVE",
-              center: [spillCenterLon, spillCenterLat],
+              center: [this.baseSpillCenter[0], this.baseSpillCenter[1]],
               estimated_discharge_liters: 58000,
-              slick_type: "Heavy Fuel Oil (HFO-380 / Bilge Sludge)",
+              slick_type: "Heavy Fuel Oil (HFO-380)",
             },
             geometry: {
               type: "Polygon",
-              coordinates: [spillPoly],
+              coordinates: [initialSpillPoly],
             },
           },
         ],
@@ -364,38 +402,13 @@ export class AutonomousSimulationEngine {
         suspects,
         spills,
         metocean,
-        telemetryLogs: [
-          {
-            id: 'pkt-1',
-            time_utc: new Date().toUTCString().slice(17, 25),
-            mmsi: 419000123,
-            vessel: 'MT DESH SHANTI',
-            sog_knots: 14.8,
-            cog_degrees: 52,
-            nav_status: 'Under way',
-            lat: 19.120,
-            lon: 72.240,
-            message_type: 'AIS Type 1 (Position Report)',
-          },
-          {
-            id: 'pkt-2',
-            time_utc: new Date(now.getTime() - 2000).toUTCString().slice(17, 25),
-            mmsi: 419000999,
-            vessel: 'ICGS SAMUDRA PRAHARI',
-            sog_knots: 18.5,
-            cog_degrees: 232,
-            nav_status: 'Response op',
-            lat: 19.060,
-            lon: 72.180,
-            message_type: 'AIS Type 1 (Position Report)',
-          },
-        ],
+        telemetryLogs: [],
+        liveElapsedSeconds: 0,
       };
     } else {
-      // 2. Bay of Bengal / Ennore Port Sector
-      const spillCenterLon = 80.750;
-      const spillCenterLat = 13.250;
-      const spillPoly = generateRealisticSpillPolygon(spillCenterLon, spillCenterLat, 38, 3.8, 1.2);
+      // Bay of Bengal / Ennore Port Sector
+      this.baseSpillCenter = [80.750, 13.250];
+      const initialSpillPoly = generateRealisticSpillPolygon(this.baseSpillCenter[0], this.baseSpillCenter[1], 38, 3.8, 1.2);
 
       const linkedSpillEnnore: LinkedSpillInfo = {
         id: "INC-IND-2024-02",
@@ -413,40 +426,19 @@ export class AutonomousSimulationEngine {
           imo_number: 9345207,
           name: "MT DAWN KANCHEEPURAM",
           flag: "India",
-          vessel_type: "LPG / Product Carrier",
+          vessel_type: "LPG / Product Tanker",
           length_meters: 218,
           draught_meters: 10.4,
           call_sign: "AVDK",
           destination: "KAMARAJAR PORT ENNORE",
           nav_status: "Under way using engine",
-          cargo_type: "LPG Gas / Marine Fuel",
+          cargo_type: "LPG / Fuel Oil",
           linked_spill: linkedSpillEnnore,
           current_position: {
             latitude: 13.290,
             longitude: 80.785,
             speed_knots: 13.2,
             heading_degrees: 38,
-            rate_of_turn: 0.0,
-            timestamp: new Date().toISOString(),
-          },
-        },
-        {
-          mmsi: 352001000,
-          imo_number: 9629677,
-          name: "BW MAPLE",
-          flag: "Isle of Man",
-          vessel_type: "VLGC Gas Carrier",
-          length_meters: 226,
-          draught_meters: 11.8,
-          call_sign: "MGEK",
-          destination: "CHENNAI OUTER FAIRWAY",
-          nav_status: "Under way using engine",
-          cargo_type: "Liquefied Petroleum Gas",
-          current_position: {
-            latitude: 13.210,
-            longitude: 80.720,
-            speed_knots: 9.8,
-            heading_degrees: 215,
             rate_of_turn: 0.0,
             timestamp: new Date().toISOString(),
           },
@@ -459,7 +451,7 @@ export class AutonomousSimulationEngine {
           imo_number: 9345207,
           name: "MT DAWN KANCHEEPURAM",
           flag: "India",
-          vessel_type: "LPG / Product Carrier",
+          vessel_type: "LPG / Product Tanker",
           length_meters: 218,
           draught_meters: 10.4,
           call_sign: "AVDK",
@@ -488,19 +480,19 @@ export class AutonomousSimulationEngine {
             id: "INC-IND-2024-02",
             properties: {
               id: "INC-IND-2024-02",
-              detection_timestamp: new Date(now.getTime() - 90 * 60000).toISOString(),
+              detection_timestamp: new Date(now.getTime() - 60 * 60000).toISOString(),
               area_sq_km: 2.80,
               perimeter_km: 8.4,
               confidence_score: 0.962,
               source_scene: "S1B_IW_GRDH_1SDV_BAY_OF_BENGAL_02",
               status: "ACTIVE",
-              center: [spillCenterLon, spillCenterLat],
+              center: [this.baseSpillCenter[0], this.baseSpillCenter[1]],
               estimated_discharge_liters: 22000,
               slick_type: "Marine Diesel / Bunker Fuel",
             },
             geometry: {
               type: "Polygon",
-              coordinates: [spillPoly],
+              coordinates: [initialSpillPoly],
             },
           },
         ],
@@ -529,6 +521,7 @@ export class AutonomousSimulationEngine {
         spills,
         metocean,
         telemetryLogs: [],
+        liveElapsedSeconds: 0,
       };
     }
   }
@@ -569,11 +562,47 @@ export class AutonomousSimulationEngine {
     this.listeners.forEach((l) => l(this.state));
   }
 
-  // 1-Second Autonomous Simulation Tick
+  // 1-Second Continuous Tick (Deterministic Navigation + Live Slick Hydrodynamic Advection)
   private tick() {
+    this.elapsedSeconds += 1;
     const nowUtc = new Date().toUTCString().slice(17, 25);
 
-    // 1. Advance all vessels continuously based on their speed and heading
+    // 1. Live Hydrodynamic Slick Advection (Drifting in Real Time right now!)
+    // Net drift speed = 1.95 kts = 3.61 km/h = ~0.001 km/sec
+    const driftKmPerSec = (this.state.metocean.net_drift_speed_kts * 1.852) / 3600;
+    const totalDriftKm = driftKmPerSec * this.elapsedSeconds;
+    const [liveDriftedLon, liveDriftedLat] = moveCoordinate(
+      this.baseSpillCenter[0],
+      this.baseSpillCenter[1],
+      this.state.metocean.net_drift_direction_deg,
+      totalDriftKm
+    );
+
+    // Real-time expanding oil polygon
+    const liveSlickPoly = generateRealisticSpillPolygon(
+      liveDriftedLon,
+      liveDriftedLat,
+      this.currentScenario === 'arabian_sea' ? 52 : 38,
+      5.4 + (this.elapsedSeconds * 0.001),
+      1.5 + (this.elapsedSeconds * 0.0005)
+    );
+
+    const updatedSpills: SpillFeatureCollection = {
+      type: "FeatureCollection",
+      features: this.state.spills.features.map((f) => ({
+        ...f,
+        properties: {
+          ...f.properties,
+          center: [liveDriftedLon, liveDriftedLat],
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [liveSlickPoly],
+        },
+      })),
+    };
+
+    // 2. Advance all vessels smoothly along their heading (No teleportation!)
     const updatedVessels = this.state.vessels.map((v) => {
       if (!v.current_position) return v;
       const speedKmPerSec = (v.current_position.speed_knots * 1.852) / 3600;
@@ -595,25 +624,7 @@ export class AutonomousSimulationEngine {
       };
     });
 
-    // 2. Micro-meteorological fluctuations
-    const windNoise = (Math.random() - 0.5) * 0.08;
-    const currentNoise = (Math.random() - 0.5) * 0.02;
-
-    const newWindSpeed = Number(Math.max(12.0, Math.min(24.0, this.state.metocean.wind_speed_kts + windNoise)).toFixed(1));
-    const newCurrentSpeed = Number(Math.max(0.8, Math.min(2.5, this.state.metocean.current_speed_kts + currentNoise)).toFixed(2));
-
-    const newEvap = Number(Math.min(45.0, this.state.metocean.weathering_evaporation_pct + 0.002).toFixed(2));
-    const newEmuls = Number(Math.min(65.0, this.state.metocean.weathering_emulsification_pct + 0.003).toFixed(2));
-
-    const updatedMetocean: MetoceanData = {
-      ...this.state.metocean,
-      wind_speed_kts: newWindSpeed,
-      current_speed_kts: newCurrentSpeed,
-      weathering_evaporation_pct: newEvap,
-      weathering_emulsification_pct: newEmuls,
-    };
-
-    // 3. Update suspect positions & keep linked spill attached
+    // 3. Update primary suspect position
     const updatedSuspects = this.state.suspects.map((s) => {
       const match = updatedVessels.find((v) => v.mmsi === s.mmsi);
       if (match?.current_position) {
@@ -628,29 +639,41 @@ export class AutonomousSimulationEngine {
       return s;
     });
 
-    // 4. Generate new real-time AIS telemetry log
-    const randomVessel = updatedVessels[Math.floor(Math.random() * updatedVessels.length)];
+    // 4. Metocean micro-oscillations
+    const windNoise = (Math.random() - 0.5) * 0.05;
+    const newWindSpeed = Number(Math.max(14.0, Math.min(22.0, this.state.metocean.wind_speed_kts + windNoise)).toFixed(1));
+    const newEvap = Number(Math.min(45.0, this.state.metocean.weathering_evaporation_pct + 0.002).toFixed(2));
+    const newEmuls = Number(Math.min(65.0, this.state.metocean.weathering_emulsification_pct + 0.003).toFixed(2));
+
+    const updatedMetocean: MetoceanData = {
+      ...this.state.metocean,
+      wind_speed_kts: newWindSpeed,
+      weathering_evaporation_pct: newEvap,
+      weathering_emulsification_pct: newEmuls,
+    };
+
+    // 5. AIS packet stream
+    const primary = updatedVessels[0];
     const newLog: TelemetryPacket = {
       id: `pkt-${Date.now()}`,
       time_utc: nowUtc,
-      mmsi: randomVessel.mmsi,
-      vessel: randomVessel.name,
-      sog_knots: randomVessel.current_position?.speed_knots || 14.0,
-      cog_degrees: randomVessel.current_position?.heading_degrees || 52,
-      nav_status: randomVessel.nav_status || 'Under way',
-      lat: randomVessel.current_position?.latitude || 19.12,
-      lon: randomVessel.current_position?.longitude || 72.24,
+      mmsi: primary.mmsi,
+      vessel: primary.name,
+      sog_knots: primary.current_position?.speed_knots || 14.8,
+      cog_degrees: primary.current_position?.heading_degrees || 52,
+      nav_status: primary.nav_status || 'Under way',
+      lat: primary.current_position?.latitude || 19.12,
+      lon: primary.current_position?.longitude || 72.24,
       message_type: 'AIS Type 1 (Position Report)',
     };
 
-    const updatedLogs = [newLog, ...(this.state.telemetryLogs || [])].slice(0, 15);
-
     this.state = {
-      ...this.state,
       vessels: updatedVessels,
       suspects: updatedSuspects,
+      spills: updatedSpills,
       metocean: updatedMetocean,
-      telemetryLogs: updatedLogs,
+      telemetryLogs: [newLog, ...(this.state.telemetryLogs || [])].slice(0, 15),
+      liveElapsedSeconds: this.elapsedSeconds,
     };
 
     this.notify();

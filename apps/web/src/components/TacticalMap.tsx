@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, ShieldAlert, Radio } from 'lucide-react';
+import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Radio, AlertTriangle } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData } from '../types';
 import { calculateHydrodynamicDrift } from '../lib/api';
 import { generateForecastCone } from '../lib/simulationEngine';
@@ -38,8 +38,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
 
-  // Hydrodynamically Drifted Spills based on Time Scrubber
-  const driftedSpills = useMemo<SpillFeatureCollection>(() => {
+  // Primary suspect with maximum spillage probability
+  const primarySuspect = useMemo(() => {
+    return suspects.reduce((prev, curr) => (curr.probability_score > prev.probability_score ? curr : prev), suspects[0]);
+  }, [suspects]);
+
+  // Hydrodynamically Drifted Spills
+  const currentSpills = useMemo<SpillFeatureCollection>(() => {
     if (timeOffsetMinutes === 0) return spills;
     return {
       type: "FeatureCollection",
@@ -49,7 +54,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         return {
           ...f,
           geometry: {
-            ...f.geometry,
+            type: "Polygon",
             coordinates: [driftedCoords],
           },
         };
@@ -57,7 +62,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, [spills, timeOffsetMinutes, metocean]);
 
-  // Realistic +6h Hydrodynamic Forecast Dispersal Fan Cone
+  // +6h Hydrodynamic Forecast Envelope
   const forecastConeFeature = useMemo(() => {
     const activeSpill = spills.features.find((f) => f.properties.id === selectedSpillId) || spills.features[0];
     if (!activeSpill) return null;
@@ -70,7 +75,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
     return {
       type: "Feature" as const,
-      properties: { name: "+6h Dispersal Envelope" },
+      properties: { name: "+6h Metocean Drift Forecast" },
       geometry: {
         type: "Polygon" as const,
         coordinates: [coneCoords],
@@ -124,7 +129,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         ],
       },
       center: centerCoordinates,
-      zoom: 9.8,
+      zoom: 10.0,
       attributionControl: false,
     });
 
@@ -132,7 +137,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       setMapLoaded(true);
       mapRef.current = map;
 
-      // 1. Forecast Cone Layer (+6h Envelope)
+      // 1. Forecast Cone Layer
       map.addSource('forecast-source', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -159,7 +164,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 2. Trajectory Source & Dashed Red Intercept Track
+      // 2. Trajectory Track Layer
       map.addSource('culprit-trajectory', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -171,7 +176,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'culprit-trajectory',
         paint: {
           'line-color': '#ff3b30',
-          'line-width': 6,
+          'line-width': 8,
           'line-opacity': 0.25,
         },
       });
@@ -187,41 +192,44 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 3. Spills GeoJSON Source
+      // 3. Oil Spill Layer
       map.addSource('spills-source', {
         type: 'geojson',
-        data: driftedSpills,
+        data: currentSpills,
       });
 
+      // Ambient Red Glow
       map.addLayer({
         id: 'spills-glow',
         type: 'line',
         source: 'spills-source',
         paint: {
           'line-color': '#ff3b30',
-          'line-width': 8,
-          'line-opacity': 0.35,
+          'line-width': 10,
+          'line-opacity': 0.4,
         },
       });
 
+      // Dense Petroleum Core
       map.addLayer({
         id: 'spills-fill',
         type: 'fill',
         source: 'spills-source',
         paint: {
           'fill-color': '#ff2a40',
-          'fill-opacity': 0.65,
+          'fill-opacity': 0.7,
         },
       });
 
+      // Crisp White Radar Perimeter
       map.addLayer({
         id: 'spills-line',
         type: 'line',
         source: 'spills-source',
         paint: {
           'line-color': '#ffffff',
-          'line-width': 2.0,
-          'line-opacity': 0.9,
+          'line-width': 2.2,
+          'line-opacity': 0.95,
         },
       });
 
@@ -244,7 +252,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   // Update center when scenario changes
   useEffect(() => {
     if (mapRef.current && mapLoaded) {
-      mapRef.current.flyTo({ center: centerCoordinates, zoom: 9.8, duration: 1200 });
+      mapRef.current.flyTo({ center: centerCoordinates, zoom: 10.0, duration: 1200 });
     }
   }, [centerCoordinates, mapLoaded]);
 
@@ -252,8 +260,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
     const src = mapRef.current.getSource('spills-source') as maplibregl.GeoJSONSource;
-    if (src) src.setData(driftedSpills);
-  }, [driftedSpills, mapLoaded]);
+    if (src) src.setData(currentSpills);
+  }, [currentSpills, mapLoaded]);
 
   // Update Forecast Cone
   useEffect(() => {
@@ -271,7 +279,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [forecastConeFeature, showForecast, mapLoaded]);
 
-  // Update Culprit Trajectory
+  // Update Culprit Trajectory Track
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
     const src = mapRef.current.getSource('culprit-trajectory') as maplibregl.GeoJSONSource;
@@ -282,8 +290,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       return;
     }
 
-    const primary = suspects.find((s) => s.probability_score > 70) || suspects[0];
-    if (primary?.trajectory) {
+    if (primarySuspect?.trajectory) {
       src.setData({
         type: 'FeatureCollection',
         features: [
@@ -291,11 +298,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             type: 'Feature',
             geometry: {
               type: 'LineString',
-              coordinates: primary.trajectory.map((t) => [t[0], t[1]]),
+              coordinates: primarySuspect.trajectory.map((t) => [t[0], t[1]]),
             },
             properties: {
-              mmsi: primary.mmsi,
-              name: primary.name,
+              mmsi: primarySuspect.mmsi,
+              name: primarySuspect.name,
             },
           },
         ],
@@ -303,32 +310,30 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     } else {
       src.setData({ type: 'FeatureCollection', features: [] });
     }
-  }, [suspects, showTrails, mapLoaded]);
+  }, [primarySuspect, showTrails, mapLoaded]);
 
-  // Update Vessel HTML Markers with Attached Real-Time Spill Tags
+  // Update Vessel HTML Markers (Clean, non-glitchy, zero-teleportation)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
     const positions = vessels.map((v) => {
       const scrubbed = scrubbedVessels?.find((s) => s.mmsi === v.mmsi);
-      const suspectMatch = suspects.find((s) => s.mmsi === v.mmsi);
-      const isCulprit = (suspectMatch && suspectMatch.probability_score > 70) || !!v.linked_spill;
-      const linkedSpill = v.linked_spill || suspectMatch?.linked_spill;
+      const isPrimary = primarySuspect && primarySuspect.mmsi === v.mmsi;
+      const linkedSpill = v.linked_spill || (isPrimary ? primarySuspect.linked_spill : undefined);
 
       return {
         mmsi: v.mmsi,
         imo: v.imo_number,
         name: v.name,
         vessel_type: v.vessel_type,
-        draught: v.draught_meters,
         flag: v.flag,
         destination: v.destination,
         speed: v.current_position?.speed_knots || 14.0,
         lon: scrubbed ? scrubbed.lon : v.current_position?.longitude || 72.15,
         lat: scrubbed ? scrubbed.lat : v.current_position?.latitude || 19.05,
         heading: scrubbed ? scrubbed.heading : v.current_position?.heading_degrees || 52,
-        isCulprit,
-        probability: suspectMatch ? suspectMatch.probability_score : 98.4,
+        isPrimary,
+        probability: isPrimary ? primarySuspect.probability_score : 5.0,
         linkedSpill,
       };
     });
@@ -346,6 +351,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       const existing = markersRef.current[key];
 
       if (existing) {
+        // Smoothly glide marker without jumping
         existing.setLngLat([p.lon, p.lat]);
         const el = existing.getElement();
         const arrow = el.querySelector('.ship-heading-arrow') as HTMLElement;
@@ -353,35 +359,42 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       } else {
         const el = document.createElement('div');
         el.className = 'group select-none cursor-pointer';
-        el.style.transition = 'transform 0.8s linear';
 
-        // Attached Spill Badge HTML (renders directly beside the culprit ship!)
-        const attachedSpillBadgeHtml = (p.isCulprit && p.linkedSpill)
+        // Attached Primary Culprit Tactical Tag
+        const attachedSpillBadgeHtml = p.isPrimary && p.linkedSpill
           ? `
-            <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-[#121622]/95 border border-[#ff3b30] rounded-xl p-2.5 text-white font-mono text-[10px] shadow-[0_0_20px_rgba(255,59,48,0.4)] pointer-events-auto min-w-[210px] sm:min-w-[230px] backdrop-blur-md z-30">
-              <div class="flex items-center justify-between border-b border-[#ff3b30]/40 pb-1 mb-1.5">
-                <span class="text-[#ff3b30] font-bold flex items-center gap-1">
-                  <span class="w-2 h-2 rounded-full bg-[#ff3b30] animate-ping"></span>
-                  ⚠️ SPILL ATTACHED
+            <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-[#10141f]/95 border-2 border-[#ff3b30] rounded-xl p-3 text-white font-mono text-[10px] shadow-[0_0_25px_rgba(255,59,48,0.45)] pointer-events-auto min-w-[240px] sm:min-w-[260px] backdrop-blur-md z-30">
+              <div class="flex items-center justify-between border-b border-[#ff3b30]/40 pb-1.5 mb-1.5">
+                <span class="text-[#ff3b30] font-bold flex items-center gap-1.5 text-[10.5px]">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#ff3b30] animate-ping"></span>
+                  ⚠️ MAXIMUM SPILL MATCH
                 </span>
-                <span class="bg-[#93000a]/60 text-[#ffb4ab] px-1.5 py-0.5 rounded text-[9px] font-bold border border-[#ffb4ab]/30">${p.probability}% MATCH</span>
+                <span class="bg-[#ff3b30] text-white px-2 py-0.5 rounded text-[9.5px] font-bold shadow-sm">${p.probability}% MATCH</span>
               </div>
-              <div class="text-[#bac9cc] text-[9px] flex flex-col gap-0.5">
+              <div class="text-[#bac9cc] text-[9.5px] flex flex-col gap-1">
                 <div class="flex justify-between">
-                  <span class="text-[#849396]">DATE:</span>
+                  <span class="text-[#849396]">VESSEL:</span>
+                  <span class="text-white font-bold">${p.name} (VLCC)</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[#849396]">DETECTION DATE:</span>
                   <span class="text-white font-bold">${p.linkedSpill.detection_date}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-[#849396]">TIME:</span>
-                  <span class="text-white font-bold">${p.linkedSpill.detection_time_utc}</span>
+                  <span class="text-[#849396]">TIME (UTC):</span>
+                  <span class="text-[#00daf3] font-bold">${p.linkedSpill.detection_time_utc}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-[#849396]">DISCHARGE:</span>
-                  <span class="text-[#ffb4ab] font-bold">~${p.linkedSpill.volume_liters.toLocaleString()} L</span>
+                  <span class="text-[#849396]">EST. DISCHARGE:</span>
+                  <span class="text-[#ffb4ab] font-bold">~${p.linkedSpill.volume_liters.toLocaleString()} L (${p.linkedSpill.slick_type.split(' ')[0]})</span>
                 </div>
                 <div class="flex justify-between">
-                  <span class="text-[#849396]">PROXIMITY:</span>
-                  <span class="text-[#4ade80] font-bold">0.0 km (Direct Overlap)</span>
+                  <span class="text-[#849396]">COURSE & SPEED:</span>
+                  <span class="text-white">${p.speed} kts @ ${p.heading}° NE</span>
+                </div>
+                <div class="flex justify-between border-t border-[#3b494c]/30 pt-1 mt-0.5">
+                  <span class="text-[#849396]">SLICK INTERCEPT:</span>
+                  <span class="text-[#4ade80] font-bold">0.0 km (Direct Track Overlap)</span>
                 </div>
               </div>
             </div>
@@ -390,20 +403,20 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
         el.innerHTML = `
           <div class="relative flex items-center justify-center">
-            ${p.isCulprit ? '<div class="absolute w-10 h-10 rounded-full bg-[#ff3b30]/35 animate-ping pointer-events-none"></div>' : ''}
-            <div class="w-7 h-7 rounded-full ${
-              p.isCulprit
-                ? 'bg-[#ff2a40] border-2 border-white text-white shadow-[0_0_15px_#ff2a40]'
+            ${p.isPrimary ? '<div class="absolute w-12 h-12 rounded-full bg-[#ff3b30]/35 animate-ping pointer-events-none"></div>' : ''}
+            <div class="w-8 h-8 rounded-full ${
+              p.isPrimary
+                ? 'bg-[#ff2a40] border-2 border-white text-white shadow-[0_0_16px_#ff2a40]'
                 : 'bg-[#181c27] border border-[#00daf3] text-[#00daf3] shadow-[0_0_8px_#00daf3]'
             } flex items-center justify-center transition-transform hover:scale-125">
-              <svg class="w-4 h-4 ship-heading-arrow transition-transform duration-500" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
+              <svg class="w-4.5 h-4.5 ship-heading-arrow transition-transform duration-500" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
               </svg>
             </div>
 
-            <!-- Ship Name Pill Top -->
-            <div class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-[#121622]/95 border border-[#3b494c]/60 text-white font-mono text-[9.5px] px-2 py-0.5 rounded shadow-xl whitespace-nowrap opacity-85 group-hover:opacity-100 transition-opacity pointer-events-none">
-              <span class="${p.isCulprit ? 'text-[#ffb4ab] font-bold' : 'text-white'}">${p.name}</span>
+            <!-- Ship Callout Top -->
+            <div class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-[#10141f]/95 border border-[#3b494c]/60 text-white font-mono text-[9.5px] px-2 py-0.5 rounded shadow-xl whitespace-nowrap opacity-90 pointer-events-none">
+              <span class="${p.isPrimary ? 'text-[#ffb4ab] font-bold' : 'text-white'}">${p.name}</span>
               <span class="text-[#849396] ml-1">(${p.speed} kts)</span>
             </div>
 
@@ -419,7 +432,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               .setLngLat([p.lon, p.lat])
               .setHTML(`
                 <div class="bg-[#181c27] text-white p-3 rounded-xl border border-[#00daf3]/40 font-mono text-xs shadow-2xl">
-                  <div class="font-bold ${p.isCulprit ? 'text-[#ffb4ab]' : 'text-[#00daf3]'} mb-1 text-sm">${p.name}</div>
+                  <div class="font-bold ${p.isPrimary ? 'text-[#ffb4ab]' : 'text-[#00daf3]'} mb-1 text-sm">${p.name}</div>
                   <div class="grid grid-cols-2 gap-1 text-[10px] text-[#bac9cc] my-1 border-t border-[#3b494c]/30 pt-1.5">
                     <div>MMSI: <span class="text-white font-bold">${p.mmsi}</span></div>
                     <div>IMO: <span class="text-white">${p.imo || 'N/A'}</span></div>
@@ -442,7 +455,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         markersRef.current[key] = marker;
       }
     });
-  }, [vessels, scrubbedVessels, suspects, mapLoaded, onSelectVessel]);
+  }, [vessels, scrubbedVessels, primarySuspect, mapLoaded, onSelectVessel]);
 
   return (
     <div className="w-full h-full relative">
@@ -453,7 +466,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         <div className="flex items-center justify-between border-b border-[#3b494c]/30 pb-1.5">
           <div className="flex items-center gap-1.5 text-white font-mono text-[11px] font-bold">
             <Compass className="w-3.5 h-3.5 text-[#00daf3] animate-spin-slow" />
-            <span>METOCEAN VECTORS</span>
+            <span>METOCEAN DRIFT</span>
           </div>
           <span className="text-[9px] font-mono text-[#4ade80] font-bold flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span>
@@ -489,9 +502,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           </div>
         </div>
 
-        {/* Net Drift Advection */}
-        <div className="p-1.5 bg-[#171b26] rounded border border-[#00e5ff]/30 text-[9px] font-mono flex items-center justify-between">
-          <span className="text-[#849396]">NET DRIFT:</span>
+        {/* Net Slick Drift Vector */}
+        <div className="p-1.5 bg-[#171b26] rounded border border-[#00e5ff]/30 text-[9.5px] font-mono flex items-center justify-between">
+          <span className="text-[#849396]">SLICK ADVECTION:</span>
           <span className="text-[#00e5ff] font-bold">{metocean?.net_drift_speed_kts || 1.95} kts @ {metocean?.net_drift_direction_deg || 69.3}°</span>
         </div>
       </div>
@@ -513,9 +526,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           <Minus className="w-4 h-4" />
         </button>
         <button
-          onClick={() => mapRef.current?.flyTo({ center: centerCoordinates, zoom: 9.8, duration: 1000 })}
+          onClick={() => mapRef.current?.flyTo({ center: centerCoordinates, zoom: 10.0, duration: 1000 })}
           className="w-8 h-8 rounded-lg bg-[#181c27]/90 hover:bg-[#262a35] border border-[#3b494c]/40 text-[#00daf3] flex items-center justify-center shadow-lg transition-colors"
-          title="Center on Incident"
+          title="Center on Suspect Tanker"
         >
           <Crosshair className="w-4 h-4" />
         </button>
@@ -526,7 +539,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               ? 'bg-[#ff3b30]/20 border-[#ff3b30] text-[#ffb4ab]'
               : 'bg-[#181c27]/90 border-[#3b494c]/40 text-[#849396]'
           }`}
-          title="Toggle Culprit Trajectory Trail"
+          title="Toggle Culprit Trajectory Track"
         >
           <Navigation className="w-4 h-4" />
         </button>
@@ -537,29 +550,25 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               ? 'bg-[#00e5ff]/20 border-[#00e5ff] text-[#00e5ff]'
               : 'bg-[#181c27]/90 border-[#3b494c]/40 text-[#849396]'
           }`}
-          title="Toggle +6h Metocean Drift Forecast Envelope"
+          title="Toggle +6h Hydrodynamic Drift Forecast"
         >
           <Eye className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Legend */}
+      {/* Clear Bottom Legend */}
       <div className="absolute bottom-20 sm:bottom-4 left-4 z-20 tactical-glass rounded-lg px-3 py-1.5 border border-[#3b494c]/30 flex items-center gap-3 text-[10px] font-mono text-[#bac9cc] select-none shadow-lg">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-[#ff2a40] border border-white"></span>
-          <span>Active Oil Slick</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-[#00daf3]"></span>
-          <span>AIS Vessel</span>
+          <span>Live Drifting Spill</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-3 border-t border-dashed border-[#ff3b30]"></span>
-          <span>Discharge Track</span>
+          <span>Tanker Track</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-[#00e5ff]/20 border border-[#00e5ff] border-dashed"></span>
-          <span>+6h Forecast</span>
+          <span>+6h Drift Forecast</span>
         </div>
       </div>
     </div>
