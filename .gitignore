@@ -1,0 +1,25 @@
+# Node
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.env.local
+venv/
+.venv/
+env/
+ENV/
+
+# Data & IDE
+.vscode/
+.idea/
+*.log
+postgis_data/
+qdrant_storage/

@@ -1,0 +1,389 @@
+{
+  "vessels": [
+    {
+      "mmsi": 419000123,
+      "name": "MT DESH SHANTI",
+      "flag": "India",
+      "vessel_type": "Very Large Crude Carrier (VLCC)",
+      "length_meters": 333.0,
+      "call_sign": "ATVS",
+      "destination": "JNPT MUMBAI",
+      "current_position": {
+        "latitude": 19.16,
+        "longitude": 72.28,
+        "speed_knots": 14.5,
+        "heading_degrees": 135.0,
+        "timestamp": "2024-10-14T23:42:01+00:00"
+      }
+    },
+    {
+      "mmsi": 419000456,
+      "name": "MT JAG LOK",
+      "flag": "India",
+      "vessel_type": "Crude Oil Tanker",
+      "length_meters": 274.0,
+      "call_sign": "AVKL",
+      "destination": "SIKKA JAMNAGAR",
+      "current_position": {
+        "latitude": 19.02,
+        "longitude": 72.42,
+        "speed_knots": 13.2,
+        "heading_degrees": 320.0,
+        "timestamp": "2024-10-14T23:42:01+00:00"
+      }
+    },
+    {
+      "mmsi": 353136000,
+      "name": "MSC KANOKO",
+      "flag": "Liberia",
+      "vessel_type": "Container Ship",
+      "length_meters": 366.0,
+      "call_sign": "D5EG7",
+      "destination": "MUNDRA PORT",
+      "current_position": {
+        "latitude": 19.28,
+        "longitude": 72.02,
+        "speed_knots": 19.8,
+        "heading_degrees": 330.0,
+        "timestamp": "2024-10-14T23:42:01+00:00"
+      }
+    },
+    {
+      "mmsi": 419000789,
+      "name": "MT SWARNA SINDHU",
+      "flag": "India",
+      "vessel_type": "Product Tanker",
+      "length_meters": 228.0,
+      "call_sign": "AWXZ",
+      "destination": "COCHIN REFINERY",
+      "current_position": {
+        "latitude": 18.75,
+        "longitude": 72.1,
+        "speed_knots": 12.0,
+        "heading_degrees": 170.0,
+        "timestamp": "2024-10-14T23:42:01+00:00"
+      }
+    },
+    {
+      "mmsi": 563032000,
+      "name": "CHEMBULK GIBRALTAR",
+      "flag": "Singapore",
+      "vessel_type": "Chemical Tanker",
+      "length_meters": 175.0,
+      "call_sign": "9V2941",
+      "destination": "HAZIRA PORT",
+      "current_position": {
+        "latitude": 19.12,
+        "longitude": 71.95,
+        "speed_knots": 11.5,
+        "heading_degrees": 15.0,
+        "timestamp": "2024-10-14T23:42:01+00:00"
+      }
+    }
+  ],
+  "telemetry": [
+    {
+      "mmsi": 419000123,
+      "timestamp": "2024-10-14T17:42:01+00:00",
+      "latitude": 18.75,
+      "longitude": 71.85,
+      "speed_knots": 14.5,
+      "heading_degrees": 135.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000123,
+      "timestamp": "2024-10-14T18:33:26.714286+00:00",
+      "latitude": 18.81,
+      "longitude": 71.91,
+      "speed_knots": 14.5,
+      "heading_degrees": 135.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000123,
+      "timestamp": "2024-10-14T19:24:52.428571+00:00",
+      "latitude": 18.87,
+      "longitude": 71.97,
+      "speed_knots": 14.5,
+      "heading_degrees": 135.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000123,
+      "timestamp": "2024-10-14T20:16:18.142857+00:00",
+      "latitude": 18.93,
+      "longitude": 72.03,
+      "speed_knots": 14.5,
+      "heading_degrees": 135.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000123,
+      "timestamp": "2024-10-14T21:07:43.857143+00:00",
+      "latitude": 18.99,
+      "longitude": 72.09,
+      "speed_knots": 14.5,
+      "heading_degrees": 135.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000123,
+      "timestamp": "2024-10-14T21:59:09.571429+00:00",
+      "latitude": 19.05,
+      "longitude": 72.15,
+      "speed_knots": 14.5,
+      "heading_degrees": 135.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000123,
+      "timestamp": "2024-10-14T22:50:35.285714+00:00",
+      "latitude": 19.1,
+      "longitude": 72.21,
+      "speed_knots": 14.5,
+      "heading_degrees": 135.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000123,
+      "timestamp": "2024-10-14T23:42:01+00:00",
+      "latitude": 19.16,
+      "longitude": 72.28,
+      "speed_knots": 14.5,
+      "heading_degrees": 135.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000456,
+      "timestamp": "2024-10-14T17:42:01+00:00",
+      "latitude": 18.7,
+      "longitude": 72.6,
+      "speed_knots": 13.2,
+      "heading_degrees": 320.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000456,
+      "timestamp": "2024-10-14T19:42:01+00:00",
+      "latitude": 18.81,
+      "longitude": 72.54,
+      "speed_knots": 13.2,
+      "heading_degrees": 320.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000456,
+      "timestamp": "2024-10-14T21:42:01+00:00",
+      "latitude": 18.91,
+      "longitude": 72.48,
+      "speed_knots": 13.2,
+      "heading_degrees": 320.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000456,
+      "timestamp": "2024-10-14T23:42:01+00:00",
+      "latitude": 19.02,
+      "longitude": 72.42,
+      "speed_knots": 13.2,
+      "heading_degrees": 320.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 353136000,
+      "timestamp": "2024-10-14T17:42:01+00:00",
+      "latitude": 18.6,
+      "longitude": 72.2,
+      "speed_knots": 19.8,
+      "heading_degrees": 330.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 353136000,
+      "timestamp": "2024-10-14T19:42:01+00:00",
+      "latitude": 18.82,
+      "longitude": 72.14,
+      "speed_knots": 19.8,
+      "heading_degrees": 330.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 353136000,
+      "timestamp": "2024-10-14T21:42:01+00:00",
+      "latitude": 19.05,
+      "longitude": 72.08,
+      "speed_knots": 19.8,
+      "heading_degrees": 330.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 353136000,
+      "timestamp": "2024-10-14T23:42:01+00:00",
+      "latitude": 19.28,
+      "longitude": 72.02,
+      "speed_knots": 19.8,
+      "heading_degrees": 330.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000789,
+      "timestamp": "2024-10-14T17:42:01+00:00",
+      "latitude": 18.5,
+      "longitude": 71.85,
+      "speed_knots": 12.0,
+      "heading_degrees": 170.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000789,
+      "timestamp": "2024-10-14T20:42:01+00:00",
+      "latitude": 18.63,
+      "longitude": 71.98,
+      "speed_knots": 12.0,
+      "heading_degrees": 170.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000789,
+      "timestamp": "2024-10-14T23:42:01+00:00",
+      "latitude": 18.75,
+      "longitude": 72.1,
+      "speed_knots": 12.0,
+      "heading_degrees": 170.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 563032000,
+      "timestamp": "2024-10-14T17:42:01+00:00",
+      "latitude": 18.87,
+      "longitude": 71.7,
+      "speed_knots": 11.5,
+      "heading_degrees": 15.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 563032000,
+      "timestamp": "2024-10-14T20:42:01+00:00",
+      "latitude": 19.0,
+      "longitude": 71.83,
+      "speed_knots": 11.5,
+      "heading_degrees": 15.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 563032000,
+      "timestamp": "2024-10-14T23:42:01+00:00",
+      "latitude": 19.12,
+      "longitude": 71.95,
+      "speed_knots": 11.5,
+      "heading_degrees": 15.0,
+      "nav_status": "Under way using engine"
+    }
+  ],
+  "spills": [
+    {
+      "id": "INC-IND-2024-01",
+      "detection_timestamp": "2024-10-14T23:42:01+00:00",
+      "area_sq_km": 5.4,
+      "perimeter_km": 14.8,
+      "confidence_score": 0.988,
+      "source_scene": "S1A_IW_GRDH_1SDV_ARABIAN_SEA_01",
+      "status": "ACTIVE",
+      "center": [
+        72.15,
+        19.05
+      ],
+      "estimated_discharge_liters": 58000,
+      "slick_type": "Heavy Fuel Oil (HFO-380 / Bilge Sludge)",
+      "polygon_coordinates": [
+        [
+          72.125,
+          19.035
+        ],
+        [
+          72.138,
+          19.058
+        ],
+        [
+          72.155,
+          19.068
+        ],
+        [
+          72.172,
+          19.06
+        ],
+        [
+          72.18,
+          19.048
+        ],
+        [
+          72.17,
+          19.035
+        ],
+        [
+          72.15,
+          19.03
+        ],
+        [
+          72.134,
+          19.032
+        ],
+        [
+          72.125,
+          19.035
+        ]
+      ]
+    },
+    {
+      "id": "INC-IND-2024-02",
+      "detection_timestamp": "2024-10-14T20:42:01+00:00",
+      "area_sq_km": 2.8,
+      "perimeter_km": 8.4,
+      "confidence_score": 0.962,
+      "source_scene": "S1B_IW_GRDH_1SDV_BAY_OF_BENGAL_02",
+      "status": "ACTIVE",
+      "center": [
+        80.75,
+        13.25
+      ],
+      "estimated_discharge_liters": 22000,
+      "slick_type": "Marine Diesel / Bunker Fuel",
+      "polygon_coordinates": [
+        [
+          80.73,
+          13.235
+        ],
+        [
+          80.745,
+          13.26
+        ],
+        [
+          80.765,
+          13.268
+        ],
+        [
+          80.778,
+          13.252
+        ],
+        [
+          80.76,
+          13.238
+        ],
+        [
+          80.73,
+          13.235
+        ]
+      ]
+    }
+  ],
+  "correlations": [
+    {
+      "spill_id": "INC-IND-2024-01",
+      "mmsi": 419000123,
+      "vessel_name": "MT DESH SHANTI",
+      "probability_score": 98.4,
+      "distance_meters": 110.0
+    }
+  ]
+}
