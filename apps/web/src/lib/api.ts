@@ -65,44 +65,53 @@ export async function fetchMetoceanData(sector: string = 'arabian_sea'): Promise
 export function calculateHydrodynamicDrift(
   basePolygon: number[][],
   timeOffsetMinutes: number,
-  metocean?: MetoceanData
+  metocean?: MetoceanData,
+  scenario: string = 'arabian_sea'
 ): number[][] {
-  if (Math.abs(timeOffsetMinutes) < 1 || !basePolygon?.length) return basePolygon;
+  if (Math.abs(timeOffsetMinutes) < 0.1 || !basePolygon?.length) return basePolygon;
 
-  const windSpeedKmh = (metocean?.wind_speed_kts || 16.2) * 1.852;
-  const currentSpeedKmh = (metocean?.current_speed_kts || 1.4) * 1.852;
-  const windDir = ((metocean?.wind_direction_deg || 245.0) + 180 + 15) % 360; // 15° Coriolis
-  const currentDir = metocean?.current_direction_deg || 65.0;
+  const isArabian = scenario === 'arabian_sea' || basePolygon[0][0] < 76.0;
+  const dischargeOffset = isArabian ? -42 : -60;
+  const baseOrigin: [number, number] = isArabian ? [72.145, 19.048] : [80.750, 13.250];
 
-  const windU = (windSpeedKmh * 0.035) * Math.sin((windDir * Math.PI) / 180);
-  const windV = (windSpeedKmh * 0.035) * Math.cos((windDir * Math.PI) / 180);
-  const curU = currentSpeedKmh * Math.sin((currentDir * Math.PI) / 180);
-  const curV = currentSpeedKmh * Math.cos((currentDir * Math.PI) / 180);
+  const driftSpeedKts = metocean?.net_drift_speed_kts || (isArabian ? 1.95 : 1.52);
+  const driftDir = metocean?.net_drift_direction_deg || (isArabian ? 69.3 : 48.2);
 
-  const netU = windU + curU;
-  const netV = windV + curV;
+  // Time elapsed since oil was dumped (in hours)
+  const elapsedSinceDischargeHours = (timeOffsetMinutes - dischargeOffset) / 60.0;
+  
+  if (elapsedSinceDischargeHours <= 0) {
+    // Fresh at origin
+    const dx = baseOrigin[0] - basePolygon[0][0];
+    const dy = baseOrigin[1] - basePolygon[0][1];
+    return basePolygon.map(([lon, lat]) => [
+      Number((lon + dx).toFixed(6)),
+      Number((lat + dy).toFixed(6))
+    ]);
+  }
 
-  const hours = timeOffsetMinutes / 60.0;
-  const shiftEastKm = netU * hours;
-  const shiftNorthKm = netV * hours;
+  const driftDistanceKm = (driftSpeedKts * 1.852) * elapsedSinceDischargeHours;
+  const R = 6371.0;
+  const dByR = driftDistanceKm / R;
+  const rad = (deg: number) => (deg * Math.PI) / 180;
+  const deg = (radVal: number) => (radVal * 180) / Math.PI;
+  const brng = rad(driftDir);
 
-  const meanLat = basePolygon[0][1] || 19.05;
-  const kmPerDegLat = 111.139;
-  const kmPerDegLon = 111.139 * Math.cos((meanLat * Math.PI) / 180);
-
-  const deltaLon = shiftEastKm / kmPerDegLon;
-  const deltaLat = shiftNorthKm / kmPerDegLat;
-
-  const spreadScale = Math.max(1.0 + (timeOffsetMinutes / 360.0) * 0.40, 0.60);
+  const lat1 = rad(baseOrigin[1]);
+  const lon1 = rad(baseOrigin[0]);
+  const targetLat = deg(Math.asin(Math.sin(lat1) * Math.cos(dByR) + Math.cos(lat1) * Math.sin(dByR) * Math.cos(brng)));
+  const targetLon = deg(lon1 + Math.atan2(Math.sin(brng) * Math.sin(dByR) * Math.cos(lat1), Math.cos(dByR) - Math.sin(lat1) * Math.sin(rad(targetLat))));
 
   const lons = basePolygon.map(p => p[0]);
   const lats = basePolygon.map(p => p[1]);
   const cx = lons.reduce((a, b) => a + b, 0) / lons.length;
   const cy = lats.reduce((a, b) => a + b, 0) / lats.length;
 
+  const spreadScale = Math.min(1.35, Math.max(0.65, 0.75 + elapsedSinceDischargeHours * 0.35));
+
   return basePolygon.map(([lon, lat]) => [
-    Number((cx + (lon - cx) * spreadScale + deltaLon).toFixed(6)),
-    Number((cy + (lat - cy) * spreadScale + deltaLat).toFixed(6))
+    Number((targetLon + (lon - cx) * spreadScale).toFixed(6)),
+    Number((targetLat + (lat - cy) * spreadScale).toFixed(6))
   ]);
 }
 

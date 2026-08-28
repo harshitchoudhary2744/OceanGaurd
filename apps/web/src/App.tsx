@@ -31,7 +31,7 @@ import {
   DEFAULT_METOCEAN
 } from './lib/mockData';
 
-import { globalSimulation } from './lib/simulationEngine';
+import { globalSimulation, interpolateVesselPosition } from './lib/simulationEngine';
 
 export function App() {
   const [spills, setSpills] = useState<SpillFeatureCollection>(INITIAL_SPILLS);
@@ -58,7 +58,7 @@ export function App() {
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isForensicOpen, setIsForensicOpen] = useState<boolean>(false);
 
-  // 1. Continuous 24/7 Autonomous Simulation Hook (Works seamlessly offline)
+  // 1. Continuous 24/7 Autonomous Simulation Hook (Deterministic & synchronized)
   useEffect(() => {
     const unsubscribe = globalSimulation.subscribe((simState) => {
       setVessels(simState.vessels);
@@ -147,12 +147,19 @@ export function App() {
   const handleScenarioChange = (scenario: string) => {
     setActiveScenario(scenario);
     globalSimulation.setScenario(scenario);
+    const newState = globalSimulation.getState();
+    setVessels(newState.vessels);
+    setSuspects(newState.suspects);
+    setSpills(newState.spills);
+    setMetocean(newState.metocean);
+    setTimeOffsetMinutes(0);
+    setIsPlaying(false);
     if (scenario === 'arabian_sea') {
       setSelectedSpillId('INC-IND-2024-01');
       setSelectedVesselMmsi(419000123);
     } else {
       setSelectedSpillId('INC-IND-2024-02');
-      setSelectedVesselMmsi(419000456);
+      setSelectedVesselMmsi(419000789);
     }
   };
 
@@ -160,27 +167,27 @@ export function App() {
   const scrubbedVessels = useMemo(() => {
     if (timeOffsetMinutes === 0) return undefined;
 
-    const progressRatio = (timeOffsetMinutes + 360) / 360;
-
     return vessels.map((v) => {
-      const isCulprit = suspects.some((s) => s.mmsi === v.mmsi && s.probability_score > 70);
+      const interp = interpolateVesselPosition(v.mmsi, timeOffsetMinutes, activeScenario);
+      if (interp) {
+        return {
+          mmsi: v.mmsi,
+          lon: interp.lon,
+          lat: interp.lat,
+          heading: interp.heading,
+          speed: interp.speed,
+        };
+      }
       const cur = v.current_position;
-      if (!cur) return { mmsi: v.mmsi, lon: 72.15, lat: 19.05, heading: 135 };
-
-      const baseLon = isCulprit ? 72.02 : cur.longitude - 0.15;
-      const baseLat = isCulprit ? 18.95 : cur.latitude - 0.10;
-
-      const interpLon = baseLon + (cur.longitude - baseLon) * progressRatio;
-      const interpLat = baseLat + (cur.latitude - baseLat) * progressRatio;
-
       return {
         mmsi: v.mmsi,
-        lon: Number(interpLon.toFixed(6)),
-        lat: Number(interpLat.toFixed(6)),
-        heading: cur.heading_degrees,
+        lon: cur?.longitude || 72.15,
+        lat: cur?.latitude || 19.05,
+        heading: cur?.heading_degrees || 52,
+        speed: cur?.speed_knots || 14.0,
       };
     });
-  }, [timeOffsetMinutes, vessels, suspects]);
+  }, [timeOffsetMinutes, vessels, activeScenario]);
 
   // Selected Spill Feature
   const selectedSpillFeature = useMemo<SpillGeoFeature | null>(() => {
@@ -213,7 +220,7 @@ export function App() {
   const primaryCulprit = suspects.find((s) => s.probability_score > 70) || suspects[0];
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0f131d] text-[#dfe2f1] overflow-hidden select-none">
+    <div className="flex flex-col h-screen w-screen bg-[#0b0f19] text-slate-100 overflow-hidden select-none">
       {/* 1. Clean Header */}
       <Header
         selectedSpillId={selectedSpillId}
@@ -228,7 +235,7 @@ export function App() {
         metocean={metocean}
       />
 
-      {/* 2. Main Stage */}
+      {/* 2. Main Tactical Stage */}
       <main className="flex-1 flex overflow-hidden relative">
         {/* Map Container */}
         <div className="flex-1 h-full relative">
@@ -249,16 +256,19 @@ export function App() {
             centerCoordinates={mapCenter}
             timeOffsetMinutes={timeOffsetMinutes}
             metocean={metocean}
+            scenario={activeScenario}
           />
 
           {/* Mobile Quick Suspect Pill */}
           <div className="lg:hidden absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
             <button
               onClick={() => setIsMobileDrawerOpen(true)}
-              className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#181c27]/90 backdrop-blur-md border border-[#ffb4ab]/40 text-xs font-mono shadow-lg text-white"
+              className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-md border border-rose-500/40 text-xs font-mono shadow-lg text-white"
             >
-              <span className="w-2 h-2 rounded-full bg-[#ff3b30] animate-pulse"></span>
-              <span className="font-bold text-[#ffb4ab]">{primaryCulprit ? `${primaryCulprit.probability_score}% Suspect: ${primaryCulprit.name}` : 'Threat Details'}</span>
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+              <span className="font-bold text-rose-300">
+                {primaryCulprit ? `${primaryCulprit.probability_score}%: ${primaryCulprit.name}` : 'Threat Details'}
+              </span>
             </button>
           </div>
 
@@ -270,6 +280,7 @@ export function App() {
             onTogglePlay={() => setIsPlaying(!isPlaying)}
             playbackSpeed={playbackSpeed}
             onChangeSpeed={setPlaybackSpeed}
+            scenario={activeScenario}
           />
         </div>
 
@@ -289,9 +300,9 @@ export function App() {
         {/* Mobile Expandable Drawer / Modal */}
         {isMobileDrawerOpen && (
           <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end">
-            <div className="bg-[#181c27] border-t border-[#3b494c]/40 rounded-t-2xl max-h-[80vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
+            <div className="bg-[#111622] border-t border-slate-800 rounded-t-2xl max-h-[82vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
               {/* Drag handle bar */}
-              <div className="w-12 h-1.5 bg-[#3b494c]/60 rounded-full mx-auto my-2" />
+              <div className="w-12 h-1.5 bg-slate-700/60 rounded-full mx-auto my-2" />
               <InspectorPanel
                 spill={selectedSpillFeature?.properties}
                 spillFeature={selectedSpillFeature}
@@ -309,14 +320,14 @@ export function App() {
       </main>
 
       {/* 3. Mobile Bottom Navigation Bar (< lg) */}
-      <nav className="lg:hidden h-14 bg-[#121622] border-t border-[#3b494c]/30 flex items-center justify-around z-30 shrink-0 px-2">
+      <nav className="lg:hidden h-14 bg-slate-950 border-t border-slate-800 flex items-center justify-around z-30 shrink-0 px-2">
         <button
           onClick={() => {
             setMobileActiveTab('map');
             setIsMobileDrawerOpen(false);
           }}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
-            !isMobileDrawerOpen && mobileActiveTab === 'map' ? 'text-[#00e5ff] font-bold' : 'text-[#849396]'
+            !isMobileDrawerOpen && mobileActiveTab === 'map' ? 'text-cyan-400 font-bold' : 'text-slate-400'
           }`}
         >
           <MapIcon className="w-4 h-4" />
@@ -329,7 +340,7 @@ export function App() {
             setIsMobileDrawerOpen(true);
           }}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
-            isMobileDrawerOpen && mobileActiveTab === 'threat' ? 'text-[#ffb4ab] font-bold' : 'text-[#849396]'
+            isMobileDrawerOpen && mobileActiveTab === 'threat' ? 'text-rose-300 font-bold' : 'text-slate-400'
           }`}
         >
           <ShieldAlert className="w-4 h-4" />
@@ -342,7 +353,7 @@ export function App() {
             setIsMobileDrawerOpen(true);
           }}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
-            isMobileDrawerOpen && mobileActiveTab === 'suspects' ? 'text-[#00daf3] font-bold' : 'text-[#849396]'
+            isMobileDrawerOpen && mobileActiveTab === 'suspects' ? 'text-cyan-400 font-bold' : 'text-slate-400'
           }`}
         >
           <Ship className="w-4 h-4" />
@@ -355,11 +366,11 @@ export function App() {
             setIsMobileDrawerOpen(true);
           }}
           className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
-            isMobileDrawerOpen && mobileActiveTab === 'vectors' ? 'text-[#00daf3] font-bold' : 'text-[#849396]'
+            isMobileDrawerOpen && mobileActiveTab === 'vectors' ? 'text-cyan-400 font-bold' : 'text-slate-400'
           }`}
         >
           <Database className="w-4 h-4" />
-          <span>Vectors</span>
+          <span>Intel</span>
         </button>
       </nav>
 

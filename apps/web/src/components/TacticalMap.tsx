@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Radio, AlertTriangle } from 'lucide-react';
+import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, ShieldAlert } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData } from '../types';
-import { calculateHydrodynamicDrift } from '../lib/api';
-import { generateForecastCone } from '../lib/simulationEngine';
+import { calculateSynchronizedOilSpill, generateForecastCone } from '../lib/simulationEngine';
 
 interface TacticalMapProps {
   spills: SpillFeatureCollection;
@@ -12,10 +11,11 @@ interface TacticalMapProps {
   selectedSpillId: string;
   onSelectSpill: (id: string) => void;
   onSelectVessel: (mmsi: number) => void;
-  scrubbedVessels?: { mmsi: number; lon: number; lat: number; heading: number }[];
+  scrubbedVessels?: { mmsi: number; lon: number; lat: number; heading: number; speed?: number }[];
   centerCoordinates?: [number, number];
   timeOffsetMinutes?: number;
   metocean?: MetoceanData;
+  scenario?: string;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -29,6 +29,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   centerCoordinates = [72.150, 19.050],
   timeOffsetMinutes = 0,
   metocean,
+  scenario = 'arabian_sea',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -37,39 +38,52 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
+  const [showMetoceanOverlay, setShowMetoceanOverlay] = useState(true);
 
   // Primary suspect with maximum spillage probability
   const primarySuspect = useMemo(() => {
     return suspects.reduce((prev, curr) => (curr.probability_score > prev.probability_score ? curr : prev), suspects[0]);
   }, [suspects]);
 
-  // Hydrodynamically Drifted Spills
+  // Synchronized Hydrodynamic Spills (Locks to vessel discharge time & coordinates)
   const currentSpills = useMemo<SpillFeatureCollection>(() => {
-    if (timeOffsetMinutes === 0) return spills;
+    const isArabian = scenario === 'arabian_sea';
+    const spillData = calculateSynchronizedOilSpill(timeOffsetMinutes, scenario, metocean);
+
+    const activeSpill = spills.features.find((f) => f.properties.id === selectedSpillId) || spills.features[0];
+    const spillId = activeSpill?.properties?.id || (isArabian ? 'INC-IND-2024-01' : 'INC-IND-2024-02');
+
     return {
       type: "FeatureCollection",
-      features: spills.features.map((f) => {
-        const baseCoords = f.geometry.coordinates[0];
-        const driftedCoords = calculateHydrodynamicDrift(baseCoords, timeOffsetMinutes, metocean);
-        return {
-          ...f,
+      features: [
+        {
+          type: "Feature",
+          id: spillId,
+          properties: {
+            ...activeSpill?.properties,
+            id: spillId,
+            center: spillData.center,
+            area_sq_km: spillData.area,
+            perimeter_km: spillData.perimeter,
+            isNascent: spillData.isNascent,
+          },
           geometry: {
             type: "Polygon",
-            coordinates: [driftedCoords],
+            coordinates: [spillData.polygon],
           },
-        };
-      }),
+        },
+      ],
     };
-  }, [spills, timeOffsetMinutes, metocean]);
+  }, [spills, selectedSpillId, timeOffsetMinutes, scenario, metocean]);
 
   // +6h Hydrodynamic Forecast Envelope
   const forecastConeFeature = useMemo(() => {
-    const activeSpill = spills.features.find((f) => f.properties.id === selectedSpillId) || spills.features[0];
+    const activeSpill = currentSpills.features[0];
     if (!activeSpill) return null;
 
-    const centroid = activeSpill.properties.center || [72.145, 19.048];
-    const driftDir = metocean?.net_drift_direction_deg || 69.3;
-    const driftSpeed = metocean?.net_drift_speed_kts || 1.95;
+    const centroid = activeSpill.properties.center || (scenario === 'arabian_sea' ? [72.145, 19.048] : [80.750, 13.250]);
+    const driftDir = metocean?.net_drift_direction_deg || (scenario === 'arabian_sea' ? 69.3 : 48.2);
+    const driftSpeed = metocean?.net_drift_speed_kts || (scenario === 'arabian_sea' ? 1.95 : 1.52);
 
     const coneCoords = generateForecastCone(centroid[0], centroid[1], driftDir, driftSpeed, 6);
 
@@ -81,7 +95,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         coordinates: [coneCoords],
       },
     };
-  }, [spills, selectedSpillId, metocean]);
+  }, [currentSpills, metocean, scenario]);
 
   // Initialize Map
   useEffect(() => {
@@ -114,22 +128,22 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             type: 'raster',
             source: 'esri-dark',
             minzoom: 0,
-            maxzoom: 19,
+            maxzoom: 20,
           },
           {
             id: 'esri-labels-layer',
             type: 'raster',
             source: 'esri-labels',
             minzoom: 0,
-            maxzoom: 19,
+            maxzoom: 20,
             paint: {
-              'raster-opacity': 0.75,
+              'raster-opacity': 0.85,
             },
           },
         ],
       },
       center: centerCoordinates,
-      zoom: 10.0,
+      zoom: 9.8,
       attributionControl: false,
     });
 
@@ -148,8 +162,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: 'fill',
         source: 'forecast-source',
         paint: {
-          'fill-color': '#00e5ff',
-          'fill-opacity': 0.12,
+          'fill-color': '#06b6d4',
+          'fill-opacity': 0.10,
         },
       });
 
@@ -158,9 +172,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: 'line',
         source: 'forecast-source',
         paint: {
-          'line-color': '#00e5ff',
-          'line-width': 1.8,
-          'line-dasharray': [4, 3],
+          'line-color': '#22d3ee',
+          'line-width': 1.6,
+          'line-dasharray': [3, 3],
         },
       });
 
@@ -175,9 +189,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: 'line',
         source: 'culprit-trajectory',
         paint: {
-          'line-color': '#ff3b30',
-          'line-width': 8,
-          'line-opacity': 0.25,
+          'line-color': '#f43f5e',
+          'line-width': 4,
+          'line-opacity': 0.20,
         },
       });
 
@@ -186,9 +200,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: 'line',
         source: 'culprit-trajectory',
         paint: {
-          'line-color': '#ff5c6d',
-          'line-width': 2.5,
-          'line-dasharray': [3, 2],
+          'line-color': '#fb7185',
+          'line-width': 2.0,
+          'line-dasharray': [4, 2],
         },
       });
 
@@ -198,37 +212,37 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         data: currentSpills,
       });
 
-      // Ambient Red Glow
+      // Ambient Subtle Red Outline Glow
       map.addLayer({
         id: 'spills-glow',
         type: 'line',
         source: 'spills-source',
         paint: {
-          'line-color': '#ff3b30',
-          'line-width': 10,
-          'line-opacity': 0.4,
+          'line-color': '#e11d48',
+          'line-width': 5,
+          'line-opacity': 0.35,
         },
       });
 
-      // Dense Petroleum Core
+      // Dense Petroleum Slick Core
       map.addLayer({
         id: 'spills-fill',
         type: 'fill',
         source: 'spills-source',
         paint: {
-          'fill-color': '#ff2a40',
-          'fill-opacity': 0.7,
+          'fill-color': '#e11d48',
+          'fill-opacity': 0.60,
         },
       });
 
-      // Crisp White Radar Perimeter
+      // Crisp Radar Perimeter Line
       map.addLayer({
         id: 'spills-line',
         type: 'line',
         source: 'spills-source',
         paint: {
-          'line-color': '#ffffff',
-          'line-width': 2.2,
+          'line-color': '#fda4af',
+          'line-width': 1.8,
           'line-opacity': 0.95,
         },
       });
@@ -239,8 +253,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         }
       });
 
-      map.on('mouseenter', 'spills-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', 'spills-fill', () => { map.getCanvas().style.cursor = ''; });
+      map.on('mouseenter', 'spills-fill', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'spills-fill', () => {
+        map.getCanvas().style.cursor = '';
+      });
     });
 
     return () => {
@@ -252,7 +270,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   // Update center when scenario changes
   useEffect(() => {
     if (mapRef.current && mapLoaded) {
-      mapRef.current.flyTo({ center: centerCoordinates, zoom: 10.0, duration: 1200 });
+      mapRef.current.flyTo({ center: centerCoordinates, zoom: 9.8, duration: 1000 });
     }
   }, [centerCoordinates, mapLoaded]);
 
@@ -312,6 +330,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [primarySuspect, showTrails, mapLoaded]);
 
+  // Remove all markers when scenario changes to avoid ghost markers from other maritime sectors
+  useEffect(() => {
+    Object.values(markersRef.current).forEach((m) => m.remove());
+    markersRef.current = {};
+    if (popupRef.current) {
+      popupRef.current.remove();
+      popupRef.current = null;
+    }
+  }, [scenario]);
+
   // Update Vessel HTML Markers (Clean, non-glitchy, zero-teleportation)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
@@ -328,17 +356,17 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         vessel_type: v.vessel_type,
         flag: v.flag,
         destination: v.destination,
-        speed: v.current_position?.speed_knots || 14.0,
-        lon: scrubbed ? scrubbed.lon : v.current_position?.longitude || 72.15,
-        lat: scrubbed ? scrubbed.lat : v.current_position?.latitude || 19.05,
-        heading: scrubbed ? scrubbed.heading : v.current_position?.heading_degrees || 52,
+        speed: scrubbed?.speed ?? (v.current_position?.speed_knots || 14.0),
+        lon: scrubbed ? scrubbed.lon : (v.current_position?.longitude || 72.15),
+        lat: scrubbed ? scrubbed.lat : (v.current_position?.latitude || 19.05),
+        heading: scrubbed ? scrubbed.heading : (v.current_position?.heading_degrees || 52),
         isPrimary,
         probability: isPrimary ? primarySuspect.probability_score : 5.0,
         linkedSpill,
       };
     });
 
-    const activeKeys = new Set(positions.map((p) => p.mmsi.toString()));
+    const activeKeys = new Set(positions.map((p) => `${scenario}-${p.mmsi}`));
     Object.keys(markersRef.current).forEach((k) => {
       if (!activeKeys.has(k)) {
         markersRef.current[k].remove();
@@ -347,7 +375,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     });
 
     positions.forEach((p) => {
-      const key = p.mmsi.toString();
+      const key = `${scenario}-${p.mmsi}`;
       const existing = markersRef.current[key];
 
       if (existing) {
@@ -358,69 +386,30 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         if (arrow) arrow.style.transform = `rotate(${p.heading}deg)`;
       } else {
         const el = document.createElement('div');
-        el.className = 'group select-none cursor-pointer';
-
-        // Attached Primary Culprit Tactical Tag
-        const attachedSpillBadgeHtml = p.isPrimary && p.linkedSpill
-          ? `
-            <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-[#10141f]/95 border-2 border-[#ff3b30] rounded-xl p-3 text-white font-mono text-[10px] shadow-[0_0_25px_rgba(255,59,48,0.45)] pointer-events-auto min-w-[240px] sm:min-w-[260px] backdrop-blur-md z-30">
-              <div class="flex items-center justify-between border-b border-[#ff3b30]/40 pb-1.5 mb-1.5">
-                <span class="text-[#ff3b30] font-bold flex items-center gap-1.5 text-[10.5px]">
-                  <span class="w-2.5 h-2.5 rounded-full bg-[#ff3b30] animate-ping"></span>
-                  ⚠️ MAXIMUM SPILL MATCH
-                </span>
-                <span class="bg-[#ff3b30] text-white px-2 py-0.5 rounded text-[9.5px] font-bold shadow-sm">${p.probability}% MATCH</span>
-              </div>
-              <div class="text-[#bac9cc] text-[9.5px] flex flex-col gap-1">
-                <div class="flex justify-between">
-                  <span class="text-[#849396]">VESSEL:</span>
-                  <span class="text-white font-bold">${p.name} (VLCC)</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-[#849396]">DETECTION DATE:</span>
-                  <span class="text-white font-bold">${p.linkedSpill.detection_date}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-[#849396]">TIME (UTC):</span>
-                  <span class="text-[#00daf3] font-bold">${p.linkedSpill.detection_time_utc}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-[#849396]">EST. DISCHARGE:</span>
-                  <span class="text-[#ffb4ab] font-bold">~${p.linkedSpill.volume_liters.toLocaleString()} L (${p.linkedSpill.slick_type.split(' ')[0]})</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-[#849396]">COURSE & SPEED:</span>
-                  <span class="text-white">${p.speed} kts @ ${p.heading}° NE</span>
-                </div>
-                <div class="flex justify-between border-t border-[#3b494c]/30 pt-1 mt-0.5">
-                  <span class="text-[#849396]">SLICK INTERCEPT:</span>
-                  <span class="text-[#4ade80] font-bold">0.0 km (Direct Track Overlap)</span>
-                </div>
-              </div>
-            </div>
-          `
-          : '';
+        el.className = 'group select-none cursor-pointer relative';
 
         el.innerHTML = `
           <div class="relative flex items-center justify-center">
-            ${p.isPrimary ? '<div class="absolute w-12 h-12 rounded-full bg-[#ff3b30]/35 animate-ping pointer-events-none"></div>' : ''}
-            <div class="w-8 h-8 rounded-full ${
+            ${p.isPrimary ? '<div class="absolute w-10 h-10 rounded-full bg-rose-500/25 animate-ping pointer-events-none"></div>' : ''}
+            
+            <!-- Ship Icon Circle -->
+            <div class="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg ${
               p.isPrimary
-                ? 'bg-[#ff2a40] border-2 border-white text-white shadow-[0_0_16px_#ff2a40]'
-                : 'bg-[#181c27] border border-[#00daf3] text-[#00daf3] shadow-[0_0_8px_#00daf3]'
-            } flex items-center justify-center transition-transform hover:scale-125">
-              <svg class="w-4.5 h-4.5 ship-heading-arrow transition-transform duration-500" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
+                ? 'bg-rose-600 border border-white text-white shadow-rose-500/50'
+                : 'bg-slate-900 border border-cyan-400 text-cyan-400 shadow-cyan-500/30'
+            }">
+              <svg class="w-3.5 h-3.5 ship-heading-arrow transition-transform duration-300" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
               </svg>
             </div>
 
-            <!-- Ship Callout Top -->
-            <div class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-[#10141f]/95 border border-[#3b494c]/60 text-white font-mono text-[9.5px] px-2 py-0.5 rounded shadow-xl whitespace-nowrap opacity-90 pointer-events-none">
-              <span class="${p.isPrimary ? 'text-[#ffb4ab] font-bold' : 'text-white'}">${p.name}</span>
-              <span class="text-[#849396] ml-1">(${p.speed} kts)</span>
+            <!-- Clean Label -->
+            <div class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-slate-900/90 border ${
+              p.isPrimary ? 'border-rose-500/60 text-rose-200 font-semibold' : 'border-slate-700/60 text-slate-200'
+            } px-2 py-0.5 rounded text-[10px] font-mono whitespace-nowrap shadow-md pointer-events-none transition-opacity duration-200">
+              <span>${p.name}</span>
+              <span class="text-slate-400 ml-1">${p.speed} kts</span>
             </div>
-
-            ${attachedSpillBadgeHtml}
           </div>
         `;
 
@@ -431,17 +420,22 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             popupRef.current = new maplibregl.Popup({ offset: 15, closeButton: false })
               .setLngLat([p.lon, p.lat])
               .setHTML(`
-                <div class="bg-[#181c27] text-white p-3 rounded-xl border border-[#00daf3]/40 font-mono text-xs shadow-2xl">
-                  <div class="font-bold ${p.isPrimary ? 'text-[#ffb4ab]' : 'text-[#00daf3]'} mb-1 text-sm">${p.name}</div>
-                  <div class="grid grid-cols-2 gap-1 text-[10px] text-[#bac9cc] my-1 border-t border-[#3b494c]/30 pt-1.5">
+                <div class="bg-slate-900/95 text-slate-100 p-3 rounded-lg border ${p.isPrimary ? 'border-rose-500/60' : 'border-cyan-500/50'} font-mono text-xs shadow-xl min-w-[200px]">
+                  <div class="font-bold ${p.isPrimary ? 'text-rose-400' : 'text-cyan-400'} text-xs mb-1.5 flex items-center justify-between">
+                    <span>${p.name}</span>
+                    ${p.isPrimary ? `<span class="bg-rose-500/20 text-rose-300 text-[10px] px-1.5 py-0.5 rounded border border-rose-500/40">${p.probability}% Match</span>` : ''}
+                  </div>
+                  <div class="grid grid-cols-2 gap-1 text-[10px] text-slate-300 pt-1 border-t border-slate-700/50">
                     <div>MMSI: <span class="text-white font-bold">${p.mmsi}</span></div>
-                    <div>IMO: <span class="text-white">${p.imo || 'N/A'}</span></div>
                     <div>Flag: <span class="text-white">${p.flag}</span></div>
                     <div>Type: <span class="text-white">${p.vessel_type}</span></div>
-                    <div>SOG: <span class="text-white font-bold">${p.speed} kts</span></div>
-                    <div>COG: <span class="text-white font-bold">${p.heading}°</span></div>
+                    <div>Speed: <span class="text-white font-bold">${p.speed} kts</span></div>
+                    <div>Heading: <span class="text-white">${p.heading}°</span></div>
+                    <div>Status: <span class="text-emerald-400">Underway</span></div>
                   </div>
-                  <div class="text-[9.5px] text-[#849396] mt-1">Dest: <span class="text-white">${p.destination || 'MUMBAI ANCHORAGE'}</span></div>
+                  <div class="text-[9.5px] text-slate-400 mt-1.5 pt-1 border-t border-slate-800">
+                    Destination: <span class="text-slate-200">${p.destination || 'N/A'}</span>
+                  </div>
                 </div>
               `)
               .addTo(mapRef.current);
@@ -455,80 +449,82 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         markersRef.current[key] = marker;
       }
     });
-  }, [vessels, scrubbedVessels, primarySuspect, mapLoaded, onSelectVessel]);
+  }, [vessels, scrubbedVessels, primarySuspect, mapLoaded, onSelectVessel, scenario]);
 
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative overflow-hidden">
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Floating Metocean Live Vector Overlay (Top-Right) */}
-      <div className="absolute top-3 right-3 z-20 tactical-glass rounded-xl p-2.5 sm:p-3 border border-[#00e5ff]/30 shadow-2xl flex flex-col gap-2 select-none max-w-[200px] sm:max-w-[240px]">
-        <div className="flex items-center justify-between border-b border-[#3b494c]/30 pb-1.5">
-          <div className="flex items-center gap-1.5 text-white font-mono text-[11px] font-bold">
-            <Compass className="w-3.5 h-3.5 text-[#00daf3] animate-spin-slow" />
-            <span>METOCEAN DRIFT</span>
-          </div>
-          <span className="text-[9px] font-mono text-[#4ade80] font-bold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span>
-            LIVE
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-1.5 font-mono text-[10px]">
-          {/* Wind Vector */}
-          <div className="p-1.5 bg-[#171b26] rounded border border-[#3b494c]/20 flex flex-col">
-            <div className="flex items-center gap-1 text-[#00daf3]">
-              <Wind className="w-3 h-3" />
-              <span className="text-[9px] text-[#849396]">WIND</span>
+      {showMetoceanOverlay && (
+        <div className="absolute top-3 right-3 z-20 tactical-glass rounded-xl p-3 border border-cyan-500/20 shadow-xl flex flex-col gap-2 select-none w-56 sm:w-60 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between border-b border-slate-700/40 pb-1.5">
+            <div className="flex items-center gap-1.5 text-white font-mono text-xs font-semibold">
+              <Compass className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Surface Metocean</span>
             </div>
-            <span className="font-bold text-white text-xs mt-0.5">{metocean?.wind_speed_kts || 16.2} kts</span>
-            <span className="text-[9px] text-[#bac9cc] mt-0.5 flex items-center gap-0.5">
-              <span style={{ transform: `rotate(${(metocean?.wind_direction_deg || 245) + 180}deg)` }} className="inline-block text-[#00daf3] font-bold">↑</span>
-              <span>{metocean?.wind_direction_deg || 245}° {metocean?.wind_cardinal || 'WSW'}</span>
+            <span className="text-[10px] font-mono text-emerald-400 font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              LIVE
             </span>
           </div>
 
-          {/* Current Vector */}
-          <div className="p-1.5 bg-[#171b26] rounded border border-[#3b494c]/20 flex flex-col">
-            <div className="flex items-center gap-1 text-[#00daf3]">
-              <Waves className="w-3 h-3" />
-              <span className="text-[9px] text-[#849396]">CURRENT</span>
+          <div className="grid grid-cols-2 gap-1.5 font-mono text-[10px]">
+            {/* Wind Vector */}
+            <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800 flex flex-col">
+              <div className="flex items-center gap-1 text-slate-400 text-[9px]">
+                <Wind className="w-3 h-3 text-cyan-400" />
+                <span>WIND</span>
+              </div>
+              <span className="font-bold text-white text-xs mt-0.5">{metocean?.wind_speed_kts || 16.2} kts</span>
+              <span className="text-[9px] text-slate-400 mt-0.5">
+                {metocean?.wind_direction_deg || 245}° ({metocean?.wind_cardinal || 'WSW'})
+              </span>
             </div>
-            <span className="font-bold text-white text-xs mt-0.5">{metocean?.current_speed_kts || 1.4} kts</span>
-            <span className="text-[9px] text-[#bac9cc] mt-0.5 flex items-center gap-0.5">
-              <span style={{ transform: `rotate(${metocean?.current_direction_deg || 65}deg)` }} className="inline-block text-[#00daf3] font-bold">↑</span>
-              <span>{metocean?.current_direction_deg || 65}° {metocean?.current_cardinal || 'ENE'}</span>
+
+            {/* Current Vector */}
+            <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800 flex flex-col">
+              <div className="flex items-center gap-1 text-slate-400 text-[9px]">
+                <Waves className="w-3 h-3 text-cyan-400" />
+                <span>CURRENT</span>
+              </div>
+              <span className="font-bold text-white text-xs mt-0.5">{metocean?.current_speed_kts || 1.4} kts</span>
+              <span className="text-[9px] text-slate-400 mt-0.5">
+                {metocean?.current_direction_deg || 65}° ({metocean?.current_cardinal || 'ENE'})
+              </span>
+            </div>
+          </div>
+
+          {/* Net Slick Drift Vector */}
+          <div className="p-1.5 bg-slate-900/90 rounded border border-cyan-500/20 text-[10px] font-mono flex items-center justify-between">
+            <span className="text-slate-400">Net Advection:</span>
+            <span className="text-cyan-300 font-bold">
+              {metocean?.net_drift_speed_kts || 1.95} kts @ {metocean?.net_drift_direction_deg || 69.3}°
             </span>
           </div>
         </div>
+      )}
 
-        {/* Net Slick Drift Vector */}
-        <div className="p-1.5 bg-[#171b26] rounded border border-[#00e5ff]/30 text-[9.5px] font-mono flex items-center justify-between">
-          <span className="text-[#849396]">SLICK ADVECTION:</span>
-          <span className="text-[#00e5ff] font-bold">{metocean?.net_drift_speed_kts || 1.95} kts @ {metocean?.net_drift_direction_deg || 69.3}°</span>
-        </div>
-      </div>
-
-      {/* Map Control Buttons */}
-      <div className="absolute top-20 sm:top-28 left-3 z-20 flex flex-col gap-1.5">
+      {/* Map Controls (Left-Side) */}
+      <div className="absolute top-20 sm:top-24 left-3 z-20 flex flex-col gap-1.5">
         <button
           onClick={() => mapRef.current?.zoomIn()}
-          className="w-8 h-8 rounded-lg bg-[#181c27]/90 hover:bg-[#262a35] border border-[#3b494c]/40 text-white flex items-center justify-center shadow-lg transition-colors"
+          className="w-8 h-8 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-slate-200 hover:text-white flex items-center justify-center shadow-lg transition-colors"
           title="Zoom In"
         >
           <Plus className="w-4 h-4" />
         </button>
         <button
           onClick={() => mapRef.current?.zoomOut()}
-          className="w-8 h-8 rounded-lg bg-[#181c27]/90 hover:bg-[#262a35] border border-[#3b494c]/40 text-white flex items-center justify-center shadow-lg transition-colors"
+          className="w-8 h-8 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-slate-200 hover:text-white flex items-center justify-center shadow-lg transition-colors"
           title="Zoom Out"
         >
           <Minus className="w-4 h-4" />
         </button>
         <button
-          onClick={() => mapRef.current?.flyTo({ center: centerCoordinates, zoom: 10.0, duration: 1000 })}
-          className="w-8 h-8 rounded-lg bg-[#181c27]/90 hover:bg-[#262a35] border border-[#3b494c]/40 text-[#00daf3] flex items-center justify-center shadow-lg transition-colors"
-          title="Center on Suspect Tanker"
+          onClick={() => mapRef.current?.flyTo({ center: centerCoordinates, zoom: 9.8, duration: 800 })}
+          className="w-8 h-8 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-cyan-400 flex items-center justify-center shadow-lg transition-colors"
+          title="Center on Incident"
         >
           <Crosshair className="w-4 h-4" />
         </button>
@@ -536,10 +532,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           onClick={() => setShowTrails(!showTrails)}
           className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-colors ${
             showTrails
-              ? 'bg-[#ff3b30]/20 border-[#ff3b30] text-[#ffb4ab]'
-              : 'bg-[#181c27]/90 border-[#3b494c]/40 text-[#849396]'
+              ? 'bg-rose-500/20 border-rose-500/60 text-rose-300'
+              : 'bg-slate-900/90 border-slate-700/60 text-slate-400'
           }`}
-          title="Toggle Culprit Trajectory Track"
+          title="Toggle Vessel Trajectory Tracks"
         >
           <Navigation className="w-4 h-4" />
         </button>
@@ -547,28 +543,39 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           onClick={() => setShowForecast(!showForecast)}
           className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-colors ${
             showForecast
-              ? 'bg-[#00e5ff]/20 border-[#00e5ff] text-[#00e5ff]'
-              : 'bg-[#181c27]/90 border-[#3b494c]/40 text-[#849396]'
+              ? 'bg-cyan-500/20 border-cyan-500/60 text-cyan-300'
+              : 'bg-slate-900/90 border-slate-700/60 text-slate-400'
           }`}
-          title="Toggle +6h Hydrodynamic Drift Forecast"
+          title="Toggle +6h Drift Forecast"
         >
           <Eye className="w-4 h-4" />
         </button>
+        <button
+          onClick={() => setShowMetoceanOverlay(!showMetoceanOverlay)}
+          className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-colors ${
+            showMetoceanOverlay
+              ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300'
+              : 'bg-slate-900/90 border-slate-700/60 text-slate-400'
+          }`}
+          title="Toggle Metocean Drift Card"
+        >
+          <Layers className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Clear Bottom Legend */}
-      <div className="absolute bottom-20 sm:bottom-4 left-4 z-20 tactical-glass rounded-lg px-3 py-1.5 border border-[#3b494c]/30 flex items-center gap-3 text-[10px] font-mono text-[#bac9cc] select-none shadow-lg">
+      {/* Clean Bottom Legend */}
+      <div className="absolute bottom-20 sm:bottom-4 left-4 z-20 tactical-glass rounded-lg px-3 py-1.5 border border-slate-700/40 flex items-center gap-3 text-[10px] font-mono text-slate-300 select-none shadow-lg">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#ff2a40] border border-white"></span>
-          <span>Live Drifting Spill</span>
+          <span className="w-2.5 h-2.5 rounded-sm bg-rose-600 border border-rose-300"></span>
+          <span>Oil Slick (SAR)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-3 border-t border-dashed border-[#ff3b30]"></span>
+          <span className="w-3 border-t border-dashed border-rose-400"></span>
           <span>Tanker Track</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[#00e5ff]/20 border border-[#00e5ff] border-dashed"></span>
-          <span>+6h Drift Forecast</span>
+          <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500/20 border border-cyan-400 border-dashed"></span>
+          <span>+6h Forecast</span>
         </div>
       </div>
     </div>

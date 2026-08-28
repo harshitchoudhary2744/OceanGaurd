@@ -2,6 +2,7 @@
  * OceanGuard Ground-Truth Simulation & Hydrodynamic Drift Engine
  * Unified, deterministic trajectory and live metocean physics.
  * Eliminates ship teleportation by using continuous waypoint interpolation.
+ * Perfectly synchronizes ship track and oil spill discharge & drift.
  */
 import { Vessel, SuspectVessel, SpillFeatureCollection, MetoceanData, LinkedSpillInfo } from '../types';
 
@@ -44,7 +45,7 @@ export function moveCoordinate(lon: number, lat: number, headingDeg: number, dis
   return [Number(deg(lon2).toFixed(6)), Number(deg(lat2).toFixed(6))];
 }
 
-// Smooth realistic elongated oil spill polygon
+// Generate smooth realistic elongated oil spill polygon
 export function generateRealisticSpillPolygon(
   centerLon: number,
   centerLat: number,
@@ -98,72 +99,194 @@ export function generateForecastCone(
   return [leftBase, rightBase, rightHead, frontHead, leftHead, leftBase];
 }
 
-// Deterministic Waypoint Tracks for Indian EEZ (Ensures zero teleportation)
-const WAYPOINT_TRACKS: Record<string, { mmsi: number; waypoints: [number, number, number][] }[]> = {
+export interface TimedWaypoint {
+  tMinutes: number; // time offset in minutes (-360 to 0)
+  lon: number;
+  lat: number;
+  heading: number;
+  speed: number;
+}
+
+// Deterministic Timed Waypoint Tracks for Indian EEZ
+export const WAYPOINT_TIMELINES: Record<string, { mmsi: number; name: string; isCulprit?: boolean; waypoints: TimedWaypoint[] }[]> = {
   arabian_sea: [
     // MT DESH SHANTI (VLCC Crude Tanker - Transits SW to NE through Mumbai High)
+    // Discharges oil at T - 42m at [72.145, 19.048]
     {
       mmsi: 419000123,
+      name: "MT DESH SHANTI",
+      isCulprit: true,
       waypoints: [
-        [72.020, 18.950, 52], // T-360m
-        [72.080, 19.000, 52], // T-180m
-        [72.145, 19.048, 52], // T-60m (Spill discharge point)
-        [72.240, 19.120, 52], // Present (T-0)
-        [72.380, 19.210, 52], // T+180m future
+        { tMinutes: -360, lon: 72.000, lat: 18.930, heading: 52, speed: 14.8 },
+        { tMinutes: -180, lon: 72.075, lat: 18.990, heading: 52, speed: 14.8 },
+        { tMinutes: -42,  lon: 72.145, lat: 19.048, heading: 52, speed: 14.8 }, // Exact Spill Origin Discharge Point!
+        { tMinutes: 0,    lon: 72.240, lat: 19.120, heading: 52, speed: 14.8 }, // Live Present
+        { tMinutes: 180,  lon: 72.380, lat: 19.210, heading: 52, speed: 14.8 },
       ],
     },
-    // ICGS SAMUDRA PRAHARI (Coast Guard Pollution Vessel - Patrolling towards spill)
+    // ICGS SAMUDRA PRAHARI (Coast Guard Pollution Vessel - Intercept patrol)
     {
       mmsi: 419000999,
+      name: "ICGS SAMUDRA PRAHARI",
       waypoints: [
-        [72.300, 18.980, 310],
-        [72.220, 19.030, 310],
-        [72.180, 19.060, 310],
-        [72.140, 19.080, 310],
+        { tMinutes: -360, lon: 72.380, lat: 18.920, heading: 310, speed: 18.5 },
+        { tMinutes: -180, lon: 72.280, lat: 18.990, heading: 310, speed: 18.5 },
+        { tMinutes: 0,    lon: 72.180, lat: 19.060, heading: 310, speed: 18.5 },
+        { tMinutes: 180,  lon: 72.100, lat: 19.120, heading: 310, speed: 18.5 },
       ],
     },
     // MT JAG LOK (Product Tanker inbound JNPT)
     {
       mmsi: 419000456,
+      name: "MT JAG LOK",
       waypoints: [
-        [72.050, 19.040, 98],
-        [72.160, 19.028, 98],
-        [72.275, 19.015, 98],
-        [72.400, 19.000, 98],
+        { tMinutes: -360, lon: 71.950, lat: 19.055, heading: 98, speed: 12.4 },
+        { tMinutes: -180, lon: 72.100, lat: 19.035, heading: 98, speed: 12.4 },
+        { tMinutes: 0,    lon: 72.275, lat: 19.015, heading: 98, speed: 12.4 },
+        { tMinutes: 180,  lon: 72.420, lat: 18.990, heading: 98, speed: 12.4 },
       ],
     },
     // MSC KANOKO (Container Ship heading 68°)
     {
       mmsi: 255806000,
+      name: "MSC KANOKO",
       waypoints: [
-        [71.950, 19.130, 68],
-        [72.105, 19.195, 68],
-        [72.260, 19.255, 68],
+        { tMinutes: -360, lon: 71.800, lat: 19.070, heading: 68, speed: 17.2 },
+        { tMinutes: -180, lon: 71.950, lat: 19.130, heading: 68, speed: 17.2 },
+        { tMinutes: 0,    lon: 72.105, lat: 19.195, heading: 68, speed: 17.2 },
+        { tMinutes: 180,  lon: 72.260, lat: 19.255, heading: 68, speed: 17.2 },
       ],
     },
   ],
   bay_of_bengal: [
     // MT DAWN KANCHEEPURAM (Ennore Port Sector)
+    // Discharges oil at T - 60m at [80.750, 13.250]
     {
-      mmsi: 419000456,
+      mmsi: 419000789,
+      name: "MT DAWN KANCHEEPURAM",
+      isCulprit: true,
       waypoints: [
-        [80.710, 13.200, 38],
-        [80.750, 13.250, 38], // Spill discharge point
-        [80.785, 13.290, 38], // Present
-        [80.840, 13.350, 38],
+        { tMinutes: -360, lon: 80.680, lat: 13.160, heading: 38, speed: 13.2 },
+        { tMinutes: -180, lon: 80.710, lat: 13.200, heading: 38, speed: 13.2 },
+        { tMinutes: -60,  lon: 80.750, lat: 13.250, heading: 38, speed: 13.2 }, // Exact Spill Origin!
+        { tMinutes: 0,    lon: 80.785, lat: 13.290, heading: 38, speed: 13.2 }, // Live Present
+        { tMinutes: 180,  lon: 80.840, lat: 13.350, heading: 38, speed: 13.2 },
       ],
     },
     // BW MAPLE (VLGC Gas Carrier)
     {
       mmsi: 352001000,
+      name: "BW MAPLE",
       waypoints: [
-        [80.820, 13.310, 215],
-        [80.720, 13.210, 215],
-        [80.640, 13.120, 215],
+        { tMinutes: -360, lon: 80.920, lat: 13.410, heading: 215, speed: 15.0 },
+        { tMinutes: -180, lon: 80.820, lat: 13.310, heading: 215, speed: 15.0 },
+        { tMinutes: 0,    lon: 80.720, lat: 13.210, heading: 215, speed: 15.0 },
+        { tMinutes: 180,  lon: 80.620, lat: 13.110, heading: 215, speed: 15.0 },
       ],
     },
   ],
 };
+
+// Precise piece-wise waypoint kinematic interpolation
+export function interpolateVesselPosition(
+  mmsi: number,
+  timeOffsetMinutes: number,
+  scenario: string = 'arabian_sea'
+): { lon: number; lat: number; heading: number; speed: number } | null {
+  const tracks = WAYPOINT_TIMELINES[scenario] || WAYPOINT_TIMELINES.arabian_sea;
+  const vesselTrack = tracks.find((t) => t.mmsi === mmsi);
+  if (!vesselTrack || !vesselTrack.waypoints.length) return null;
+
+  const wps = vesselTrack.waypoints;
+
+  // Clamp or extrapolate
+  if (timeOffsetMinutes <= wps[0].tMinutes) {
+    return { lon: wps[0].lon, lat: wps[0].lat, heading: wps[0].heading, speed: wps[0].speed };
+  }
+  if (timeOffsetMinutes >= wps[wps.length - 1].tMinutes) {
+    const last = wps[wps.length - 1];
+    return { lon: last.lon, lat: last.lat, heading: last.heading, speed: last.speed };
+  }
+
+  // Find surrounding waypoint segment
+  for (let i = 0; i < wps.length - 1; i++) {
+    const w1 = wps[i];
+    const w2 = wps[i + 1];
+    if (timeOffsetMinutes >= w1.tMinutes && timeOffsetMinutes <= w2.tMinutes) {
+      const segSpan = w2.tMinutes - w1.tMinutes;
+      const progress = segSpan === 0 ? 0 : (timeOffsetMinutes - w1.tMinutes) / segSpan;
+
+      const lon = w1.lon + (w2.lon - w1.lon) * progress;
+      const lat = w1.lat + (w2.lat - w1.lat) * progress;
+      const heading = w1.heading;
+      const speed = w1.speed;
+
+      return {
+        lon: Number(lon.toFixed(6)),
+        lat: Number(lat.toFixed(6)),
+        heading,
+        speed,
+      };
+    }
+  }
+
+  const last = wps[wps.length - 1];
+  return { lon: last.lon, lat: last.lat, heading: last.heading, speed: last.speed };
+}
+
+// Calculate oil slick center and polygon at any arbitrary timeline point
+export function calculateSynchronizedOilSpill(
+  timeOffsetMinutes: number, // -360 to 0 (and live +)
+  scenario: string = 'arabian_sea',
+  metocean?: MetoceanData
+): { center: [number, number]; polygon: number[][]; area: number; perimeter: number; isNascent: boolean } {
+  const isArabian = scenario === 'arabian_sea';
+  const dischargeOffset = isArabian ? -42 : -60; // Incident time in minutes before live
+  const baseOrigin: [number, number] = isArabian ? [72.145, 19.048] : [80.750, 13.250];
+  const trackHeading = isArabian ? 52 : 38;
+
+  const driftSpeedKts = metocean?.net_drift_speed_kts || (isArabian ? 1.95 : 1.52);
+  const driftDir = metocean?.net_drift_direction_deg || (isArabian ? 69.3 : 48.2);
+
+  // If before discharge: spill has not happened yet (or show initial discharge spot)
+  if (timeOffsetMinutes < dischargeOffset) {
+    const freshPoly = generateRealisticSpillPolygon(baseOrigin[0], baseOrigin[1], trackHeading, 1.8, 0.5);
+    return {
+      center: baseOrigin,
+      polygon: freshPoly,
+      area: 0.8,
+      perimeter: 4.2,
+      isNascent: true,
+    };
+  }
+
+  // Time elapsed since oil was dumped (in hours)
+  const elapsedSinceDischargeHours = (timeOffsetMinutes - dischargeOffset) / 60.0;
+  const driftDistanceKm = (driftSpeedKts * 1.852) * elapsedSinceDischargeHours;
+
+  const [currentCenterLon, currentCenterLat] = moveCoordinate(
+    baseOrigin[0],
+    baseOrigin[1],
+    driftDir,
+    driftDistanceKm
+  );
+
+  // Fay expansion: slick grows as it ages
+  const lengthKm = Math.min(6.5, 3.2 + elapsedSinceDischargeHours * 2.8);
+  const widthKm = Math.min(2.2, 0.8 + elapsedSinceDischargeHours * 0.9);
+  const poly = generateRealisticSpillPolygon(currentCenterLon, currentCenterLat, trackHeading, lengthKm, widthKm);
+
+  const area = Number((lengthKm * widthKm * 0.78).toFixed(2));
+  const perimeter = Number(((lengthKm + widthKm) * 2.1).toFixed(1));
+
+  return {
+    center: [currentCenterLon, currentCenterLat],
+    polygon: poly,
+    area,
+    perimeter,
+    isNascent: false,
+  };
+}
 
 export class AutonomousSimulationEngine {
   private listeners: ((state: SimulationState) => void)[] = [];
@@ -172,8 +295,8 @@ export class AutonomousSimulationEngine {
   private currentScenario: string = 'arabian_sea';
   private elapsedSeconds: number = 0;
 
-  // Base spill origin coordinates
-  private baseSpillCenter: [number, number] = [72.145, 19.048];
+  // Base spill origin coordinates at discharge time (T-42m)
+  private baseSpillOrigin: [number, number] = [72.145, 19.048];
 
   constructor(initialScenario: string = 'arabian_sea') {
     this.currentScenario = initialScenario;
@@ -186,11 +309,30 @@ export class AutonomousSimulationEngine {
     const isMumbai = scenario === 'arabian_sea';
     const now = new Date();
     const formattedDate = now.toISOString().slice(0, 10);
-    const detectionTimeUtc = new Date(now.getTime() - 42 * 60000).toUTCString().slice(17, 25);
+    const detectionTimeUtc = new Date(now.getTime() - (isMumbai ? 42 : 60) * 60000).toUTCString().slice(17, 25);
 
     if (isMumbai) {
-      this.baseSpillCenter = [72.145, 19.048];
-      const initialSpillPoly = generateRealisticSpillPolygon(this.baseSpillCenter[0], this.baseSpillCenter[1], 52, 5.4, 1.5);
+      this.baseSpillOrigin = [72.145, 19.048];
+
+      const metocean: MetoceanData = {
+        wind_speed_kts: 16.2,
+        wind_direction_deg: 245.0,
+        current_speed_kts: 1.4,
+        current_direction_deg: 65.0,
+        sea_surface_temp_c: 28.4,
+        significant_wave_height_m: 1.8,
+        weathering_evaporation_pct: 22.5,
+        weathering_emulsification_pct: 34.0,
+        net_drift_speed_kts: 1.95,
+        net_drift_direction_deg: 69.3,
+        wind_cardinal: "WSW",
+        current_cardinal: "ENE",
+        sar_backscatter_quality: "OPTIMAL (High Radar Contrast)",
+        sea_state: "Slight to Moderate (Beaufort 4)",
+      };
+
+      // Live present spill (at T=0, 42 minutes after discharge)
+      const liveSpill = calculateSynchronizedOilSpill(0, 'arabian_sea', metocean);
 
       const linkedSpillMHO: LinkedSpillInfo = {
         id: "INC-IND-2024-01",
@@ -310,8 +452,8 @@ export class AutonomousSimulationEngine {
           last_lon: 72.240,
           linked_spill: linkedSpillMHO,
           trajectory: [
-            [72.020, 18.950, new Date(now.getTime() - 360 * 60000).toISOString()],
-            [72.080, 19.000, new Date(now.getTime() - 180 * 60000).toISOString()],
+            [72.000, 18.930, new Date(now.getTime() - 360 * 60000).toISOString()],
+            [72.075, 18.990, new Date(now.getTime() - 180 * 60000).toISOString()],
             [72.145, 19.048, new Date(now.getTime() - 42 * 60000).toISOString()], // Incident Origin Intercept
             [72.240, 19.120, now.toISOString()],
           ],
@@ -363,38 +505,21 @@ export class AutonomousSimulationEngine {
             properties: {
               id: "INC-IND-2024-01",
               detection_timestamp: new Date(now.getTime() - 42 * 60000).toISOString(),
-              area_sq_km: 5.40,
-              perimeter_km: 14.8,
+              area_sq_km: liveSpill.area,
+              perimeter_km: liveSpill.perimeter,
               confidence_score: 0.988,
               source_scene: "S1A_IW_GRDH_1SDV_20260828T174510_048912",
               status: "ACTIVE",
-              center: [this.baseSpillCenter[0], this.baseSpillCenter[1]],
+              center: liveSpill.center,
               estimated_discharge_liters: 58000,
               slick_type: "Heavy Fuel Oil (HFO-380)",
             },
             geometry: {
               type: "Polygon",
-              coordinates: [initialSpillPoly],
+              coordinates: [liveSpill.polygon],
             },
           },
         ],
-      };
-
-      const metocean: MetoceanData = {
-        wind_speed_kts: 16.2,
-        wind_direction_deg: 245.0,
-        current_speed_kts: 1.4,
-        current_direction_deg: 65.0,
-        sea_surface_temp_c: 28.4,
-        significant_wave_height_m: 1.8,
-        weathering_evaporation_pct: 22.5,
-        weathering_emulsification_pct: 34.0,
-        net_drift_speed_kts: 1.95,
-        net_drift_direction_deg: 69.3,
-        wind_cardinal: "WSW",
-        current_cardinal: "ENE",
-        sar_backscatter_quality: "OPTIMAL (High Radar Contrast)",
-        sea_state: "Slight to Moderate (Beaufort 4)",
       };
 
       return {
@@ -407,8 +532,26 @@ export class AutonomousSimulationEngine {
       };
     } else {
       // Bay of Bengal / Ennore Port Sector
-      this.baseSpillCenter = [80.750, 13.250];
-      const initialSpillPoly = generateRealisticSpillPolygon(this.baseSpillCenter[0], this.baseSpillCenter[1], 38, 3.8, 1.2);
+      this.baseSpillOrigin = [80.750, 13.250];
+
+      const metocean: MetoceanData = {
+        wind_speed_kts: 12.8,
+        wind_direction_deg: 190.0,
+        current_speed_kts: 1.1,
+        current_direction_deg: 40.0,
+        sea_surface_temp_c: 29.1,
+        significant_wave_height_m: 1.4,
+        weathering_evaporation_pct: 26.0,
+        weathering_emulsification_pct: 31.5,
+        net_drift_speed_kts: 1.52,
+        net_drift_direction_deg: 48.2,
+        wind_cardinal: "S",
+        current_cardinal: "NE",
+        sar_backscatter_quality: "OPTIMAL (High Radar Contrast)",
+        sea_state: "Smooth to Slight (Beaufort 3)",
+      };
+
+      const liveSpill = calculateSynchronizedOilSpill(0, 'bay_of_bengal', metocean);
 
       const linkedSpillEnnore: LinkedSpillInfo = {
         id: "INC-IND-2024-02",
@@ -422,7 +565,7 @@ export class AutonomousSimulationEngine {
 
       const vessels: Vessel[] = [
         {
-          mmsi: 419000456,
+          mmsi: 419000789,
           imo_number: 9345207,
           name: "MT DAWN KANCHEEPURAM",
           flag: "India",
@@ -447,7 +590,7 @@ export class AutonomousSimulationEngine {
 
       const suspects: SuspectVessel[] = [
         {
-          mmsi: 419000456,
+          mmsi: 419000789,
           imo_number: 9345207,
           name: "MT DAWN KANCHEEPURAM",
           flag: "India",
@@ -465,7 +608,8 @@ export class AutonomousSimulationEngine {
           last_lon: 80.785,
           linked_spill: linkedSpillEnnore,
           trajectory: [
-            [80.710, 13.200, new Date(now.getTime() - 360 * 60000).toISOString()],
+            [80.680, 13.160, new Date(now.getTime() - 360 * 60000).toISOString()],
+            [80.710, 13.200, new Date(now.getTime() - 180 * 60000).toISOString()],
             [80.750, 13.250, new Date(now.getTime() - 60 * 60000).toISOString()],
             [80.785, 13.290, now.toISOString()],
           ],
@@ -481,38 +625,21 @@ export class AutonomousSimulationEngine {
             properties: {
               id: "INC-IND-2024-02",
               detection_timestamp: new Date(now.getTime() - 60 * 60000).toISOString(),
-              area_sq_km: 2.80,
-              perimeter_km: 8.4,
+              area_sq_km: liveSpill.area,
+              perimeter_km: liveSpill.perimeter,
               confidence_score: 0.962,
               source_scene: "S1B_IW_GRDH_1SDV_BAY_OF_BENGAL_02",
               status: "ACTIVE",
-              center: [this.baseSpillCenter[0], this.baseSpillCenter[1]],
+              center: liveSpill.center,
               estimated_discharge_liters: 22000,
               slick_type: "Marine Diesel / Bunker Fuel",
             },
             geometry: {
               type: "Polygon",
-              coordinates: [initialSpillPoly],
+              coordinates: [liveSpill.polygon],
             },
           },
         ],
-      };
-
-      const metocean: MetoceanData = {
-        wind_speed_kts: 12.8,
-        wind_direction_deg: 190.0,
-        current_speed_kts: 1.1,
-        current_direction_deg: 40.0,
-        sea_surface_temp_c: 29.1,
-        significant_wave_height_m: 1.4,
-        weathering_evaporation_pct: 26.0,
-        weathering_emulsification_pct: 31.5,
-        net_drift_speed_kts: 1.52,
-        net_drift_direction_deg: 48.2,
-        wind_cardinal: "S",
-        current_cardinal: "NE",
-        sar_backscatter_quality: "OPTIMAL (High Radar Contrast)",
-        sea_state: "Smooth to Slight (Beaufort 3)",
       };
 
       return {
@@ -566,26 +693,11 @@ export class AutonomousSimulationEngine {
   private tick() {
     this.elapsedSeconds += 1;
     const nowUtc = new Date().toUTCString().slice(17, 25);
+    const isArabian = this.currentScenario === 'arabian_sea';
+    const totalMinutesElapsed = (this.elapsedSeconds / 60.0);
 
-    // 1. Live Hydrodynamic Slick Advection (Drifting in Real Time right now!)
-    // Net drift speed = 1.95 kts = 3.61 km/h = ~0.001 km/sec
-    const driftKmPerSec = (this.state.metocean.net_drift_speed_kts * 1.852) / 3600;
-    const totalDriftKm = driftKmPerSec * this.elapsedSeconds;
-    const [liveDriftedLon, liveDriftedLat] = moveCoordinate(
-      this.baseSpillCenter[0],
-      this.baseSpillCenter[1],
-      this.state.metocean.net_drift_direction_deg,
-      totalDriftKm
-    );
-
-    // Real-time expanding oil polygon
-    const liveSlickPoly = generateRealisticSpillPolygon(
-      liveDriftedLon,
-      liveDriftedLat,
-      this.currentScenario === 'arabian_sea' ? 52 : 38,
-      5.4 + (this.elapsedSeconds * 0.001),
-      1.5 + (this.elapsedSeconds * 0.0005)
-    );
+    // 1. Advance oil spill with live drift
+    const liveSpillData = calculateSynchronizedOilSpill(totalMinutesElapsed, this.currentScenario, this.state.metocean);
 
     const updatedSpills: SpillFeatureCollection = {
       type: "FeatureCollection",
@@ -593,16 +705,18 @@ export class AutonomousSimulationEngine {
         ...f,
         properties: {
           ...f.properties,
-          center: [liveDriftedLon, liveDriftedLat],
+          center: liveSpillData.center,
+          area_sq_km: liveSpillData.area,
+          perimeter_km: liveSpillData.perimeter,
         },
         geometry: {
           type: "Polygon",
-          coordinates: [liveSlickPoly],
+          coordinates: [liveSpillData.polygon],
         },
       })),
     };
 
-    // 2. Advance all vessels smoothly along their heading (No teleportation!)
+    // 2. Advance all vessels smoothly along their heading
     const updatedVessels = this.state.vessels.map((v) => {
       if (!v.current_position) return v;
       const speedKmPerSec = (v.current_position.speed_knots * 1.852) / 3600;
@@ -624,7 +738,7 @@ export class AutonomousSimulationEngine {
       };
     });
 
-    // 3. Update primary suspect position
+    // 3. Update suspect positions
     const updatedSuspects = this.state.suspects.map((s) => {
       const match = updatedVessels.find((v) => v.mmsi === s.mmsi);
       if (match?.current_position) {
@@ -640,10 +754,10 @@ export class AutonomousSimulationEngine {
     });
 
     // 4. Metocean micro-oscillations
-    const windNoise = (Math.random() - 0.5) * 0.05;
-    const newWindSpeed = Number(Math.max(14.0, Math.min(22.0, this.state.metocean.wind_speed_kts + windNoise)).toFixed(1));
-    const newEvap = Number(Math.min(45.0, this.state.metocean.weathering_evaporation_pct + 0.002).toFixed(2));
-    const newEmuls = Number(Math.min(65.0, this.state.metocean.weathering_emulsification_pct + 0.003).toFixed(2));
+    const windNoise = (Math.random() - 0.5) * 0.04;
+    const newWindSpeed = Number(Math.max(12.0, Math.min(22.0, this.state.metocean.wind_speed_kts + windNoise)).toFixed(1));
+    const newEvap = Number(Math.min(45.0, this.state.metocean.weathering_evaporation_pct + 0.001).toFixed(2));
+    const newEmuls = Number(Math.min(65.0, this.state.metocean.weathering_emulsification_pct + 0.002).toFixed(2));
 
     const updatedMetocean: MetoceanData = {
       ...this.state.metocean,
