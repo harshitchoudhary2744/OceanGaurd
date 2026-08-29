@@ -111,11 +111,6 @@ def generate_forensic_pdf_report(
     elements = []
 
     # 1. Header Banner
-    header_table_data = [
-        [
-            Paragraph("<b>OCEANGUARD MARITIME FORENSIC DOSSIER</b><br/><font size=7 color='#00626e'>SIH PROBLEM STATEMENT: SIH26143 | SATELLITE OIL SPILL DETECTION & VESSEL TRACKING</font>", title_style),
-            Paragraph("<b>SECURITY LEVEL</b><br/><font color='#93000a'>OMEGA-7 / EVIDENCE GRADE</font><br/><b>TIMESTAMP:</b> " + datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"), subtitle_style)
-        ]
     elements.append(Paragraph("OCEANGUARD MARITIME INTELLIGENCE COMMAND", title_style))
     elements.append(Paragraph(f"<b>OFFICIAL SATELLITE FORENSIC AUDIT DOSSIER • INCIDENT {active_spill_id}</b>", ParagraphStyle("Sub", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=10, textColor=colors.HexColor("#00626e"))))
     elements.append(Spacer(1, 4))
