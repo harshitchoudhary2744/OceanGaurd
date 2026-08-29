@@ -2,7 +2,38 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, History } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData } from '../types';
-import { calculateSynchronizedOilSpill, generateForecastCone, generateHindcastCone } from '../lib/simulationEngine';
+import { calculateSynchronizedOilSpill, moveCoordinate } from '../lib/simulationEngine';
+
+// Precise Great-Circle Bearing (degrees clockwise from North)
+function calculateBearing(lon1: number, lat1: number, lon2: number, lat2: number): number {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const deg = (r: number) => (r * 180) / Math.PI;
+  const y = Math.sin(rad(lon2 - lon1)) * Math.cos(rad(lat2));
+  const x = Math.cos(rad(lat1)) * Math.sin(rad(lat2)) - Math.sin(rad(lat1)) * Math.cos(rad(lat2)) * Math.cos(rad(lon2 - lon1));
+  return (deg(Math.atan2(y, x)) + 360) % 360;
+}
+
+// Generate mathematically locked directional cone between two points
+function generateConeBetweenPoints(
+  startLon: number,
+  startLat: number,
+  endLon: number,
+  endLat: number,
+  startHalfWidthKm: number = 0.3,
+  endHalfWidthKm: number = 0.8
+): number[][] {
+  const bearing = calculateBearing(startLon, startLat, endLon, endLat);
+  const perp1 = (bearing - 90 + 360) % 360;
+  const perp2 = (bearing + 90) % 360;
+
+  const leftStart = moveCoordinate(startLon, startLat, perp1, startHalfWidthKm);
+  const rightStart = moveCoordinate(startLon, startLat, perp2, startHalfWidthKm);
+  const rightEnd = moveCoordinate(endLon, endLat, perp2, endHalfWidthKm);
+  const tipEnd = moveCoordinate(endLon, endLat, bearing, endHalfWidthKm * 0.3);
+  const leftEnd = moveCoordinate(endLon, endLat, perp1, endHalfWidthKm);
+
+  return [leftStart, rightStart, rightEnd, tipEnd, leftEnd, leftStart];
+}
 
 interface TacticalMapProps {
   spills: SpillFeatureCollection;
@@ -44,6 +75,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [showMetoceanOverlay, setShowMetoceanOverlay] = useState(true);
 
   const isEnnore = scenario === 'bay_of_bengal';
+  
+  // Exact Ground-Truth Spill Discharge Coordinates (Where the vessel dumped oil)
   const baseOrigin = useMemo<[number, number]>(() => {
     return isEnnore ? [80.750, 13.250] : [72.145, 19.048];
   }, [isEnnore]);
@@ -54,7 +87,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     return suspects.reduce((prev, curr) => (curr.probability_score > prev.probability_score ? curr : prev), suspects[0]);
   }, [suspects]);
 
-  // Synchronized Hydrodynamic Oil Spill Polygon (Drifts from baseOrigin with time)
+  // Synchronized Hydrodynamic Oil Spill Polygon
   const currentSpills = useMemo<SpillFeatureCollection>(() => {
     const isArabian = scenario === 'arabian_sea';
     const spillData = calculateSynchronizedOilSpill(timeOffsetMinutes, scenario, metocean);
@@ -86,7 +119,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, [spills, selectedSpillId, timeOffsetMinutes, scenario, metocean]);
 
-  // Current Slick Centroid
+  // Current Slick Centroid Position
   const slickCentroid = useMemo<[number, number]>(() => {
     const activeSpill = currentSpills.features[0];
     if (activeSpill?.properties?.center) {
@@ -95,30 +128,17 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     return isEnnore ? [80.769, 13.267] : [72.168, 19.062];
   }, [currentSpills, isEnnore]);
 
-  // +6h Hydrodynamic Forecast Dispersal Fan (Cyan)
-  const forecastConeFeature = useMemo(() => {
-    const driftDir = metocean?.net_drift_direction_deg || (isEnnore ? 48.2 : 69.3);
-    const driftSpeed = metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95);
-
-    const coneCoords = generateForecastCone(slickCentroid[0], slickCentroid[1], driftDir, driftSpeed, 6);
-
-    return {
-      type: "Feature" as const,
-      properties: { name: "+6h Metocean Drift Forecast" },
-      geometry: {
-        type: "Polygon" as const,
-        coordinates: [coneCoords],
-      },
-    };
-  }, [slickCentroid, metocean, isEnnore]);
-
-  // Hydrodynamic Hindcast (Back-Tracing) Features (Amber Trail from Live Slick -> Dump Origin)
+  // Hydrodynamic Hindcast Back-Tracing (Connecting Current Slick Centroid directly to Dump Origin)
   const hindcastFeatures = useMemo(() => {
-    const driftDir = metocean?.net_drift_direction_deg || (isEnnore ? 48.2 : 69.3);
-    const driftSpeed = metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95);
-
-    // Subtle reverse fan
-    const coneCoords = generateHindcastCone(slickCentroid[0], slickCentroid[1], driftDir, driftSpeed, isEnnore ? 1.4 : 1.1);
+    // Generate locked amber cone enveloping the line from slickCentroid to baseOrigin
+    const coneCoords = generateConeBetweenPoints(
+      slickCentroid[0],
+      slickCentroid[1],
+      baseOrigin[0],
+      baseOrigin[1],
+      0.35,
+      0.85
+    );
 
     const coneFeature = {
       type: "Feature" as const,
@@ -129,7 +149,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       },
     };
 
-    // Vector line precisely connecting the live slick centroid to the true dump origin
+    // Vector line connecting slickCentroid directly to baseOrigin
     const lineFeature = {
       type: "Feature" as const,
       properties: { name: "Hindcast Reverse Vector" },
@@ -146,9 +166,36 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       type: "FeatureCollection" as const,
       features: [coneFeature, lineFeature],
     };
+  }, [slickCentroid, baseOrigin]);
+
+  // +6h Hydrodynamic Forecast Dispersal Fan (Cyan)
+  const forecastConeFeature = useMemo(() => {
+    // Forward bearing is opposite to the hindcast vector (pointing into the future)
+    const forwardBearing = calculateBearing(baseOrigin[0], baseOrigin[1], slickCentroid[0], slickCentroid[1]);
+    const driftSpeed = metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95);
+    const forecastDistanceKm = (driftSpeed * 1.852) * 6.0;
+
+    const [endLon, endLat] = moveCoordinate(slickCentroid[0], slickCentroid[1], forwardBearing, forecastDistanceKm);
+    const coneCoords = generateConeBetweenPoints(
+      slickCentroid[0],
+      slickCentroid[1],
+      endLon,
+      endLat,
+      0.4,
+      2.2
+    );
+
+    return {
+      type: "Feature" as const,
+      properties: { name: "+6h Metocean Drift Forecast" },
+      geometry: {
+        type: "Polygon" as const,
+        coordinates: [coneCoords],
+      },
+    };
   }, [slickCentroid, baseOrigin, metocean, isEnnore]);
 
-  // Initialize MapLibre
+  // Initialize MapLibre GL
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -217,7 +264,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'forecast-source',
         paint: {
           'fill-color': '#06b6d4',
-          'fill-opacity': 0.15,
+          'fill-opacity': 0.14,
         },
       });
 
@@ -245,7 +292,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         filter: ['==', '$type', 'Polygon'],
         paint: {
           'fill-color': '#f59e0b',
-          'fill-opacity': 0.14,
+          'fill-opacity': 0.16,
         },
       });
 
@@ -257,7 +304,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         paint: {
           'line-color': '#fbbf24',
           'line-width': 2.5,
-          'line-dasharray': [4, 4],
+          'line-dasharray': [4, 3],
         },
       });
 
@@ -454,24 +501,24 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const cpaDist = isEnnore ? '0.00 km CPA' : '0.34 km CPA';
 
     const el = document.createElement('div');
-    el.className = 'select-none pointer-events-auto cursor-pointer relative z-20';
+    el.className = 'select-none pointer-events-auto cursor-pointer relative z-30 flex flex-col items-center';
     el.innerHTML = `
-      <div class="relative flex flex-col items-center group -translate-y-1/2">
-        <!-- Unified Glowing Amber Target Locus Dot -->
+      <div class="relative flex flex-col items-center group">
+        <!-- Target Locus Anchor Pin -->
         <div class="relative flex items-center justify-center">
           <div class="absolute w-7 h-7 rounded-full bg-amber-400/40 animate-ping pointer-events-none"></div>
-          <div class="w-4 h-4 rounded-full bg-amber-400 border-2 border-white shadow-xl flex items-center justify-center relative z-10">
+          <div class="w-4 h-4 rounded-full bg-amber-400 border-2 border-white shadow-2xl flex items-center justify-center relative z-10">
             <div class="w-1.5 h-1.5 rounded-full bg-slate-950"></div>
           </div>
         </div>
 
-        <!-- High-Contrast Clean Tactical Callout (Centered directly below the pin) -->
-        <div class="mt-1.5 bg-slate-950/95 border border-amber-400/90 rounded px-2.5 py-1 shadow-2xl flex flex-col items-center gap-0.5 whitespace-nowrap backdrop-blur-md">
-          <div class="flex items-center gap-1 font-mono text-[10px] font-bold text-amber-300">
+        <!-- High-Contrast Clean Tactical Badge (Centered Directly Below Pin) -->
+        <div class="mt-1 bg-slate-950/95 border border-amber-400/90 rounded px-2 py-0.5 shadow-2xl flex flex-col items-center gap-0.5 whitespace-nowrap backdrop-blur-md">
+          <div class="flex items-center gap-1 font-mono text-[9.5px] font-bold text-amber-300">
             <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
             <span>DUMPED: ${dumpTimeLabel}</span>
           </div>
-          <div class="text-[8.5px] font-mono text-slate-300">
+          <div class="text-[8px] font-mono text-slate-300">
             ${dumpAction} • <span class="text-amber-200 font-semibold">${suspectShip}</span> (${cpaDist})
           </div>
         </div>
@@ -504,7 +551,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       }
     });
 
-    const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'top' })
       .setLngLat(baseOrigin)
       .addTo(mapRef.current);
 
@@ -532,7 +579,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [scenario]);
 
-  // Update Vessel HTML Markers (Clean, non-glitchy gliding)
+  // Update Vessel HTML Markers
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
