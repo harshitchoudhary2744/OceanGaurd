@@ -67,7 +67,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const prevScenarioRef = useRef<string>(scenario);
   const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
   const popupRef = useRef<maplibregl.Popup | null>(null);
-  const dumpMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const dumpLabelMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
@@ -177,6 +177,26 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       features: [coneFeature, lineFeature],
     };
   }, [slickCentroid, baseOrigin]);
+
+  // Dump Origin Point GeoJSON Feature (Rendered natively in WebGL on GPU)
+  const dumpOriginFeature = useMemo(() => {
+    return {
+      type: "FeatureCollection" as const,
+      features: [
+        {
+          type: "Feature" as const,
+          properties: {
+            name: "Spill Dump Origin Locus",
+            scenario,
+          },
+          geometry: {
+            type: "Point" as const,
+            coordinates: [baseOrigin[0], baseOrigin[1]],
+          },
+        },
+      ],
+    };
+  }, [baseOrigin, scenario]);
 
   // +6h Hydrodynamic Forecast Dispersal Fan (Cyan)
   const forecastConeFeature = useMemo(() => {
@@ -317,7 +337,46 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 3. Culprit Trajectory Layers (Pink Dashed Track)
+      // 3. Dump Origin Point Layers (WebGL GPU Circle Pin - Zero Drift / Zero Offset)
+      map.addSource('dump-origin-source', {
+        type: 'geojson',
+        data: dumpOriginFeature,
+      });
+
+      map.addLayer({
+        id: 'dump-dot-glow',
+        type: 'circle',
+        source: 'dump-origin-source',
+        paint: {
+          'circle-radius': 13,
+          'circle-color': '#f59e0b',
+          'circle-opacity': 0.35,
+        },
+      });
+
+      map.addLayer({
+        id: 'dump-dot-ring',
+        type: 'circle',
+        source: 'dump-origin-source',
+        paint: {
+          'circle-radius': 6.5,
+          'circle-color': '#fbbf24',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2,
+        },
+      });
+
+      map.addLayer({
+        id: 'dump-dot-core',
+        type: 'circle',
+        source: 'dump-origin-source',
+        paint: {
+          'circle-radius': 2.2,
+          'circle-color': '#020617',
+        },
+      });
+
+      // 4. Culprit Trajectory Layers (Pink Dashed Track)
       map.addSource('culprit-trajectory', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -345,7 +404,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 4. Oil Spill Layers (Crimson Slick)
+      // 5. Oil Spill Layers (Crimson Slick)
       map.addSource('spills-source', {
         type: 'geojson',
         data: currentSpills,
@@ -464,6 +523,19 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [hindcastFeatures, showHindcast, mapLoaded]);
 
+  // Update Dump Origin WebGL Point Layer
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const src = mapRef.current.getSource('dump-origin-source') as maplibregl.GeoJSONSource;
+    if (!src) return;
+
+    if (showHindcast && dumpOriginFeature) {
+      src.setData(dumpOriginFeature);
+    } else {
+      src.setData({ type: 'FeatureCollection', features: [] });
+    }
+  }, [dumpOriginFeature, showHindcast, mapLoaded]);
+
   // Update Culprit Trajectory Trail Layer
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
@@ -493,13 +565,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     });
   }, [primarySuspect, showTrails, mapLoaded]);
 
-  // Render Exactly ONE Unified Dump Origin Marker placed directly on baseOrigin
+  // Render Pinned Dump Origin Tactical Label Badge (Directly below WebGL Circle)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
-    if (dumpMarkerRef.current) {
-      dumpMarkerRef.current.remove();
-      dumpMarkerRef.current = null;
+    if (dumpLabelMarkerRef.current) {
+      dumpLabelMarkerRef.current.remove();
+      dumpLabelMarkerRef.current = null;
     }
 
     if (!showHindcast) return;
@@ -510,26 +582,15 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const cpaDist = isEnnore ? '0.00 km CPA' : '0.00 km CPA (Direct Intercept)';
 
     const el = document.createElement('div');
-    el.className = 'select-none pointer-events-auto cursor-pointer relative z-30 flex flex-col items-center';
+    el.className = 'select-none pointer-events-auto cursor-pointer relative z-20 flex flex-col items-center';
     el.innerHTML = `
-      <div class="relative flex flex-col items-center group">
-        <!-- Target Locus Anchor Pin -->
-        <div class="relative flex items-center justify-center">
-          <div class="absolute w-7 h-7 rounded-full bg-amber-400/40 animate-ping pointer-events-none"></div>
-          <div class="w-4 h-4 rounded-full bg-amber-400 border-2 border-white shadow-2xl flex items-center justify-center relative z-10">
-            <div class="w-1.5 h-1.5 rounded-full bg-slate-950"></div>
-          </div>
+      <div class="mt-2.5 bg-slate-950/95 border border-amber-400/90 rounded px-2 py-0.5 shadow-2xl flex flex-col items-center gap-0.5 whitespace-nowrap backdrop-blur-md hover:scale-105 transition-transform">
+        <div class="flex items-center gap-1 font-mono text-[9.5px] font-bold text-amber-300">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span>DUMPED: ${dumpTimeLabel}</span>
         </div>
-
-        <!-- High-Contrast Clean Tactical Badge (Centered Directly Below Pin) -->
-        <div class="mt-1 bg-slate-950/95 border border-amber-400/90 rounded px-2 py-0.5 shadow-2xl flex flex-col items-center gap-0.5 whitespace-nowrap backdrop-blur-md">
-          <div class="flex items-center gap-1 font-mono text-[9.5px] font-bold text-amber-300">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-            <span>DUMPED: ${dumpTimeLabel}</span>
-          </div>
-          <div class="text-[8px] font-mono text-slate-300">
-            ${dumpAction} • <span class="text-amber-200 font-semibold">${suspectShip}</span> (${cpaDist})
-          </div>
+        <div class="text-[8px] font-mono text-slate-300">
+          ${dumpAction} • <span class="text-amber-200 font-semibold">${suspectShip}</span> (${cpaDist})
         </div>
       </div>
     `;
@@ -560,16 +621,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       }
     });
 
-    const marker = new maplibregl.Marker({ element: el, anchor: 'top' })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'top', offset: [0, 8] })
       .setLngLat(baseOrigin)
       .addTo(mapRef.current);
 
-    dumpMarkerRef.current = marker;
+    dumpLabelMarkerRef.current = marker;
 
     return () => {
-      if (dumpMarkerRef.current) {
-        dumpMarkerRef.current.remove();
-        dumpMarkerRef.current = null;
+      if (dumpLabelMarkerRef.current) {
+        dumpLabelMarkerRef.current.remove();
+        dumpLabelMarkerRef.current = null;
       }
     };
   }, [showHindcast, baseOrigin, primarySuspect, isEnnore, mapLoaded, onSelectVessel]);
@@ -578,9 +639,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   useEffect(() => {
     Object.values(markersRef.current).forEach((m) => m.remove());
     markersRef.current = {};
-    if (dumpMarkerRef.current) {
-      dumpMarkerRef.current.remove();
-      dumpMarkerRef.current = null;
+    if (dumpLabelMarkerRef.current) {
+      dumpLabelMarkerRef.current.remove();
+      dumpLabelMarkerRef.current = null;
     }
     if (popupRef.current) {
       popupRef.current.remove();
