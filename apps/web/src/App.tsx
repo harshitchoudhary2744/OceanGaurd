@@ -158,7 +158,7 @@ export function App() {
       setSelectedSpillId(`INC-IND-${currentYear}-01`);
       setSelectedVesselMmsi(419000123);
     } else {
-      setSelectedSpillId(`INC-IND-${currentYear}-02`);
+      setSelectedSpillId("INC-IND-2017-02");
       setSelectedVesselMmsi(419000789);
     }
   };
@@ -196,10 +196,10 @@ export function App() {
 
   // Active Map Center
   const mapCenter = useMemo<[number, number]>(() => {
-    if (selectedSpillFeature?.properties?.center) {
-      return selectedSpillFeature.properties.center;
+    if (activeScenario === 'bay_of_bengal') {
+      return selectedSpillFeature?.properties?.center || [80.750, 13.250];
     }
-    return activeScenario === 'bay_of_bengal' ? [80.750, 13.250] : [72.150, 19.050];
+    return selectedSpillFeature?.properties?.center || [72.150, 19.050];
   }, [selectedSpillFeature, activeScenario]);
 
   // Handle Detection from Upload

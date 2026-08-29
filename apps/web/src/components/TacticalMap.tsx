@@ -268,12 +268,28 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, []);
 
-  // Update center when scenario changes
+  // Update center & viewport when scenario changes
   useEffect(() => {
-    if (mapRef.current && mapLoaded) {
-      mapRef.current.flyTo({ center: centerCoordinates, zoom: 9.8, duration: 1000 });
+    if (!mapRef.current || !mapLoaded) return;
+    const isEnnore = scenario === 'bay_of_bengal';
+    const targetCenter: [number, number] = isEnnore ? [80.750, 13.250] : [72.150, 19.050];
+    const targetZoom = isEnnore ? 10.0 : 9.8;
+
+    // Remove any leftover popups
+    if (popupRef.current) {
+      popupRef.current.remove();
+      popupRef.current = null;
     }
-  }, [centerCoordinates, mapLoaded]);
+
+    // Force canvas resize then smoothly fly to sector
+    mapRef.current.resize();
+    mapRef.current.flyTo({
+      center: targetCenter,
+      zoom: targetZoom,
+      essential: true,
+      duration: 1000,
+    });
+  }, [scenario, mapLoaded]);
 
   // Update Live Drifting Spills Layer
   useEffect(() => {
