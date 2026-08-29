@@ -10,6 +10,7 @@ Includes:
 import io
 import math
 import logging
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
@@ -125,6 +126,34 @@ class MetoceanHydrodynamicEngine:
 
         return net_u, net_v, round(net_speed, 3), round(net_direction, 1)
 
+    def compute_hindcast_velocity_kmh(
+        self,
+        wind_speed_kts: float = 16.2,
+        wind_direction_deg: float = 245.0,
+        current_speed_kts: float = 1.4,
+        current_direction_deg: float = 65.0,
+        windage_factor: float = 0.035,
+        coriolis_deflection_deg: float = 15.0
+    ) -> Tuple[float, float, float, float]:
+        """
+        Calculate reverse hindcast drift speed (km/h) and heading direction for back-tracing.
+        Back-tracing inverts the forward drift advection vector: V_hindcast = -V_drift.
+        Returns: (hindcast_u_kmh, hindcast_v_kmh, speed_kmh, hindcast_direction_deg)
+        """
+        net_u, net_v, speed_kmh, forward_dir = self.compute_drift_velocity_kmh(
+            wind_speed_kts=wind_speed_kts,
+            wind_direction_deg=wind_direction_deg,
+            current_speed_kts=current_speed_kts,
+            current_direction_deg=current_direction_deg,
+            windage_factor=windage_factor,
+            coriolis_deflection_deg=coriolis_deflection_deg
+        )
+        # Reverse vector
+        hind_u = -net_u
+        hind_v = -net_v
+        hind_dir = (math.degrees(math.atan2(hind_u, hind_v)) + 360.0) % 360.0
+        return hind_u, hind_v, speed_kmh, round(hind_dir, 1)
+
     def calculate_drifted_polygon(
         self,
         base_polygon: List[List[float]],
@@ -175,10 +204,79 @@ class MetoceanHydrodynamicEngine:
 
         return drifted
 
+    def calculate_hindcast_track(
+        self,
+        center: List[float],
+        detection_timestamp_iso: str,
+        lookback_hours: float = 6.0,
+        step_minutes: int = 15,
+        wind_speed_kts: float = 16.2,
+        wind_direction_deg: float = 245.0,
+        current_speed_kts: float = 1.4,
+        current_direction_deg: float = 65.0,
+    ) -> List[Dict[str, Any]]:
+        """
+        Generates step-by-step back-traced (hindcast) positions from detection time T0 back to T - lookback_hours.
+        In reverse time, advection moves backward against net drift velocity.
+        """
+        center_lon, center_lat = center
+        hind_u_kmh, hind_v_kmh, net_speed_kmh, hind_dir_deg = self.compute_hindcast_velocity_kmh(
+            wind_speed_kts=wind_speed_kts,
+            wind_direction_deg=wind_direction_deg,
+            current_speed_kts=current_speed_kts,
+            current_direction_deg=current_direction_deg,
+        )
+
+        try:
+            t0 = datetime.fromisoformat(detection_timestamp_iso.replace("Z", "+00:00"))
+        except Exception:
+            t0 = datetime.utcnow()
+
+        km_per_deg_lat = 111.139
+        km_per_deg_lon = 111.139 * math.cos(math.radians(center_lat))
+
+        total_steps = int((lookback_hours * 60) // step_minutes) + 1
+        track = []
+
+        for i in range(total_steps):
+            mins_ago = i * step_minutes
+            hrs_ago = mins_ago / 60.0
+            point_time = t0 - timedelta(minutes=mins_ago)
+
+            # In reverse time, displacement backward
+            shift_east_km = hind_u_kmh * hrs_ago
+            shift_north_km = hind_v_kmh * hrs_ago
+
+            pt_lon = center_lon + (shift_east_km / km_per_deg_lon)
+            pt_lat = center_lat + (shift_north_km / km_per_deg_lat)
+
+            # Contraction factor (Fay model in reverse)
+            contraction = max(0.40, 1.0 - (hrs_ago / 6.0) * 0.55)
+            spread_radius_m = round(max(300.0, 1200.0 * contraction), 1)
+
+            track.append({
+                "time_offset_minutes": -mins_ago,
+                "timestamp": point_time.isoformat(),
+                "longitude": round(pt_lon, 6),
+                "latitude": round(pt_lat, 6),
+                "distance_from_detected_km": round(math.sqrt(shift_east_km**2 + shift_north_km**2), 2),
+                "estimated_slick_radius_m": spread_radius_m,
+                "hindcast_heading_deg": hind_dir_deg,
+                "drift_speed_kts": round(net_speed_kmh / 1.852, 2)
+            })
+
+        return track
+
     def get_metocean_conditions(self, sector: str = "arabian_sea") -> Dict[str, Any]:
-        """Return metocean parameters and calculated net drift vector"""
+        """Return metocean parameters, forward drift vector and reverse hindcast vector"""
         params = self.default_metocean.get(sector, self.default_metocean["arabian_sea"])
         net_u, net_v, speed_kmh, dir_deg = self.compute_drift_velocity_kmh(
+            params["wind_speed_kts"],
+            params["wind_direction_deg"],
+            params["current_speed_kts"],
+            params["current_direction_deg"]
+        )
+        hind_u, hind_v, _, hind_dir_deg = self.compute_hindcast_velocity_kmh(
             params["wind_speed_kts"],
             params["wind_direction_deg"],
             params["current_speed_kts"],
@@ -191,6 +289,8 @@ class MetoceanHydrodynamicEngine:
             "net_drift_speed_kts": round(speed_kmh / 1.852, 2),
             "net_drift_direction_deg": dir_deg,
             "drift_vector": [round(net_u, 4), round(net_v, 4)],
+            "hindcast_direction_deg": hind_dir_deg,
+            "hindcast_vector": [round(hind_u, 4), round(hind_v, 4)],
             "wind_cardinal": "WSW",
             "current_cardinal": "ENE",
             "sar_backscatter_quality": "OPTIMAL (High Radar Contrast)",

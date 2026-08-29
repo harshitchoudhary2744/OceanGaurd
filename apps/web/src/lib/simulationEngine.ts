@@ -99,6 +99,58 @@ export function generateForecastCone(
   return [leftBase, rightBase, rightHead, frontHead, leftHead, leftBase];
 }
 
+// -6h Hydrodynamic Hindcast (Back-Tracing) Dispersal Origin Cone
+export function generateHindcastCone(
+  baseCenterLon: number,
+  baseCenterLat: number,
+  driftBearingDeg: number,
+  driftSpeedKts: number,
+  hours: number = 6
+): number[][] {
+  const reverseBearing = (driftBearingDeg + 180) % 360;
+  const driftDistanceKm = (driftSpeedKts * 1.852) * hours;
+  const [originLon, originLat] = moveCoordinate(baseCenterLon, baseCenterLat, reverseBearing, driftDistanceKm);
+  const spreadWidthKm = 0.6 + (hours * 0.25);
+
+  const leftBase = moveCoordinate(baseCenterLon, baseCenterLat, (reverseBearing - 90 + 360) % 360, 0.6);
+  const rightBase = moveCoordinate(baseCenterLon, baseCenterLat, (reverseBearing + 90) % 360, 0.6);
+  const rightHead = moveCoordinate(originLon, originLat, (reverseBearing + 45) % 360, spreadWidthKm);
+  const frontHead = moveCoordinate(originLon, originLat, reverseBearing, spreadWidthKm * 0.5);
+  const leftHead = moveCoordinate(originLon, originLat, (reverseBearing - 45 + 360) % 360, spreadWidthKm);
+
+  return [leftBase, rightBase, rightHead, frontHead, leftHead, leftBase];
+}
+
+// Generate step-by-step hindcast track points (-360 to 0)
+export function generateHindcastTrack(
+  baseCenterLon: number,
+  baseCenterLat: number,
+  driftBearingDeg: number,
+  driftSpeedKts: number,
+  hours: number = 6,
+  steps: number = 6
+): { timeOffsetMinutes: number; lon: number; lat: number; radiusMeters: number }[] {
+  const reverseBearing = (driftBearingDeg + 180) % 360;
+  const track = [];
+
+  for (let i = 0; i <= steps; i++) {
+    const hrsAgo = (i / steps) * hours;
+    const minsAgo = Math.round(hrsAgo * 60);
+    const distKm = (driftSpeedKts * 1.852) * hrsAgo;
+    const [ptLon, ptLat] = moveCoordinate(baseCenterLon, baseCenterLat, reverseBearing, distKm);
+    const contraction = Math.max(0.4, 1.0 - (hrsAgo / 6.0) * 0.55);
+
+    track.push({
+      timeOffsetMinutes: -minsAgo,
+      lon: ptLon,
+      lat: ptLat,
+      radiusMeters: Math.round(1200 * contraction)
+    });
+  }
+
+  return track;
+}
+
 export interface TimedWaypoint {
   tMinutes: number; // time offset in minutes (-360 to 0)
   lon: number;
@@ -328,6 +380,8 @@ export class AutonomousSimulationEngine {
         weathering_emulsification_pct: 34.0,
         net_drift_speed_kts: 1.95,
         net_drift_direction_deg: 69.3,
+        hindcast_direction_deg: 249.3,
+        hindcast_vector: [-1.82, -0.69],
         wind_cardinal: "WSW",
         current_cardinal: "ENE",
         sar_backscatter_quality: "OPTIMAL (High Radar Contrast)",
@@ -347,6 +401,43 @@ export class AutonomousSimulationEngine {
         distance_km: 0.0,
       };
 
+      const deshShantiAnomaly = {
+        composite_score: 98.4,
+        risk_level: 'CRITICAL' as const,
+        speed_drop_score: 96.0,
+        speed_drop_delta_kts: 9.6,
+        speed_drop_details: 'Sudden deceleration from 14.8 to 5.2 kts during transit',
+        ais_gap_score: 92.0,
+        max_ais_gap_minutes: 42.0,
+        ais_gap_details: '42 min transponder blackout directly over discharge origin',
+        loitering_score: 74.0,
+        loitering_details: 'Slow-speed maneuvering and course deflection during dump',
+        hindcast_cpa_score: 100.0,
+        hindcast_cpa_distance_m: 0.0,
+        hindcast_cpa_distance_km: 0.0,
+        hindcast_details: 'Direct spatial intercept with hindcast discharge origin at T-42m',
+        evidence_tags: [
+          'Direct Hindcast Origin Match (0.00 km CPA)',
+          'Sudden Speed Drop (-9.6 kts)',
+          'AIS Signal Blackout (42 min)',
+          'High-Risk Cargo (Crude Oil 280,000 DWT)'
+        ]
+      };
+
+      const jagLokAnomaly = {
+        composite_score: 8.2,
+        risk_level: 'LOW' as const,
+        speed_drop_score: 0.0,
+        speed_drop_delta_kts: 0.0,
+        ais_gap_score: 0.0,
+        max_ais_gap_minutes: 0.0,
+        loitering_score: 12.0,
+        hindcast_cpa_score: 5.0,
+        hindcast_cpa_distance_m: 14200.0,
+        hindcast_cpa_distance_km: 14.2,
+        evidence_tags: ['Nominal Commercial Passage']
+      };
+
       const vessels: Vessel[] = [
         {
           mmsi: 419000123,
@@ -361,6 +452,8 @@ export class AutonomousSimulationEngine {
           nav_status: "Under way using engine",
           cargo_type: "Crude Oil (280,000 DWT)",
           linked_spill: linkedSpillMHO,
+          anomaly_score: 98.4,
+          anomaly_breakdown: deshShantiAnomaly,
           current_position: {
             latitude: 19.120,
             longitude: 72.240,
@@ -382,6 +475,7 @@ export class AutonomousSimulationEngine {
           destination: "POLLUTION RESPONSE SECTOR",
           nav_status: "Engaged in response ops",
           cargo_type: "Containment Booms",
+          anomaly_score: 0.0,
           current_position: {
             latitude: 19.060,
             longitude: 72.180,
@@ -403,6 +497,8 @@ export class AutonomousSimulationEngine {
           destination: "JAWAHARLAL NEHRU PORT",
           nav_status: "Under way using engine",
           cargo_type: "Petroleum Products",
+          anomaly_score: 8.2,
+          anomaly_breakdown: jagLokAnomaly,
           current_position: {
             latitude: 19.015,
             longitude: 72.275,
@@ -424,6 +520,7 @@ export class AutonomousSimulationEngine {
           destination: "NHAVA SHEVA",
           nav_status: "Under way using engine",
           cargo_type: "Containers (14,000 TEU)",
+          anomaly_score: 3.1,
           current_position: {
             latitude: 19.195,
             longitude: 72.105,
@@ -449,6 +546,11 @@ export class AutonomousSimulationEngine {
           distance_meters: 0.0,
           distance_km: 0.0,
           probability_score: 98.4,
+          anomaly_score: 98.4,
+          anomaly_breakdown: deshShantiAnomaly,
+          evidence_tags: deshShantiAnomaly.evidence_tags,
+          hindcast_distance_meters: 0.0,
+          hindcast_distance_km: 0.0,
           speed_knots: 14.8,
           heading_degrees: 52,
           last_lat: 19.120,
@@ -474,6 +576,11 @@ export class AutonomousSimulationEngine {
           distance_meters: 14200,
           distance_km: 14.2,
           probability_score: 8.2,
+          anomaly_score: 8.2,
+          anomaly_breakdown: jagLokAnomaly,
+          evidence_tags: ['Nominal Commercial Passage'],
+          hindcast_distance_meters: 14200,
+          hindcast_distance_km: 14.2,
           speed_knots: 12.4,
           heading_degrees: 98,
           last_lat: 19.015,
@@ -492,6 +599,10 @@ export class AutonomousSimulationEngine {
           distance_meters: 18900,
           distance_km: 18.9,
           probability_score: 3.1,
+          anomaly_score: 3.1,
+          evidence_tags: ['Nominal High-Speed Cargo Transit'],
+          hindcast_distance_meters: 18900,
+          hindcast_distance_km: 18.9,
           speed_knots: 17.2,
           heading_degrees: 68,
           last_lat: 19.195,
@@ -548,6 +659,8 @@ export class AutonomousSimulationEngine {
         weathering_emulsification_pct: 31.5,
         net_drift_speed_kts: 1.52,
         net_drift_direction_deg: 48.2,
+        hindcast_direction_deg: 228.2,
+        hindcast_vector: [-1.13, -1.01],
         wind_cardinal: "S",
         current_cardinal: "NE",
         sar_backscatter_quality: "OPTIMAL (High Radar Contrast)",
@@ -566,6 +679,50 @@ export class AutonomousSimulationEngine {
         distance_km: 0.0,
       };
 
+      const dawnAnomaly = {
+        composite_score: 96.8,
+        risk_level: 'CRITICAL' as const,
+        speed_drop_score: 92.0,
+        speed_drop_delta_kts: 8.4,
+        speed_drop_details: 'Sudden deceleration upon impact from 13.2 to 4.8 kts',
+        ais_gap_score: 88.0,
+        max_ais_gap_minutes: 38.0,
+        ais_gap_details: '38 min transponder blackout during collision window',
+        loitering_score: 80.0,
+        loitering_details: 'Erratic heading swing of 74° during collision impact',
+        hindcast_cpa_score: 100.0,
+        hindcast_cpa_distance_m: 0.0,
+        hindcast_cpa_distance_km: 0.0,
+        hindcast_details: 'Direct spatial intercept with collision breach locus at T-60m',
+        evidence_tags: [
+          'Direct Hindcast Collision Intercept (0.00 km CPA)',
+          'Sudden Speed Drop (-8.4 kts)',
+          'AIS Signal Blackout (38 min)',
+          'Heavy Bunker Fuel Oil Cargo (Inbound)'
+        ]
+      };
+
+      const mapleAnomaly = {
+        composite_score: 94.2,
+        risk_level: 'CRITICAL' as const,
+        speed_drop_score: 86.0,
+        speed_drop_delta_kts: 6.2,
+        speed_drop_details: 'Emergency deceleration from 11.8 to 5.6 kts',
+        ais_gap_score: 75.0,
+        max_ais_gap_minutes: 24.0,
+        loitering_score: 82.0,
+        loitering_details: 'Sharp course deflection of 98° during evasive turn',
+        hindcast_cpa_score: 98.0,
+        hindcast_cpa_distance_m: 450.0,
+        hindcast_cpa_distance_km: 0.45,
+        hindcast_details: 'Collision proximity alignment with MT DAWN at 03:45 IST',
+        evidence_tags: [
+          'Collision Course Intercept (0.45 km CPA)',
+          'Sharp Course Deflection (98° Turn)',
+          'LPG Gas Carrier (Outbound)'
+        ]
+      };
+
       const ennoreBaseIso = "2017-01-27T23:15:00.000Z"; // 28 Jan 2017 04:45 IST (T-0)
 
       const vessels: Vessel[] = [
@@ -582,6 +739,8 @@ export class AutonomousSimulationEngine {
           nav_status: "Under way using engine",
           cargo_type: "Fuel Oil / Bunker (Inbound)",
           linked_spill: linkedSpillEnnore,
+          anomaly_score: 96.8,
+          anomaly_breakdown: dawnAnomaly,
           current_position: {
             latitude: 13.290,
             longitude: 80.785,
@@ -603,6 +762,8 @@ export class AutonomousSimulationEngine {
           destination: "SINGAPORE STRAIT",
           nav_status: "Under way using engine",
           cargo_type: "LPG Gas (Outbound)",
+          anomaly_score: 94.2,
+          anomaly_breakdown: mapleAnomaly,
           current_position: {
             latitude: 13.245,
             longitude: 80.740,
@@ -624,6 +785,7 @@ export class AutonomousSimulationEngine {
           destination: "ENNORE RECOVERY SECTOR",
           nav_status: "Engaged in response ops",
           cargo_type: "Oil Containment Booms",
+          anomaly_score: 0.0,
           current_position: {
             latitude: 13.220,
             longitude: 80.720,
@@ -649,6 +811,11 @@ export class AutonomousSimulationEngine {
           distance_meters: 0.0,
           distance_km: 0.0,
           probability_score: 96.8,
+          anomaly_score: 96.8,
+          anomaly_breakdown: dawnAnomaly,
+          evidence_tags: dawnAnomaly.evidence_tags,
+          hindcast_distance_meters: 0.0,
+          hindcast_distance_km: 0.0,
           speed_knots: 13.2,
           heading_degrees: 38,
           last_lat: 13.290,
@@ -674,6 +841,11 @@ export class AutonomousSimulationEngine {
           distance_meters: 450,
           distance_km: 0.45,
           probability_score: 94.2,
+          anomaly_score: 94.2,
+          anomaly_breakdown: mapleAnomaly,
+          evidence_tags: mapleAnomaly.evidence_tags,
+          hindcast_distance_meters: 450,
+          hindcast_distance_km: 0.45,
           speed_knots: 11.8,
           heading_degrees: 142,
           last_lat: 13.245,

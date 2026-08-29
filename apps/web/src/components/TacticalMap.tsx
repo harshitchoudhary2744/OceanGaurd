@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, ShieldAlert } from 'lucide-react';
+import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, History, AlertTriangle } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData } from '../types';
-import { calculateSynchronizedOilSpill, generateForecastCone } from '../lib/simulationEngine';
+import { calculateSynchronizedOilSpill, generateForecastCone, generateHindcastCone, generateHindcastTrack } from '../lib/simulationEngine';
 
 interface TacticalMapProps {
   spills: SpillFeatureCollection;
@@ -39,6 +39,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
+  const [showHindcast, setShowHindcast] = useState(true);
   const [showMetoceanOverlay, setShowMetoceanOverlay] = useState(true);
 
   // Primary suspect with maximum spillage probability
@@ -96,6 +97,52 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: "Polygon" as const,
         coordinates: [coneCoords],
       },
+    };
+  }, [currentSpills, metocean, scenario]);
+
+  // -6h Hydrodynamic Hindcast (Back-Tracing) Envelope & Track
+  const hindcastFeatures = useMemo(() => {
+    const activeSpill = currentSpills.features[0];
+    if (!activeSpill) return null;
+
+    const centroid = activeSpill.properties.center || (scenario === 'arabian_sea' ? [72.145, 19.048] : [80.750, 13.250]);
+    const driftDir = metocean?.net_drift_direction_deg || (scenario === 'arabian_sea' ? 69.3 : 48.2);
+    const driftSpeed = metocean?.net_drift_speed_kts || (scenario === 'arabian_sea' ? 1.95 : 1.52);
+
+    const hindcastConeCoords = generateHindcastCone(centroid[0], centroid[1], driftDir, driftSpeed, 6);
+    const trackPoints = generateHindcastTrack(centroid[0], centroid[1], driftDir, driftSpeed, 6, 6);
+
+    const coneFeature = {
+      type: "Feature" as const,
+      properties: { name: "-6h Hindcast Reverse Origin Fan" },
+      geometry: {
+        type: "Polygon" as const,
+        coordinates: [hindcastConeCoords],
+      },
+    };
+
+    const lineFeature = {
+      type: "Feature" as const,
+      properties: { name: "Hindcast Back-Trace Vector" },
+      geometry: {
+        type: "LineString" as const,
+        coordinates: trackPoints.map(p => [p.lon, p.lat]),
+      },
+    };
+
+    const originPoint = trackPoints[trackPoints.length - 1];
+    const originFeature = {
+      type: "Feature" as const,
+      properties: { name: "Estimated Discharge Origin Locus (T-6h)" },
+      geometry: {
+        type: "Point" as const,
+        coordinates: [originPoint.lon, originPoint.lat],
+      },
+    };
+
+    return {
+      type: "FeatureCollection" as const,
+      features: [coneFeature, lineFeature, originFeature],
     };
   }, [currentSpills, metocean, scenario]);
 
@@ -181,6 +228,49 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           'line-color': '#22d3ee',
           'line-width': 1.6,
           'line-dasharray': [3, 3],
+        },
+      });
+
+      // 1b. Hindcast Reverse Back-Trace Layer
+      map.addSource('hindcast-source', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addLayer({
+        id: 'hindcast-fill',
+        type: 'fill',
+        source: 'hindcast-source',
+        filter: ['==', '$type', 'Polygon'],
+        paint: {
+          'fill-color': '#f59e0b',
+          'fill-opacity': 0.12,
+        },
+      });
+
+      map.addLayer({
+        id: 'hindcast-line',
+        type: 'line',
+        source: 'hindcast-source',
+        filter: ['==', '$type', 'LineString'],
+        paint: {
+          'line-color': '#fbbf24',
+          'line-width': 2.0,
+          'line-dasharray': [4, 4],
+        },
+      });
+
+      map.addLayer({
+        id: 'hindcast-origin-point',
+        type: 'circle',
+        source: 'hindcast-source',
+        filter: ['==', '$type', 'Point'],
+        paint: {
+          'circle-radius': 7,
+          'circle-color': '#f59e0b',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+          'circle-opacity': 0.9,
         },
       });
 
@@ -322,6 +412,19 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [forecastConeFeature, showForecast, mapLoaded]);
 
+  // Update -6h Hydrodynamic Hindcast Layer
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const src = mapRef.current.getSource('hindcast-source') as maplibregl.GeoJSONSource;
+    if (!src) return;
+
+    if (showHindcast && hindcastFeatures) {
+      src.setData(hindcastFeatures);
+    } else {
+      src.setData({ type: 'FeatureCollection', features: [] });
+    }
+  }, [hindcastFeatures, showHindcast, mapLoaded]);
+
   // Update Culprit Trajectory Track
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
@@ -373,6 +476,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       const scrubbed = scrubbedVessels?.find((s) => s.mmsi === v.mmsi);
       const isPrimary = primarySuspect && primarySuspect.mmsi === v.mmsi;
       const linkedSpill = v.linked_spill || (isPrimary ? primarySuspect.linked_spill : undefined);
+      const anomalyScore = v.anomaly_score ?? (isPrimary ? (primarySuspect.anomaly_score || primarySuspect.probability_score) : 5.0);
 
       return {
         mmsi: v.mmsi,
@@ -387,6 +491,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         heading: scrubbed ? scrubbed.heading : (v.current_position?.heading_degrees || 52),
         isPrimary,
         probability: isPrimary ? primarySuspect.probability_score : 5.0,
+        anomalyScore,
+        evidenceTags: v.anomaly_breakdown?.evidence_tags || (isPrimary ? primarySuspect.evidence_tags : []),
         linkedSpill,
       };
     });
@@ -445,10 +551,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             popupRef.current = new maplibregl.Popup({ offset: 15, closeButton: false })
               .setLngLat([p.lon, p.lat])
               .setHTML(`
-                <div class="bg-slate-900/95 text-slate-100 p-3 rounded-lg border ${p.isPrimary ? 'border-rose-500/60' : 'border-cyan-500/50'} font-mono text-xs shadow-xl min-w-[200px]">
+                <div class="bg-slate-900/95 text-slate-100 p-3 rounded-lg border ${p.isPrimary ? 'border-rose-500/60' : 'border-cyan-500/50'} font-mono text-xs shadow-xl min-w-[220px]">
                   <div class="font-bold ${p.isPrimary ? 'text-rose-400' : 'text-cyan-400'} text-xs mb-1.5 flex items-center justify-between">
                     <span>${p.name}</span>
-                    ${p.isPrimary ? `<span class="bg-rose-500/20 text-rose-300 text-[10px] px-1.5 py-0.5 rounded border border-rose-500/40">${p.probability}% Match</span>` : ''}
+                    ${p.anomalyScore > 70 ? `<span class="bg-rose-500/20 text-rose-300 text-[10px] px-1.5 py-0.5 rounded border border-rose-500/40">Anomaly: ${p.anomalyScore}%</span>` : ''}
                   </div>
                   <div class="grid grid-cols-2 gap-1 text-[10px] text-slate-300 pt-1 border-t border-slate-700/50">
                     <div>MMSI: <span class="text-white font-bold">${p.mmsi}</span></div>
@@ -458,6 +564,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                     <div>Heading: <span class="text-white">${p.heading}°</span></div>
                     <div>Status: <span class="text-emerald-400">Underway</span></div>
                   </div>
+                  ${p.isPrimary && p.evidenceTags && p.evidenceTags.length > 0 ? `
+                    <div class="mt-1.5 pt-1 border-t border-slate-800 flex flex-wrap gap-1">
+                      ${p.evidenceTags.map(tag => `<span class="text-[8.5px] bg-rose-950/80 text-rose-300 px-1.5 py-0.2 rounded border border-rose-800/60">${tag}</span>`).join('')}
+                    </div>
+                  ` : ''}
                   <div class="text-[9.5px] text-slate-400 mt-1.5 pt-1 border-t border-slate-800">
                     Destination: <span class="text-slate-200">${p.destination || 'N/A'}</span>
                   </div>
@@ -538,12 +649,20 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             </div>
           </div>
 
-          {/* Net Slick Drift Vector */}
-          <div className="p-1.5 bg-slate-900/90 rounded border border-cyan-500/20 text-[10px] font-mono flex items-center justify-between">
-            <span className="text-slate-400">Net Advection:</span>
-            <span className="text-cyan-300 font-bold">
-              {metocean?.net_drift_speed_kts || 1.95} kts @ {metocean?.net_drift_direction_deg || 69.3}°
-            </span>
+          {/* Net Slick Drift Vector & Hindcast Vector */}
+          <div className="flex flex-col gap-1 text-[9.5px] font-mono">
+            <div className="p-1 bg-slate-900/90 rounded border border-cyan-500/20 flex items-center justify-between">
+              <span className="text-slate-400">Net Forward Drift:</span>
+              <span className="text-cyan-300 font-bold">
+                {metocean?.net_drift_speed_kts || 1.95} kts @ {metocean?.net_drift_direction_deg || 69.3}°
+              </span>
+            </div>
+            <div className="p-1 bg-amber-950/40 rounded border border-amber-500/30 flex items-center justify-between text-amber-300">
+              <span className="text-amber-400/80">Reverse Hindcast:</span>
+              <span className="font-bold">
+                {metocean?.net_drift_speed_kts || 1.95} kts @ {((metocean?.net_drift_direction_deg || 69.3) + 180) % 360}°
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -594,6 +713,17 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           <Eye className="w-4 h-4" />
         </button>
         <button
+          onClick={() => setShowHindcast(!showHindcast)}
+          className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-colors ${
+            showHindcast
+              ? 'bg-amber-500/20 border-amber-500/60 text-amber-300'
+              : 'bg-slate-900/90 border-slate-700/60 text-slate-400'
+          }`}
+          title="Toggle -6h Hydrodynamic Hindcast (Back-Trace)"
+        >
+          <History className="w-4 h-4" />
+        </button>
+        <button
           onClick={() => setShowMetoceanOverlay(!showMetoceanOverlay)}
           className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-colors ${
             showMetoceanOverlay
@@ -607,7 +737,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       </div>
 
       {/* Clean Bottom Legend */}
-      <div className="absolute bottom-20 sm:bottom-4 left-4 z-20 tactical-glass rounded-lg px-3 py-1.5 border border-slate-700/40 flex items-center gap-3 text-[10px] font-mono text-slate-300 select-none shadow-lg">
+      <div className="absolute bottom-20 sm:bottom-4 left-4 z-20 tactical-glass rounded-lg px-3 py-1.5 border border-slate-700/40 flex items-center gap-3 text-[10px] font-mono text-slate-300 select-none shadow-lg flex-wrap">
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-rose-600 border border-rose-300"></span>
           <span>Oil Slick (SAR)</span>
@@ -619,6 +749,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500/20 border border-cyan-400 border-dashed"></span>
           <span>+6h Forecast</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-sm bg-amber-500/20 border border-amber-400 border-dashed"></span>
+          <span>-6h Hindcast Origin</span>
         </div>
       </div>
     </div>

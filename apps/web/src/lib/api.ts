@@ -50,7 +50,7 @@ export async function fetchVectorMatches(spillId: string): Promise<VectorMatch[]
 }
 
 import { DEFAULT_METOCEAN } from './mockData';
-import { MetoceanData } from '../types';
+import { MetoceanData, HindcastData, AnomalyBreakdown } from '../types';
 
 export async function fetchMetoceanData(sector: string = 'arabian_sea'): Promise<MetoceanData> {
   try {
@@ -59,6 +59,70 @@ export async function fetchMetoceanData(sector: string = 'arabian_sea'): Promise
     return await res.json();
   } catch (err) {
     return DEFAULT_METOCEAN[sector] || DEFAULT_METOCEAN.arabian_sea;
+  }
+}
+
+export async function fetchHindcastData(
+  spillId: string,
+  lookbackHours: number = 6,
+  sector: string = 'arabian_sea'
+): Promise<HindcastData | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/spills/${spillId}/hindcast?lookback_hours=${lookbackHours}&sector=${sector}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    // Generate fallback hindcast data based on sector
+    const isArabian = sector === 'arabian_sea' || spillId.includes('2024');
+    const centerLon = isArabian ? 72.150 : 80.750;
+    const centerLat = isArabian ? 19.050 : 13.250;
+    const driftDir = isArabian ? 69.3 : 48.2;
+    const driftSpeed = isArabian ? 1.95 : 1.52;
+    const { generateHindcastTrack } = await import('./simulationEngine');
+    const rawTrack = generateHindcastTrack(centerLon, centerLat, driftDir, driftSpeed, lookbackHours);
+
+    const hindcast_track = rawTrack.map(pt => ({
+      time_offset_minutes: pt.timeOffsetMinutes,
+      timestamp: new Date(Date.now() + pt.timeOffsetMinutes * 60000).toISOString(),
+      longitude: pt.lon,
+      latitude: pt.lat,
+      distance_from_detected_km: Number((driftSpeed * 1.852 * (Math.abs(pt.timeOffsetMinutes) / 60)).toFixed(2)),
+      estimated_slick_radius_m: pt.radiusMeters,
+      hindcast_heading_deg: (driftDir + 180) % 360,
+      drift_speed_kts: driftSpeed,
+    }));
+
+    const origin = hindcast_track[hindcast_track.length - 1];
+    return {
+      spill_id: spillId,
+      detection_timestamp: new Date().toISOString(),
+      detection_center: [centerLon, centerLat],
+      lookback_hours: lookbackHours,
+      sector: isArabian ? 'arabian_sea' : 'bay_of_bengal',
+      reverse_drift_heading_deg: (driftDir + 180) % 360,
+      reverse_drift_speed_kts: driftSpeed,
+      reconstructed_origin: {
+        longitude: origin.longitude,
+        latitude: origin.latitude,
+        timestamp: origin.timestamp,
+        distance_from_detected_km: origin.distance_from_detected_km,
+      },
+      hindcast_track,
+    };
+  }
+}
+
+export async function fetchVesselAnomalies(
+  mmsi: number,
+  spillId: string = 'INC-IND-2024-01'
+): Promise<AnomalyBreakdown | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/vessels/${mmsi}/anomalies?spill_id=${spillId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return data.anomaly_breakdown || null;
+  } catch (err) {
+    return null;
   }
 }
 

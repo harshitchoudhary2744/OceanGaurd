@@ -90,63 +90,111 @@ def generate_indian_demo_data():
         }
     ]
 
-    # 2. AIS Telemetry across -6 hours for each vessel
+    # 2. AIS Telemetry across -6 hours for each vessel with realistic anomaly profiles
     telemetry = []
-    for v in vessels:
-        mmsi = v["mmsi"]
-        end_lat = v["current_position"]["latitude"]
-        end_lon = v["current_position"]["longitude"]
-        speed = v["current_position"]["speed_knots"]
-        heading = v["current_position"]["heading_degrees"]
-        
-        # Primary Suspect: MT DESH SHANTI (trajectory intersects spill centroid [72.150, 19.050] at ~22:45 UTC)
-        if v["name"] == "MT DESH SHANTI":
-            waypoints = [
-                (71.850, 18.750),  # T-6h (17:42)
-                (71.910, 18.810),  # T-5h (18:42)
-                (71.970, 18.870),  # T-4h (19:42)
-                (72.030, 18.930),  # T-3h (20:42)
-                (72.090, 18.990),  # T-2h (21:42)
-                (72.150, 19.050),  # T-1h (22:45) - Centroid Intercept!
-                (72.210, 19.100),  # T-30m (23:12)
-                (72.280, 19.160)   # T-0 (23:42)
-            ]
-        elif v["name"] == "MT JAG LOK":
-            waypoints = [
-                (72.600, 18.700),
-                (72.540, 18.810),
-                (72.480, 18.910),
-                (72.420, 19.020)
-            ]
-        elif v["name"] == "MSC KANOKO":
-            waypoints = [
-                (72.200, 18.600),
-                (72.140, 18.820),
-                (72.080, 19.050),
-                (72.020, 19.280)
-            ]
-        else:
-            waypoints = [
-                (end_lon - 0.25, end_lat - 0.25),
-                (end_lon - 0.12, end_lat - 0.12),
-                (end_lon, end_lat)
-            ]
+    
+    # Vessel 1: MT DESH SHANTI (Primary Culprit in Arabian Sea / Mumbai High)
+    # Features: Direct hindcast intercept, sudden speed drop (14.8 -> 5.2 kts), 42-min AIS signal blackout during discharge
+    desh_pts = [
+        {"lon": 71.850, "lat": 18.750, "t_offset_h": 6.0, "speed": 14.8, "heading": 52.0, "status": "Under way using engine"},
+        {"lon": 71.950, "lat": 18.850, "t_offset_h": 4.5, "speed": 14.8, "heading": 52.0, "status": "Under way using engine"},
+        {"lon": 72.030, "lat": 18.930, "t_offset_h": 3.0, "speed": 14.8, "heading": 52.0, "status": "Under way using engine"},
+        {"lon": 72.090, "lat": 18.990, "t_offset_h": 1.5, "speed": 14.5, "heading": 52.0, "status": "Under way using engine"},
+        # Speed Drop & Discharge Point at T-42m (0.7h) -> Transponder Gap Starts
+        {"lon": 72.145, "lat": 19.048, "t_offset_h": 0.7, "speed": 5.2,  "heading": 55.0, "status": "Under way using engine"}, # 42 min gap here!
+        # Transponder Re-activates after discharge at T-0
+        {"lon": 72.240, "lat": 19.120, "t_offset_h": 0.0, "speed": 14.8, "heading": 52.0, "status": "Under way using engine"},
+    ]
+    for p in desh_pts:
+        pt_time = base_time - timedelta(hours=p["t_offset_h"])
+        telemetry.append({
+            "mmsi": 419000123,
+            "timestamp": pt_time.isoformat(),
+            "latitude": p["lat"],
+            "longitude": p["lon"],
+            "speed_knots": p["speed"],
+            "heading_degrees": p["heading"],
+            "nav_status": p["status"]
+        })
 
-        # Distribute waypoints over 6 hours
-        num_pts = len(waypoints)
-        for i, (lon, lat) in enumerate(waypoints):
-            pt_time = base_time - timedelta(hours=6 * (1 - i / (num_pts - 1)))
-            telemetry.append({
-                "mmsi": mmsi,
-                "timestamp": pt_time.isoformat(),
-                "latitude": round(lat, 4),
-                "longitude": round(lon, 4),
-                "speed_knots": speed,
-                "heading_degrees": heading,
-                "nav_status": "Under way using engine"
-            })
+    # Vessel 2: MT JAG LOK (Product Tanker - Inbound JNPT)
+    # Steady voyage, regular reporting, no speed drop
+    jag_pts = [
+        {"lon": 71.950, "lat": 19.055, "t_offset_h": 6.0, "speed": 12.4, "heading": 98.0},
+        {"lon": 72.030, "lat": 19.045, "t_offset_h": 4.5, "speed": 12.4, "heading": 98.0},
+        {"lon": 72.100, "lat": 19.035, "t_offset_h": 3.0, "speed": 12.4, "heading": 98.0},
+        {"lon": 72.185, "lat": 19.025, "t_offset_h": 1.5, "speed": 12.4, "heading": 98.0},
+        {"lon": 72.275, "lat": 19.015, "t_offset_h": 0.0, "speed": 12.4, "heading": 98.0},
+    ]
+    for p in jag_pts:
+        pt_time = base_time - timedelta(hours=p["t_offset_h"])
+        telemetry.append({
+            "mmsi": 419000456,
+            "timestamp": pt_time.isoformat(),
+            "latitude": p["lat"],
+            "longitude": p["lon"],
+            "speed_knots": p["speed"],
+            "heading_degrees": p["heading"],
+            "nav_status": "Under way using engine"
+        })
 
-    # 3. Oil Spill Polygon in Arabian Sea / Mumbai High Sector
+    # Vessel 3: MSC KANOKO (Container Ship - High Speed Transit)
+    msc_pts = [
+        {"lon": 71.800, "lat": 19.070, "t_offset_h": 6.0, "speed": 17.2, "heading": 68.0},
+        {"lon": 71.875, "lat": 19.100, "t_offset_h": 4.5, "speed": 17.2, "heading": 68.0},
+        {"lon": 71.950, "lat": 19.130, "t_offset_h": 3.0, "speed": 17.2, "heading": 68.0},
+        {"lon": 72.030, "lat": 19.165, "t_offset_h": 1.5, "speed": 17.2, "heading": 68.0},
+        {"lon": 72.105, "lat": 19.195, "t_offset_h": 0.0, "speed": 17.2, "heading": 68.0},
+    ]
+    for p in msc_pts:
+        pt_time = base_time - timedelta(hours=p["t_offset_h"])
+        telemetry.append({
+            "mmsi": 353136000,
+            "timestamp": pt_time.isoformat(),
+            "latitude": p["lat"],
+            "longitude": p["lon"],
+            "speed_knots": p["speed"],
+            "heading_degrees": p["heading"],
+            "nav_status": "Under way using engine"
+        })
+
+    # Vessel 4: MT SWARNA SINDHU
+    swarna_pts = [
+        {"lon": 72.020, "lat": 18.950, "t_offset_h": 6.0, "speed": 12.0, "heading": 170.0},
+        {"lon": 72.050, "lat": 18.880, "t_offset_h": 3.0, "speed": 12.0, "heading": 170.0},
+        {"lon": 72.100, "lat": 18.750, "t_offset_h": 0.0, "speed": 12.0, "heading": 170.0},
+    ]
+    for p in swarna_pts:
+        pt_time = base_time - timedelta(hours=p["t_offset_h"])
+        telemetry.append({
+            "mmsi": 419000789,
+            "timestamp": pt_time.isoformat(),
+            "latitude": p["lat"],
+            "longitude": p["lon"],
+            "speed_knots": p["speed"],
+            "heading_degrees": p["heading"],
+            "nav_status": "Under way using engine"
+        })
+
+    # Vessel 5: CHEMBULK GIBRALTAR
+    chem_pts = [
+        {"lon": 71.900, "lat": 18.900, "t_offset_h": 6.0, "speed": 11.5, "heading": 15.0},
+        {"lon": 71.925, "lat": 19.010, "t_offset_h": 3.0, "speed": 11.5, "heading": 15.0},
+        {"lon": 71.950, "lat": 19.120, "t_offset_h": 0.0, "speed": 11.5, "heading": 15.0},
+    ]
+    for p in chem_pts:
+        pt_time = base_time - timedelta(hours=p["t_offset_h"])
+        telemetry.append({
+            "mmsi": 563032000,
+            "timestamp": pt_time.isoformat(),
+            "latitude": p["lat"],
+            "longitude": p["lon"],
+            "speed_knots": p["speed"],
+            "heading_degrees": p["heading"],
+            "nav_status": "Under way using engine"
+        })
+
+    # 3. Oil Spill Polygons in Indian Waters
     spills = [
         {
             "id": "INC-IND-2024-01",
@@ -172,16 +220,16 @@ def generate_indian_demo_data():
             ]
         },
         {
-            "id": "INC-IND-2024-02",
-            "detection_timestamp": (base_time - timedelta(hours=3)).isoformat(),
-            "area_sq_km": 2.80,
-            "perimeter_km": 8.4,
+            "id": "INC-IND-2017-02",
+            "detection_timestamp": "2017-01-27T22:15:00.000Z",
+            "area_sq_km": 3.42,
+            "perimeter_km": 11.2,
             "confidence_score": 0.962,
-            "source_scene": "S1B_IW_GRDH_1SDV_BAY_OF_BENGAL_02",
+            "source_scene": "S1A_IW_GRDH_1SDV_20170128T124530_015024",
             "status": "ACTIVE",
             "center": [80.750, 13.250],
-            "estimated_discharge_liters": 22000,
-            "slick_type": "Marine Diesel / Bunker Fuel",
+            "estimated_discharge_liters": 251400,
+            "slick_type": "Heavy Bunker Fuel Oil (HFO-380)",
             "polygon_coordinates": [
                 [80.730, 13.235],
                 [80.745, 13.260],
@@ -212,6 +260,9 @@ def generate_indian_demo_data():
     with open(out_path, "w") as f:
         json.dump(fixture_data, f, indent=2)
     print(f"Generated India demo fixture data at: {out_path}")
+
+def seed_database_and_fixtures():
+    generate_indian_demo_data()
 
 if __name__ == "__main__":
     generate_indian_demo_data()

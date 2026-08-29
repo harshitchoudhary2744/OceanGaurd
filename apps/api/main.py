@@ -532,6 +532,109 @@ def get_spill_drift_trajectory(
     }
 
 
+@app.get("/api/v1/spills/{spill_id}/hindcast")
+def get_spill_hindcast_backtrace(
+    spill_id: str,
+    lookback_hours: float = Query(6.0, description="Lookback window in hours (1.0 to 12.0)"),
+    step_minutes: int = Query(15, description="Step size in minutes")
+):
+    """
+    Hydrodynamic Drift Back-Tracing (Hindcasting):
+    Inverts 10m windage vectors and surface ocean currents to calculate reverse trajectory
+    from satellite detection timestamp T0 back to original discharge point and time.
+    """
+    target_spill = None
+    for s in _FIXTURE_DATA.get("spills", []):
+        if s["id"].lower() == spill_id.lower():
+            target_spill = s
+            break
+    if not target_spill and _FIXTURE_DATA.get("spills"):
+        target_spill = _FIXTURE_DATA["spills"][0]
+
+    if not target_spill:
+        raise HTTPException(status_code=404, detail="Spill incident not found")
+
+    sector = "arabian_sea" if "01" in spill_id else "bay_of_bengal"
+    metocean = metocean_engine.get_metocean_conditions(sector)
+    
+    hindcast_points = metocean_engine.calculate_hindcast_track(
+        center=target_spill["center"],
+        detection_timestamp_iso=target_spill["detection_timestamp"],
+        lookback_hours=lookback_hours,
+        step_minutes=step_minutes,
+        wind_speed_kts=metocean["wind_speed_kts"],
+        wind_direction_deg=metocean["wind_direction_deg"],
+        current_speed_kts=metocean["current_speed_kts"],
+        current_direction_deg=metocean["current_direction_deg"]
+    )
+
+    # Reconstructed origin coordinates (earliest lookback point)
+    origin_point = hindcast_points[-1] if hindcast_points else None
+
+    return {
+        "spill_id": target_spill["id"],
+        "detection_timestamp": target_spill["detection_timestamp"],
+        "detection_center": target_spill["center"],
+        "lookback_hours": lookback_hours,
+        "sector": sector,
+        "metocean": metocean,
+        "reverse_drift_vector": metocean["hindcast_vector"],
+        "reverse_drift_heading_deg": metocean["hindcast_direction_deg"],
+        "reverse_drift_speed_kts": metocean["net_drift_speed_kts"],
+        "reconstructed_origin": {
+            "longitude": origin_point["longitude"] if origin_point else target_spill["center"][0],
+            "latitude": origin_point["latitude"] if origin_point else target_spill["center"][1],
+            "timestamp": origin_point["timestamp"] if origin_point else target_spill["detection_timestamp"],
+            "distance_from_detected_km": origin_point["distance_from_detected_km"] if origin_point else 0.0
+        },
+        "hindcast_track": hindcast_points
+    }
+
+
+@app.get("/api/v1/vessels/{mmsi}/anomalies")
+def get_vessel_anomaly_profile(mmsi: int, spill_id: Optional[str] = "INC-IND-2024-01"):
+    """
+    Returns granular anomaly profile (speed drops, AIS gaps, loitering, hindcast CPA) for a target vessel.
+    """
+    vessels = _FIXTURE_DATA.get("vessels", [])
+    telemetry = _FIXTURE_DATA.get("telemetry", [])
+
+    target_vessel = next((v for v in vessels if v["mmsi"] == mmsi), None)
+    if not target_vessel:
+        raise HTTPException(status_code=404, detail="Vessel not found")
+
+    points = [t for t in telemetry if t["mmsi"] == mmsi]
+    points = sorted(points, key=lambda x: x.get("timestamp", ""))
+
+    target_spill = next((s for s in _FIXTURE_DATA.get("spills", []) if s["id"].lower() == (spill_id or "").lower()), None)
+    if not target_spill and _FIXTURE_DATA.get("spills"):
+        target_spill = _FIXTURE_DATA["spills"][0]
+
+    hindcast_track = []
+    if target_spill:
+        hindcast_track = metocean_engine.calculate_hindcast_track(
+            center=target_spill["center"],
+            detection_timestamp_iso=target_spill["detection_timestamp"],
+            lookback_hours=6.0
+        )
+
+    from apps.api.services.correlation import anomaly_detector
+    breakdown = anomaly_detector.compute_anomaly_breakdown(
+        vessel=target_vessel,
+        points=points,
+        hindcast_track=hindcast_track
+    )
+
+    return {
+        "mmsi": mmsi,
+        "vessel_name": target_vessel["name"],
+        "flag": target_vessel["flag"],
+        "vessel_type": target_vessel["vessel_type"],
+        "telemetry_points_count": len(points),
+        "anomaly_profile": breakdown
+    }
+
+
 
 # -------------------------------------------------------------
 # WEBSOCKET REAL-TIME TELEMETRY BROADCAST

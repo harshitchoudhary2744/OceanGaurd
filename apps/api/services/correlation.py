@@ -1,17 +1,24 @@
 """
-Spatial Vessel Correlation Engine for OceanGuard (SIH26143)
+Spatial Vessel Correlation & Maritime Anomaly Engine for OceanGuard (SIH26143)
 Correlates detected oil slicks with AIS vessel trajectories using PostGIS and GeoAlchemy2.
-Provides graceful fallback with Shapely spatial mathematics.
+Incorporates:
+- Hydrodynamic Drift Hindcasting (reverse wind vectors + ocean currents back-tracing)
+- Multi-factor Suspect Vessel Anomaly Scoring (loitering, sudden speed drops, AIS signal gaps, CPA)
 """
 import math
 import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, text
 from geoalchemy2.functions import ST_DWithin, ST_Distance, ST_GeomFromText, ST_Centroid
 
-from apps.api.db.models import Vessel, AISTelemetry, OilSpill, Correlation
+try:
+    from apps.api.db.models import Vessel, AISTelemetry, OilSpill, Correlation
+    from apps.api.ml.segmentation import metocean_engine
+except ImportError:
+    from db.models import Vessel, AISTelemetry, OilSpill, Correlation
+    from ml.segmentation import metocean_engine
 
 logger = logging.getLogger("oceanguard.correlation")
 
@@ -41,8 +48,342 @@ def point_to_segment_distance_meters(px: float, py: float, x1: float, y1: float,
     return haversine_distance_meters(px, py, proj_x, proj_y)
 
 
+def parse_iso_timestamp(ts_str: Any) -> Optional[datetime]:
+    """Robust ISO timestamp parser"""
+    if isinstance(ts_str, datetime):
+        return ts_str
+    if not ts_str or not isinstance(ts_str, str):
+        return None
+    try:
+        clean = ts_str.replace("Z", "+00:00")
+        return datetime.fromisoformat(clean)
+    except Exception:
+        return None
+
+
+class MaritimeAnomalyDetector:
+    """
+    Multi-Factor Maritime Vessel Anomaly Detector
+    Evaluates:
+    1. Sudden Speed Drops (bilge/sludge/cargo washing discharge operational signature)
+    2. AIS Signal Gaps / Transponder Blackouts ("Dark Ship" evasion)
+    3. Loitering & Erratic Heading Maneuvers
+    4. Hydrodynamic Hindcast Origin Alignment & CPA Distance
+    """
+
+    def __init__(
+        self,
+        speed_drop_threshold_kts: float = 4.0,
+        ais_gap_threshold_minutes: float = 20.0,
+        loiter_speed_threshold_kts: float = 3.5
+    ):
+        self.speed_drop_threshold_kts = speed_drop_threshold_kts
+        self.ais_gap_threshold_minutes = ais_gap_threshold_minutes
+        self.loiter_speed_threshold_kts = loiter_speed_threshold_kts
+
+    def detect_speed_drops(self, points: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Detect sudden decelerations along trajectory"""
+        if len(points) < 2:
+            return {
+                "detected": False,
+                "max_drop_kts": 0.0,
+                "score": 0.0,
+                "details": "Insufficient telemetry points for speed profile analysis"
+            }
+
+        max_drop = 0.0
+        drop_from_spd = 0.0
+        drop_to_spd = 0.0
+        drop_timestamp = None
+
+        for i in range(len(points) - 1):
+            p1 = points[i]
+            p2 = points[i + 1]
+            s1 = float(p1.get("speed_knots", 14.0))
+            s2 = float(p2.get("speed_knots", 14.0))
+            drop = s1 - s2
+            if drop > max_drop:
+                max_drop = drop
+                drop_from_spd = s1
+                drop_to_spd = s2
+                drop_timestamp = p2.get("timestamp")
+
+        # Check multi-step drop as well (e.g. over 2-3 points)
+        if len(points) >= 3:
+            for i in range(len(points) - 2):
+                s_start = float(points[i].get("speed_knots", 14.0))
+                s_mid = float(points[i+1].get("speed_knots", 14.0))
+                s_end = float(points[i+2].get("speed_knots", 14.0))
+                drop_span = s_start - min(s_mid, s_end)
+                if drop_span > max_drop:
+                    max_drop = drop_span
+                    drop_from_spd = s_start
+                    drop_to_spd = min(s_mid, s_end)
+                    drop_timestamp = points[i+1].get("timestamp")
+
+        detected = max_drop >= self.speed_drop_threshold_kts
+        # Score scaled 0 to 100
+        score = min(100.0, max(0.0, (max_drop / 12.0) * 100.0)) if detected else max(0.0, (max_drop / 6.0) * 25.0)
+
+        details = (
+            f"Sudden deceleration of -{round(max_drop, 1)} kts ({round(drop_from_spd, 1)} -> {round(drop_to_spd, 1)} kts)"
+            if detected else "Normal voyage cruising speed maintained"
+        )
+
+        return {
+            "detected": detected,
+            "max_drop_kts": round(max_drop, 1),
+            "drop_from_kts": round(drop_from_spd, 1),
+            "drop_to_kts": round(drop_to_spd, 1),
+            "drop_timestamp": drop_timestamp,
+            "score": round(score, 1),
+            "details": details
+        }
+
+    def detect_ais_gaps(self, points: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Detect transmission blackouts exceeding threshold"""
+        if len(points) < 2:
+            return {
+                "detected": False,
+                "max_gap_minutes": 0.0,
+                "gap_count": 0,
+                "score": 0.0,
+                "details": "Insufficient telemetry points for AIS gap detection"
+            }
+
+        max_gap_mins = 0.0
+        gap_count = 0
+        gap_start = None
+        gap_end = None
+
+        for i in range(len(points) - 1):
+            t1 = parse_iso_timestamp(points[i].get("timestamp"))
+            t2 = parse_iso_timestamp(points[i + 1].get("timestamp"))
+            if t1 and t2:
+                diff_mins = (t2 - t1).total_seconds() / 60.0
+                if diff_mins >= self.ais_gap_threshold_minutes:
+                    gap_count += 1
+                    if diff_mins > max_gap_mins:
+                        max_gap_mins = diff_mins
+                        gap_start = points[i].get("timestamp")
+                        gap_end = points[i + 1].get("timestamp")
+
+        detected = max_gap_mins >= self.ais_gap_threshold_minutes
+        score = min(100.0, max(0.0, (max_gap_mins / 60.0) * 100.0)) if detected else 0.0
+
+        details = (
+            f"AIS signal blackout of {round(max_gap_mins, 1)} min detected during transit"
+            if detected else "Continuous nominal AIS telemetry stream"
+        )
+
+        return {
+            "detected": detected,
+            "max_gap_minutes": round(max_gap_mins, 1),
+            "gap_count": gap_count,
+            "gap_start": gap_start,
+            "gap_end": gap_end,
+            "score": round(score, 1),
+            "details": details
+        }
+
+    def detect_loitering(self, points: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Detect loitering or erratic heading changes in open waters"""
+        if len(points) < 2:
+            return {
+                "detected": False,
+                "loitering_score": 0.0,
+                "avg_speed_kts": 14.0,
+                "details": "Nominal track"
+            }
+
+        speeds = [float(p.get("speed_knots", 14.0)) for p in points]
+        avg_speed = sum(speeds) / len(speeds)
+        min_speed = min(speeds)
+
+        total_heading_turn = 0.0
+        for i in range(len(points) - 1):
+            h1 = float(points[i].get("heading_degrees", 0.0))
+            h2 = float(points[i + 1].get("heading_degrees", 0.0))
+            diff = abs(h2 - h1)
+            if diff > 180:
+                diff = 360 - diff
+            total_heading_turn += diff
+
+        # If vessel moved at low speed or did large heading deviations
+        is_slow = min_speed <= self.loiter_speed_threshold_kts or avg_speed <= 6.0
+        is_erratic = total_heading_turn >= 90.0
+
+        loitering_score = 0.0
+        if is_slow and is_erratic:
+            loitering_score = 88.0
+        elif is_slow:
+            loitering_score = 65.0
+        elif is_erratic:
+            loitering_score = 45.0
+        else:
+            loitering_score = 5.0
+
+        detected = loitering_score >= 50.0
+        details = (
+            f"Vessel showed slow-speed maneuvering ({round(min_speed, 1)} kts) with {round(total_heading_turn, 0)}° turn"
+            if detected else "Direct steady course underway"
+        )
+
+        return {
+            "detected": detected,
+            "score": round(loitering_score, 1),
+            "avg_speed_kts": round(avg_speed, 1),
+            "min_speed_kts": round(min_speed, 1),
+            "total_turn_deg": round(total_heading_turn, 1),
+            "details": details
+        }
+
+    def compute_hindcast_cpa(
+        self,
+        points: List[Dict[str, Any]],
+        hindcast_track: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Calculates the minimum Closest Point of Approach (CPA) between vessel trajectory
+        and the hydrodynamic back-traced spill positions.
+        """
+        if not points or not hindcast_track:
+            return {
+                "min_cpa_meters": 50000.0,
+                "min_cpa_km": 50.0,
+                "cpa_timestamp": None,
+                "score": 0.0,
+                "details": "No hindcast correlation data available"
+            }
+
+        min_cpa = float("inf")
+        cpa_point = None
+        cpa_hindcast_pt = None
+
+        # Temporal and spatial matching
+        for p in points:
+            for h in hindcast_track:
+                d = haversine_distance_meters(
+                    p["longitude"], p["latitude"],
+                    h["longitude"], h["latitude"]
+                )
+                if d < min_cpa:
+                    min_cpa = d
+                    cpa_point = p
+                    cpa_hindcast_pt = h
+
+        # Proximity score based on hindcast CPA
+        score = 100.0 * math.exp(-min_cpa / 2800.0)
+        if min_cpa < 300:
+            score = max(score, 98.2)
+
+        details = (
+            f"Direct spatial intercept with hindcast discharge locus ({round(min_cpa / 1000.0, 2)} km CPA)"
+            if min_cpa < 2000 else f"Closest distance to hindcast path: {round(min_cpa / 1000.0, 2)} km"
+        )
+
+        return {
+            "min_cpa_meters": round(min_cpa, 1),
+            "min_cpa_km": round(min_cpa / 1000.0, 2),
+            "cpa_timestamp": cpa_point.get("timestamp") if cpa_point else None,
+            "cpa_lon": cpa_point.get("longitude") if cpa_point else None,
+            "cpa_lat": cpa_point.get("latitude") if cpa_point else None,
+            "score": round(score, 1),
+            "details": details
+        }
+
+    def compute_anomaly_breakdown(
+        self,
+        vessel: Dict[str, Any],
+        points: List[Dict[str, Any]],
+        hindcast_track: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
+        """
+        Fuses all behavioral and hydrodynamic features into a composite Anomaly Matrix.
+        """
+        speed_res = self.detect_speed_drops(points)
+        gap_res = self.detect_ais_gaps(points)
+        loiter_res = self.detect_loitering(points)
+        cpa_res = self.compute_hindcast_cpa(points, hindcast_track or [])
+
+        # Weight distribution
+        w_cpa = 0.40
+        w_speed = 0.25
+        w_gap = 0.20
+        w_loiter = 0.15
+
+        base_composite = (
+            w_cpa * cpa_res["score"] +
+            w_speed * speed_res["score"] +
+            w_gap * gap_res["score"] +
+            w_loiter * loiter_res["score"]
+        )
+
+        vtype = vessel.get("vessel_type", "")
+        # Vessel risk multiplier
+        if "Tanker" in vtype or "VLCC" in vtype or "Crude" in vtype:
+            cargo_mult = 1.18
+        elif "Chemical" in vtype or "Gas" in vtype:
+            cargo_mult = 1.10
+        elif "Coast Guard" in vtype or "Patrol" in vtype:
+            cargo_mult = 0.12 # Official response vessels have low anomaly culpability
+        else:
+            cargo_mult = 0.95
+
+        final_score = min(99.4, max(4.0, base_composite * cargo_mult))
+        if cpa_res["min_cpa_meters"] < 400 and (speed_res["detected"] or gap_res["detected"]):
+            final_score = max(final_score, 96.5)
+
+        # Categorization
+        if final_score >= 80.0:
+            risk_level = "CRITICAL"
+        elif final_score >= 60.0:
+            risk_level = "HIGH"
+        elif final_score >= 35.0:
+            risk_level = "ELEVATED"
+        else:
+            risk_level = "LOW"
+
+        # Evidence Tags
+        evidence_tags = []
+        if cpa_res["min_cpa_meters"] < 1500:
+            evidence_tags.append(f"Hindcast Origin Intercept ({cpa_res['min_cpa_km']} km CPA)")
+        if speed_res["detected"]:
+            evidence_tags.append(f"Sudden Speed Drop (-{speed_res['max_drop_kts']} kts)")
+        if gap_res["detected"]:
+            evidence_tags.append(f"AIS Signal Blackout ({gap_res['max_gap_minutes']} min)")
+        if loiter_res["detected"]:
+            evidence_tags.append(f"Loitering / Erratic Heading ({loiter_res['min_speed_kts']} kts)")
+        if "Tanker" in vtype:
+            evidence_tags.append("High-Risk Cargo (Petroleum/HFO-380)")
+
+        if not evidence_tags:
+            evidence_tags.append("Nominal Commercial Passage")
+
+        return {
+            "composite_score": round(final_score, 1),
+            "risk_level": risk_level,
+            "speed_drop_score": speed_res["score"],
+            "speed_drop_delta_kts": speed_res["max_drop_kts"],
+            "speed_drop_details": speed_res["details"],
+            "ais_gap_score": gap_res["score"],
+            "max_ais_gap_minutes": gap_res["max_gap_minutes"],
+            "ais_gap_details": gap_res["details"],
+            "loitering_score": loiter_res["score"],
+            "loitering_details": loiter_res["details"],
+            "hindcast_cpa_score": cpa_res["score"],
+            "hindcast_cpa_distance_m": cpa_res["min_cpa_meters"],
+            "hindcast_cpa_distance_km": cpa_res["min_cpa_km"],
+            "hindcast_details": cpa_res["details"],
+            "evidence_tags": evidence_tags
+        }
+
+
+anomaly_detector = MaritimeAnomalyDetector()
+
+
 class VesselCorrelationEngine:
-    def __init__(self, search_radius_meters: float = 15000.0, time_window_hours: float = 2.0):
+    def __init__(self, search_radius_meters: float = 15000.0, time_window_hours: float = 6.0):
         self.search_radius_meters = search_radius_meters
         self.time_window_hours = time_window_hours
 
@@ -58,7 +399,6 @@ class VesselCorrelationEngine:
             time_start = spill.detection_timestamp - timedelta(hours=self.time_window_hours)
             time_end = spill.detection_timestamp + timedelta(hours=self.time_window_hours)
 
-            # Query vessels that have AIS points within 15 km of spill polygon within time window
             query = (
                 db.query(
                     Vessel.mmsi,
@@ -90,13 +430,22 @@ class VesselCorrelationEngine:
             if not results:
                 return []
 
-            # Group by vessel and rank
-            vessel_data: Dict[int, Dict[str, Any]] = {}
+            # Group by vessel
+            vessel_points: Dict[int, List[Dict[str, Any]]] = {}
+            vessel_meta: Dict[int, Dict[str, Any]] = {}
             for r in results:
                 mmsi = r.mmsi
-                dist = float(r.dist_meters)
-                if mmsi not in vessel_data or dist < vessel_data[mmsi]["min_distance"]:
-                    vessel_data[mmsi] = {
+                pt = {
+                    "longitude": float(r.lon),
+                    "latitude": float(r.lat),
+                    "speed_knots": float(r.speed_knots or 14.0),
+                    "heading_degrees": float(r.heading_degrees or 0.0),
+                    "timestamp": r.timestamp.isoformat() if r.timestamp else None,
+                    "dist_meters": float(r.dist_meters)
+                }
+                vessel_points.setdefault(mmsi, []).append(pt)
+                if mmsi not in vessel_meta:
+                    vessel_meta[mmsi] = {
                         "mmsi": mmsi,
                         "name": r.name,
                         "flag": r.flag,
@@ -104,25 +453,40 @@ class VesselCorrelationEngine:
                         "length_meters": r.length_meters,
                         "call_sign": r.call_sign,
                         "destination": r.destination,
-                        "min_distance": dist,
-                        "speed_knots": r.speed_knots,
-                        "heading_degrees": r.heading_degrees,
-                        "last_lat": r.lat,
-                        "last_lon": r.lon,
-                        "timestamp": r.timestamp.isoformat() if r.timestamp else None,
                     }
 
+            # Generate hindcast track for spill
+            center_x = float(db.scalar(func.ST_X(func.ST_Centroid(spill.polygon_geom))))
+            center_y = float(db.scalar(func.ST_Y(func.ST_Centroid(spill.polygon_geom))))
+            hindcast_track = metocean_engine.calculate_hindcast_track(
+                center=[center_x, center_y],
+                detection_timestamp_iso=spill.detection_timestamp.isoformat(),
+                lookback_hours=6.0
+            )
+
             ranked = []
-            for v in vessel_data.values():
-                dist = v["min_distance"]
-                prob = max(5.0, 100.0 * math.exp(-dist / 3200.0))
-                if "Tanker" in v["vessel_type"]:
-                    prob = min(99.4, prob * 1.15)
-                if dist < 400:
-                    prob = max(prob, 94.8)
-                v["probability_score"] = round(prob, 1)
-                v["distance_meters"] = round(dist, 1)
-                ranked.append(v)
+            for mmsi, pts in vessel_points.items():
+                pts_sorted = sorted(pts, key=lambda x: x["timestamp"] or "")
+                v = vessel_meta[mmsi]
+                anomaly = anomaly_detector.compute_anomaly_breakdown(v, pts_sorted, hindcast_track)
+                min_dist = min(p["dist_meters"] for p in pts)
+
+                ranked.append({
+                    **v,
+                    "min_distance": round(min_dist, 1),
+                    "distance_meters": round(min_dist, 1),
+                    "distance_km": round(min_dist / 1000.0, 2),
+                    "probability_score": anomaly["composite_score"],
+                    "anomaly_score": anomaly["composite_score"],
+                    "anomaly_breakdown": anomaly,
+                    "evidence_tags": anomaly["evidence_tags"],
+                    "speed_knots": pts_sorted[-1]["speed_knots"],
+                    "heading_degrees": pts_sorted[-1]["heading_degrees"],
+                    "last_lat": pts_sorted[-1]["latitude"],
+                    "last_lon": pts_sorted[-1]["longitude"],
+                    "timestamp": pts_sorted[-1]["timestamp"],
+                    "trajectory": [[p["longitude"], p["latitude"], p["timestamp"]] for p in pts_sorted]
+                })
 
             ranked.sort(key=lambda x: x["probability_score"], reverse=True)
             return ranked
@@ -136,12 +500,20 @@ class VesselCorrelationEngine:
         spill_center: List[float],
         spill_timestamp: str,
         vessels_list: List[Dict[str, Any]],
-        telemetry_records: List[Dict[str, Any]]
+        telemetry_records: List[Dict[str, Any]],
+        sector: str = "arabian_sea"
     ) -> List[Dict[str, Any]]:
         """
-        Standalone spatial & trajectory correlation fallback using pure geometry calculations.
+        Standalone spatial, hydrodynamic hindcasting & trajectory correlation engine.
         """
         spill_lon, spill_lat = spill_center
+        # Compute reverse drift hindcast path
+        hindcast_track = metocean_engine.calculate_hindcast_track(
+            center=[spill_lon, spill_lat],
+            detection_timestamp_iso=spill_timestamp,
+            lookback_hours=6.0
+        )
+
         ranked_suspects = []
 
         for vessel in vessels_list:
@@ -151,7 +523,7 @@ class VesselCorrelationEngine:
                 continue
 
             # Sort points by timestamp
-            points = sorted(points, key=lambda x: x["timestamp"])
+            points = sorted(points, key=lambda x: x.get("timestamp", ""))
 
             min_dist = float("inf")
             closest_point = points[0]
@@ -176,15 +548,12 @@ class VesselCorrelationEngine:
                     min_dist = d
                     closest_point = pt
 
-            # Scoring algorithm
-            dist_score = 100.0 * math.exp(-min_dist / 3500.0)
-            vtype_weight = 1.2 if "Tanker" in vessel.get("vessel_type", "") else 0.95
-            speed = closest_point.get("speed_knots", 12.0)
-            speed_factor = 1.1 if (8.0 <= speed <= 18.0) else 0.9
-
-            final_prob = min(98.4, max(4.2, dist_score * vtype_weight * speed_factor))
-            if min_dist < 400:
-                final_prob = max(final_prob, 94.8)
+            # Compute comprehensive multi-factor anomaly breakdown
+            anomaly = anomaly_detector.compute_anomaly_breakdown(
+                vessel=vessel,
+                points=points,
+                hindcast_track=hindcast_track
+            )
 
             ranked_suspects.append({
                 "mmsi": mmsi,
@@ -196,12 +565,15 @@ class VesselCorrelationEngine:
                 "destination": vessel.get("destination", "PORT SUTERA"),
                 "distance_meters": round(min_dist, 1),
                 "distance_km": round(min_dist / 1000.0, 2),
-                "probability_score": round(final_prob, 1),
+                "probability_score": anomaly["composite_score"],
+                "anomaly_score": anomaly["composite_score"],
+                "anomaly_breakdown": anomaly,
+                "evidence_tags": anomaly["evidence_tags"],
                 "speed_knots": closest_point.get("speed_knots", 14.2),
                 "heading_degrees": closest_point.get("heading_degrees", 128.0),
                 "last_lat": closest_point["latitude"],
                 "last_lon": closest_point["longitude"],
-                "trajectory": [[p["longitude"], p["latitude"], p["timestamp"]] for p in points]
+                "trajectory": [[p["longitude"], p["latitude"], p.get("timestamp", "")] for p in points]
             })
 
         ranked_suspects.sort(key=lambda x: x["probability_score"], reverse=True)

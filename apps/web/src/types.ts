@@ -36,6 +36,54 @@ export interface LinkedSpillInfo {
   distance_km: number;
 }
 
+export interface AnomalyBreakdown {
+  composite_score: number;
+  risk_level: 'CRITICAL' | 'HIGH' | 'ELEVATED' | 'LOW';
+  speed_drop_score: number;
+  speed_drop_delta_kts: number;
+  speed_drop_details?: string;
+  ais_gap_score: number;
+  max_ais_gap_minutes: number;
+  ais_gap_details?: string;
+  loitering_score: number;
+  loitering_details?: string;
+  hindcast_cpa_score: number;
+  hindcast_cpa_distance_m: number;
+  hindcast_cpa_distance_km?: number;
+  hindcast_details?: string;
+  evidence_tags: string[];
+}
+
+export interface HindcastPoint {
+  time_offset_minutes: number;
+  timestamp: string;
+  longitude: number;
+  latitude: number;
+  distance_from_detected_km: number;
+  estimated_slick_radius_m: number;
+  hindcast_heading_deg: number;
+  drift_speed_kts: number;
+}
+
+export interface HindcastData {
+  spill_id: string;
+  detection_timestamp: string;
+  detection_center: [number, number];
+  lookback_hours: number;
+  sector: string;
+  metocean?: MetoceanData;
+  reverse_drift_vector?: [number, number];
+  reverse_drift_heading_deg?: number;
+  reverse_drift_speed_kts?: number;
+  reconstructed_origin: {
+    longitude: number;
+    latitude: number;
+    timestamp: string;
+    distance_from_detected_km: number;
+  };
+  hindcast_track: HindcastPoint[];
+}
+
 export interface Vessel {
   mmsi: number;
   imo_number?: number;
@@ -49,6 +97,8 @@ export interface Vessel {
   nav_status?: string;
   cargo_type?: string;
   linked_spill?: LinkedSpillInfo;
+  anomaly_score?: number;
+  anomaly_breakdown?: AnomalyBreakdown;
   current_position?: {
     latitude: number;
     longitude: number;
@@ -72,6 +122,11 @@ export interface SuspectVessel {
   distance_meters: number;
   distance_km?: number;
   probability_score: number;
+  anomaly_score?: number;
+  anomaly_breakdown?: AnomalyBreakdown;
+  evidence_tags?: string[];
+  hindcast_distance_meters?: number;
+  hindcast_distance_km?: number;
   speed_knots: number;
   heading_degrees: number;
   last_lat: number;
@@ -120,6 +175,8 @@ export interface MetoceanData {
   weathering_emulsification_pct: number;
   net_drift_speed_kts: number;
   net_drift_direction_deg: number;
+  hindcast_direction_deg?: number;
+  hindcast_vector?: [number, number];
   wind_cardinal: string;
   current_cardinal: string;
   sar_backscatter_quality: string;
