@@ -114,8 +114,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
         {/* 3. Primary Suspect Spotlight Banner */}
         {primarySuspect && (() => {
-          const isEnnore = spill?.id?.includes('02') || primarySuspect?.name?.includes('DAWN') || primarySuspect?.name?.includes('MAPLE');
-          const interceptDate = isEnnore ? '28 Jan 2017 (Verified Collision)' : 'Live Surveillance Cycle';
+          const isEnnore = spill?.id?.includes('02') || primarySuspect?.name?.includes('DAWN') || primarySuspect?.name?.includes('MAPLE') || spill?.id?.includes('2017');
+          const interceptDate = isEnnore ? '28 Jan 2017 (Verified Collision)' : '14 Aug 2024 (Offshore Radar Pass)';
           const interceptTime = isEnnore ? '03:45:00 IST (22:15 UTC)' : '05:29:40 IST (T-42m)';
           const interceptCoords = isEnnore ? "13° 14.2' N, 80° 21.8' E" : "19° 02.9' N, 72° 08.7' E";
           const verificationAuthority = isEnnore ? 'DG Shipping & INCOIS Validated' : 'Copernicus Sentinel-1 SAR & AIS Track';
@@ -239,8 +239,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
             {/* Ground Truth & Kinematic Intercept Details */}
             {(() => {
-              const isEnnore = spill?.id?.includes('02') || primarySuspect?.name?.includes('DAWN') || primarySuspect?.name?.includes('MAPLE');
-              const interceptDate = isEnnore ? '28 Jan 2017' : 'Live Surveillance Cycle';
+              const isEnnore = spill?.id?.includes('02') || primarySuspect?.name?.includes('DAWN') || primarySuspect?.name?.includes('MAPLE') || spill?.id?.includes('2017');
+              const interceptDate = isEnnore ? '28 Jan 2017' : '14 Aug 2024';
               const interceptTime = isEnnore ? '03:45:00 IST (22:15 UTC)' : '05:29:40 IST (T-42m)';
               const interceptCoords = isEnnore ? "13° 14.2' N, 80° 21.8' E" : "19° 02.9' N, 72° 08.7' E";
               const officialSource = isEnnore

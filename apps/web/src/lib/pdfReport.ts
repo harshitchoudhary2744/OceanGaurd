@@ -135,7 +135,7 @@ export function generateClientSidePdfDossier(
   y += 5.5;
 
   const interceptTimeStr = isMumbai
-    ? `Today • 05:29:40 IST (T-42m Live Transit)`
+    ? `14 Aug 2024 • 05:29:40 IST (T-42m Radar Intercept)`
     : `28 Jan 2017 • 03:45:00 IST (22:15 UTC Collision)`;
   doc.text(`• Intercept Time: ${interceptTimeStr}`, col1, y);
   doc.text(`• Transit Speed & Heading: ${primarySuspect.speed_knots} kts at ${primarySuspect.heading_degrees}°`, col2, y);

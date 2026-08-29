@@ -80,7 +80,7 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
             <div className="p-2 bg-[#0a0e18] rounded-lg border border-[#ff3b30]/40 flex items-center justify-between">
               <span className="text-[#ffb4ab] font-bold">🎯 EXACT INTERCEPT TIMESTAMP:</span>
               <span className="text-white font-bold bg-[#93000a]/50 px-2 py-0.5 rounded border border-[#ffb4ab]/40">
-                {spillId.includes('02') ? '28 JAN 2017 • 03:45:00 IST (22:15 UTC)' : 'LIVE • 05:29:40 IST (T-42m)'}
+                {spillId.includes('02') || spillId.includes('2017') ? '28 JAN 2017 • 03:45:00 IST (22:15 UTC)' : '14 AUG 2024 • 05:29:40 IST (T-42m)'}
               </span>
             </div>
 

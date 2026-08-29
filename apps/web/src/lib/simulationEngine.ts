@@ -338,9 +338,9 @@ export class AutonomousSimulationEngine {
       const liveSpill = calculateSynchronizedOilSpill(0, 'arabian_sea', metocean);
 
       const linkedSpillMHO: LinkedSpillInfo = {
-        id: `INC-IND-${currentYear}-01`,
-        detection_date: formattedDate,
-        detection_time_utc: `${detectionTimeIst} IST`,
+        id: "INC-IND-2024-01",
+        detection_date: "14 Aug 2024",
+        detection_time_utc: "05:29:40 IST (T-42m)",
         volume_liters: 58000,
         confidence_score: 98.4,
         slick_type: "Heavy Fuel Oil (HFO-380)",
@@ -504,14 +504,14 @@ export class AutonomousSimulationEngine {
         features: [
           {
             type: "Feature",
-            id: `INC-IND-${currentYear}-01`,
+            id: "INC-IND-2024-01",
             properties: {
-              id: `INC-IND-${currentYear}-01`,
-              detection_timestamp: new Date(now.getTime() - 42 * 60000).toISOString(),
+              id: "INC-IND-2024-01",
+              detection_timestamp: "2024-08-14T05:29:40.000Z",
               area_sq_km: liveSpill.area,
               perimeter_km: liveSpill.perimeter,
               confidence_score: 0.988,
-              source_scene: `S1A_IW_GRDH_1SDV_${dateCode}T${timeCode}_048912`,
+              source_scene: "S1A_IW_GRDH_1SDV_20240814T052940_048912",
               status: "ACTIVE",
               center: liveSpill.center,
               estimated_discharge_liters: 58000,

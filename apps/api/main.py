@@ -82,11 +82,10 @@ def _refresh_fixture_timestamps(data: dict):
         old_id = str(s.get("id", ""))
         suffix = "01" if ("01" in old_id or i == 0) else "02"
         if suffix == "01":
-            # Mumbai High: Live Real-Time Incident
-            s["id"] = f"INC-IND-{current_year}-01"
-            det_time = now - timedelta(minutes=42)
-            s["detection_timestamp"] = det_time.isoformat() + "Z"
-            s["source_scene"] = f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912"
+            # Mumbai High: Offshore Radar Intercept
+            s["id"] = "INC-IND-2024-01"
+            s["detection_timestamp"] = "2024-08-14T05:29:40.000Z"
+            s["source_scene"] = "S1A_IW_GRDH_1SDV_20240814T052940_048912"
         else:
             # Ennore: Authentic Verified Historical Incident (28 Jan 2017 03:45 IST)
             s["id"] = "INC-IND-2017-02"

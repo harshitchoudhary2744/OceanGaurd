@@ -38,11 +38,10 @@ export function App() {
   const [vessels, setVessels] = useState<Vessel[]>(INITIAL_VESSELS);
   const [suspects, setSuspects] = useState<SuspectVessel[]>(INITIAL_SUSPECTS);
   const [vectorMatches, setVectorMatches] = useState<VectorMatch[]>(INITIAL_VECTOR_MATCHES);
-  const [metocean, setMetocean] = useState<MetoceanData>(DEFAULT_METOCEAN.arabian_sea);
-  const currentYear = new Date().getFullYear();
-  const [selectedSpillId, setSelectedSpillId] = useState(`INC-IND-${currentYear}-01`);
-  const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(419000123);
-  const [activeScenario, setActiveScenario] = useState('arabian_sea');
+  const [metocean, setMetocean] = useState<MetoceanData>(DEFAULT_METOCEAN.bay_of_bengal);
+  const [selectedSpillId, setSelectedSpillId] = useState("INC-IND-2017-02");
+  const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(419000789);
+  const [activeScenario, setActiveScenario] = useState("bay_of_bengal");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Mobile Bottom Sheet / Active Tab
@@ -155,7 +154,7 @@ export function App() {
     setTimeOffsetMinutes(0);
     setIsPlaying(false);
     if (scenario === 'arabian_sea') {
-      setSelectedSpillId(`INC-IND-${currentYear}-01`);
+      setSelectedSpillId("INC-IND-2024-01");
       setSelectedVesselMmsi(419000123);
     } else {
       setSelectedSpillId("INC-IND-2017-02");

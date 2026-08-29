@@ -479,7 +479,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           <div className="text-[10px] text-rose-300 font-bold flex items-center gap-1.5 flex-wrap">
             <span>🎯 INTERCEPT POINT:</span>
             <span className="text-white bg-rose-950 px-1.5 py-0.5 rounded border border-rose-600/60 font-bold shadow-sm">
-              {scenario === 'bay_of_bengal' ? '28 JAN 2017 • 03:45:00 IST (22:15 UTC)' : 'LIVE • 05:29:40 IST (T-42m)'}
+              {scenario === 'bay_of_bengal' ? '28 JAN 2017 • 03:45:00 IST (22:15 UTC)' : '14 AUG 2024 • 05:29:40 IST (T-42m)'}
             </span>
           </div>
           <div className="text-[9px] text-slate-300 truncate mt-0.5">
