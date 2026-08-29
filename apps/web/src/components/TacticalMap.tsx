@@ -26,13 +26,14 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   onSelectSpill,
   onSelectVessel,
   scrubbedVessels,
-  centerCoordinates = [72.150, 19.050],
+  centerCoordinates,
   timeOffsetMinutes = 0,
   metocean,
-  scenario = 'arabian_sea',
+  scenario = 'bay_of_bengal',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const prevScenarioRef = useRef<string>(scenario);
   const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -102,6 +103,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
+    const isEnnoreInit = scenario === 'bay_of_bengal';
+    const initCenter: [number, number] = centerCoordinates || (isEnnoreInit ? [80.750, 13.250] : [72.150, 19.050]);
+    const initZoom = isEnnoreInit ? 10.0 : 9.8;
+
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: {
@@ -143,8 +148,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           },
         ],
       },
-      center: centerCoordinates,
-      zoom: 9.8,
+      center: initCenter,
+      zoom: initZoom,
       attributionControl: false,
     });
 
@@ -268,9 +273,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, []);
 
-  // Update center & viewport when scenario changes
+  // Update center & viewport when scenario changes (skips redundant flyTo on initial load)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
+    if (prevScenarioRef.current === scenario) return;
+    prevScenarioRef.current = scenario;
+
     const isEnnore = scenario === 'bay_of_bengal';
     const targetCenter: [number, number] = isEnnore ? [80.750, 13.250] : [72.150, 19.050];
     const targetZoom = isEnnore ? 10.0 : 9.8;
