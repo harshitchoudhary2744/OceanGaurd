@@ -101,21 +101,23 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, [currentSpills, metocean, scenario]);
 
-  // -6h Hydrodynamic Hindcast (Back-Tracing) Envelope & Track
+  // Hydrodynamic Hindcast (Back-Tracing) Envelope & Track to True Dump Origin
   const hindcastFeatures = useMemo(() => {
+    const isEnnore = scenario === 'bay_of_bengal';
+    const baseOrigin: [number, number] = isEnnore ? [80.750, 13.250] : [72.145, 19.048];
     const activeSpill = currentSpills.features[0];
     if (!activeSpill) return null;
 
-    const centroid = activeSpill.properties.center || (scenario === 'arabian_sea' ? [72.145, 19.048] : [80.750, 13.250]);
-    const driftDir = metocean?.net_drift_direction_deg || (scenario === 'arabian_sea' ? 69.3 : 48.2);
-    const driftSpeed = metocean?.net_drift_speed_kts || (scenario === 'arabian_sea' ? 1.95 : 1.52);
+    const centroid = activeSpill.properties.center || (isEnnore ? [80.774, 13.272] : [72.168, 19.062]);
+    const driftDir = metocean?.net_drift_direction_deg || (isEnnore ? 48.2 : 69.3);
+    const driftSpeed = metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95);
 
-    const hindcastConeCoords = generateHindcastCone(centroid[0], centroid[1], driftDir, driftSpeed, 6);
-    const trackPoints = generateHindcastTrack(centroid[0], centroid[1], driftDir, driftSpeed, 6, 6);
+    const hindcastHours = isEnnore ? 1.3 : 1.0;
+    const hindcastConeCoords = generateHindcastCone(centroid[0], centroid[1], driftDir, driftSpeed, hindcastHours);
 
     const coneFeature = {
       type: "Feature" as const,
-      properties: { name: "-6h Hindcast Reverse Origin Fan" },
+      properties: { name: "Hindcast Reverse Origin Fan" },
       geometry: {
         type: "Polygon" as const,
         coordinates: [hindcastConeCoords],
@@ -127,23 +129,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       properties: { name: "Hindcast Back-Trace Vector" },
       geometry: {
         type: "LineString" as const,
-        coordinates: trackPoints.map(p => [p.lon, p.lat]),
-      },
-    };
-
-    const originPoint = trackPoints[trackPoints.length - 1];
-    const originFeature = {
-      type: "Feature" as const,
-      properties: { name: "Estimated Discharge Origin Locus (T-6h)" },
-      geometry: {
-        type: "Point" as const,
-        coordinates: [originPoint.lon, originPoint.lat],
+        coordinates: [
+          [centroid[0], centroid[1]],
+          [baseOrigin[0], baseOrigin[1]],
+        ],
       },
     };
 
     return {
       type: "FeatureCollection" as const,
-      features: [coneFeature, lineFeature, originFeature],
+      features: [coneFeature, lineFeature],
     };
   }, [currentSpills, metocean, scenario]);
 
@@ -258,20 +253,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           'line-color': '#fbbf24',
           'line-width': 2.0,
           'line-dasharray': [4, 4],
-        },
-      });
-
-      map.addLayer({
-        id: 'hindcast-origin-point',
-        type: 'circle',
-        source: 'hindcast-source',
-        filter: ['==', '$type', 'Point'],
-        paint: {
-          'circle-radius': 7,
-          'circle-color': '#f59e0b',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff',
-          'circle-opacity': 0.9,
         },
       });
 
@@ -438,16 +419,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (!showHindcast) return;
 
     const isEnnore = scenario === 'bay_of_bengal';
-    const activeSpill = currentSpills.features[0];
-    const centroid = activeSpill?.properties?.center || (isEnnore ? [80.750, 13.250] : [72.145, 19.048]);
-    const driftDir = metocean?.net_drift_direction_deg || (isEnnore ? 48.2 : 69.3);
-    const driftSpeed = metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95);
-    const reverseBearing = (driftDir + 180) % 360;
-
-    // Actual incident dump time (42m ago for Mumbai High, 60m ago for Ennore collision)
-    const dumpMinutesAgo = isEnnore ? 60 : 42;
-    const dumpDistanceKm = (driftSpeed * 1.852) * (dumpMinutesAgo / 60);
-    const [dumpLon, dumpLat] = moveCoordinate(centroid[0], centroid[1], reverseBearing, dumpDistanceKm);
+    const baseOrigin: [number, number] = isEnnore ? [80.750, 13.250] : [72.145, 19.048];
+    const dumpLon = baseOrigin[0];
+    const dumpLat = baseOrigin[1];
 
     const dumpTimeLabel = isEnnore ? '28 Jan 03:45 IST (T-60m)' : '14 Aug 05:29:40 IST (T-42m)';
     const dumpAction = isEnnore ? 'Collision & Breach Origin' : 'Discharge Dump Origin';
