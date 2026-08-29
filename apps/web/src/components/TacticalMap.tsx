@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, History } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData } from '../types';
@@ -68,6 +68,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
   const popupRef = useRef<maplibregl.Popup | null>(null);
   const dumpLabelMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const primarySuspectRef = useRef<SuspectVessel | null>(null);
+  const onSelectVesselRef = useRef(onSelectVessel);
+  onSelectVesselRef.current = onSelectVessel;
+
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
@@ -88,6 +92,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (!suspects || suspects.length === 0) return null;
     return suspects.reduce((prev, curr) => (curr.probability_score > prev.probability_score ? curr : prev), suspects[0]);
   }, [suspects]);
+
+  useEffect(() => {
+    primarySuspectRef.current = primarySuspect;
+  }, [primarySuspect]);
 
   // Synchronized Hydrodynamic Oil Spill Polygon
   const currentSpills = useMemo<SpillFeatureCollection>(() => {
@@ -239,7 +247,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, [slickCentroid, baseOrigin, metocean, isEnnore, isPostDischarge]);
 
-  // Initialize MapLibre GL Map
+  // Initialize MapLibre GL Map (Only once per container lifecycle)
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -478,7 +486,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, []);
 
-  // Update viewport when scenario changes
+  // Update viewport ONLY when scenario changes
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
     if (prevScenarioRef.current === scenario) return;
@@ -580,7 +588,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     });
   }, [primarySuspect, showTrails, mapLoaded]);
 
-  // Render Clean Pinned Dump Origin Tactical Label Badge (Directly below WebGL Circle)
+  // Stable Pinned Dump Origin Label (Created once per scenario, never destroyed on 1s tick)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
@@ -592,7 +600,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (!showHindcast) return;
 
     const dumpTimeLabel = isEnnore ? '28 Jan 03:45 IST (T-60m)' : '14 Aug 05:29:40 IST (T-42m)';
-    const dumpAction = isEnnore ? 'Collision & Breach Origin' : 'Discharge Dump Origin';
     const suspectShip = isEnnore ? 'MT DAWN KANCHEEPURAM' : 'MT DESH SHANTI';
     const cpaDist = '0.00 km CPA';
 
@@ -608,8 +615,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     `;
 
     el.addEventListener('click', () => {
-      if (primarySuspect) {
-        onSelectVessel(primarySuspect.mmsi);
+      const currentSuspect = primarySuspectRef.current;
+      if (currentSuspect) {
+        onSelectVesselRef.current(currentSuspect.mmsi);
       }
       if (mapRef.current) {
         if (popupRef.current) popupRef.current.remove();
@@ -645,7 +653,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         dumpLabelMarkerRef.current = null;
       }
     };
-  }, [showHindcast, baseOrigin, primarySuspect, isEnnore, mapLoaded, onSelectVessel]);
+  }, [showHindcast, baseOrigin, isEnnore, mapLoaded]);
 
   // Clean and remove old markers on scenario change
   useEffect(() => {
@@ -661,7 +669,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [scenario]);
 
-  // Update Vessel HTML Markers (Clean, Uncluttered & Crisp)
+  // High-Performance Smooth Vessel Markers (Updates in-place without DOM destruction)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
@@ -703,6 +711,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       const existing = markersRef.current[key];
 
       if (existing) {
+        // High-Performance In-Place Update (Zero DOM re-creation)
         existing.setLngLat([p.lon, p.lat]);
         const el = existing.getElement();
         const arrow = el.querySelector('.ship-heading-arrow') as HTMLElement;
@@ -739,7 +748,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         `;
 
         el.addEventListener('click', () => {
-          onSelectVessel(p.mmsi);
+          onSelectVesselRef.current(p.mmsi);
           if (mapRef.current) {
             if (popupRef.current) popupRef.current.remove();
             popupRef.current = new maplibregl.Popup({ offset: 15, closeButton: false })
@@ -779,7 +788,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         markersRef.current[key] = marker;
       }
     });
-  }, [vessels, scrubbedVessels, primarySuspect, mapLoaded, onSelectVessel, scenario, baseOrigin]);
+  }, [vessels, scrubbedVessels, primarySuspect, mapLoaded, scenario, baseOrigin]);
 
   return (
     <div className="relative w-full h-full bg-[#0d1117] overflow-hidden">
