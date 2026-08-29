@@ -19,8 +19,8 @@ function generateConeBetweenPoints(
   startLat: number,
   endLon: number,
   endLat: number,
-  startHalfWidthKm: number = 0.3,
-  endHalfWidthKm: number = 0.8
+  startHalfWidthKm: number = 0.35,
+  endHalfWidthKm: number = 0.85
 ): number[][] {
   const bearing = calculateBearing(startLon, startLat, endLon, endLat);
   const perp1 = (bearing - 90 + 360) % 360;
@@ -76,7 +76,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   const isEnnore = scenario === 'bay_of_bengal';
   
-  // Exact Ground-Truth Spill Discharge Coordinates (Where the vessel dumped oil)
+  // Exact Ground-Truth Spill Discharge Origin Coordinates (Where vessel spilled oil)
   const baseOrigin = useMemo<[number, number]>(() => {
     return isEnnore ? [80.750, 13.250] : [72.145, 19.048];
   }, [isEnnore]);
@@ -125,20 +125,30 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (activeSpill?.properties?.center) {
       return activeSpill.properties.center as [number, number];
     }
-    return isEnnore ? [80.769, 13.267] : [72.168, 19.062];
+    return isEnnore ? [80.7698, 13.2670] : [72.1674, 19.0562];
   }, [currentSpills, isEnnore]);
 
   // Hydrodynamic Hindcast Back-Tracing (Connecting Current Slick Centroid directly to Dump Origin)
   const hindcastFeatures = useMemo(() => {
+    const isAtOrigin = Math.abs(slickCentroid[0] - baseOrigin[0]) < 0.001 && Math.abs(slickCentroid[1] - baseOrigin[1]) < 0.001;
+
     // Generate locked amber cone enveloping the line from slickCentroid to baseOrigin
-    const coneCoords = generateConeBetweenPoints(
-      slickCentroid[0],
-      slickCentroid[1],
-      baseOrigin[0],
-      baseOrigin[1],
-      0.35,
-      0.85
-    );
+    const coneCoords = isAtOrigin
+      ? [
+          [baseOrigin[0] - 0.005, baseOrigin[1] - 0.005],
+          [baseOrigin[0] + 0.005, baseOrigin[1] - 0.005],
+          [baseOrigin[0] + 0.005, baseOrigin[1] + 0.005],
+          [baseOrigin[0] - 0.005, baseOrigin[1] + 0.005],
+          [baseOrigin[0] - 0.005, baseOrigin[1] - 0.005],
+        ]
+      : generateConeBetweenPoints(
+          slickCentroid[0],
+          slickCentroid[1],
+          baseOrigin[0],
+          baseOrigin[1],
+          0.35,
+          0.85
+        );
 
     const coneFeature = {
       type: "Feature" as const,
@@ -170,7 +180,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   // +6h Hydrodynamic Forecast Dispersal Fan (Cyan)
   const forecastConeFeature = useMemo(() => {
-    // Forward bearing is opposite to the hindcast vector (pointing into the future)
     const forwardBearing = calculateBearing(baseOrigin[0], baseOrigin[1], slickCentroid[0], slickCentroid[1]);
     const driftSpeed = metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95);
     const forecastDistanceKm = (driftSpeed * 1.852) * 6.0;
@@ -195,7 +204,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, [slickCentroid, baseOrigin, metocean, isEnnore]);
 
-  // Initialize MapLibre GL
+  // Initialize MapLibre GL Map
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -252,7 +261,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     map.on('load', () => {
       setMapLoaded(true);
 
-      // 1. Forecast Source & Layers (Cyan)
+      // 1. Forecast Source & Layers (Cyan Fan)
       map.addSource('forecast-source', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -279,7 +288,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 2. Hindcast Source & Layers (Amber)
+      // 2. Hindcast Source & Layers (Amber Reverse Cone & Vector)
       map.addSource('hindcast-source', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -308,7 +317,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 3. Culprit Trajectory Layers (Pink / Red)
+      // 3. Culprit Trajectory Layers (Pink Dashed Track)
       map.addSource('culprit-trajectory', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -336,7 +345,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 4. Oil Spill Layers (Crimson Red)
+      // 4. Oil Spill Layers (Crimson Slick)
       map.addSource('spills-source', {
         type: 'geojson',
         data: currentSpills,
@@ -498,7 +507,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const dumpTimeLabel = isEnnore ? '28 Jan 03:45 IST (T-60m)' : '14 Aug 05:29:40 IST (T-42m)';
     const dumpAction = isEnnore ? 'Collision & Breach Origin' : 'Discharge Dump Origin';
     const suspectShip = isEnnore ? 'MT DAWN KANCHEEPURAM' : 'MT DESH SHANTI';
-    const cpaDist = isEnnore ? '0.00 km CPA' : '0.34 km CPA';
+    const cpaDist = isEnnore ? '0.00 km CPA' : '0.00 km CPA (Direct Intercept)';
 
     const el = document.createElement('div');
     el.className = 'select-none pointer-events-auto cursor-pointer relative z-30 flex flex-col items-center';

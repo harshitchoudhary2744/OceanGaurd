@@ -169,8 +169,8 @@ export const WAYPOINT_TIMELINES: Record<string, { mmsi: number; name: string; is
       name: "MT DESH SHANTI",
       isCulprit: true,
       waypoints: [
-        { tMinutes: -360, lon: 72.000, lat: 18.930, heading: 52, speed: 14.8 },
-        { tMinutes: -180, lon: 72.075, lat: 18.990, heading: 52, speed: 14.8 },
+        { tMinutes: -360, lon: 71.970, lat: 18.910, heading: 52, speed: 14.8 },
+        { tMinutes: -180, lon: 72.065, lat: 18.985, heading: 52, speed: 14.8 },
         { tMinutes: -42,  lon: 72.145, lat: 19.048, heading: 52, speed: 14.8 }, // Exact Spill Origin Discharge Point!
         { tMinutes: 0,    lon: 72.240, lat: 19.120, heading: 52, speed: 14.8 }, // Live Present
         { tMinutes: 180,  lon: 72.380, lat: 19.210, heading: 52, speed: 14.8 },
@@ -218,11 +218,11 @@ export const WAYPOINT_TIMELINES: Record<string, { mmsi: number; name: string; is
       name: "MT DAWN KANCHEEPURAM",
       isCulprit: true,
       waypoints: [
-        { tMinutes: -360, lon: 80.680, lat: 13.160, heading: 38, speed: 13.2 },
-        { tMinutes: -180, lon: 80.710, lat: 13.200, heading: 38, speed: 13.2 },
+        { tMinutes: -360, lon: 80.640, lat: 13.110, heading: 38, speed: 13.2 },
+        { tMinutes: -180, lon: 80.695, lat: 13.180, heading: 38, speed: 13.2 },
         { tMinutes: -60,  lon: 80.750, lat: 13.250, heading: 38, speed: 13.2 }, // Exact Spill Origin!
-        { tMinutes: 0,    lon: 80.785, lat: 13.290, heading: 38, speed: 13.2 }, // Live Present
-        { tMinutes: 180,  lon: 80.840, lat: 13.350, heading: 38, speed: 13.2 },
+        { tMinutes: 0,    lon: 80.805, lat: 13.320, heading: 38, speed: 13.2 }, // Live Present
+        { tMinutes: 180,  lon: 80.860, lat: 13.390, heading: 38, speed: 13.2 },
       ],
     },
     // BW MAPLE (VLGC Gas Carrier)
@@ -557,8 +557,8 @@ export class AutonomousSimulationEngine {
           last_lon: 72.240,
           linked_spill: linkedSpillMHO,
           trajectory: [
-            [72.000, 18.930, new Date(now.getTime() - 360 * 60000).toISOString()],
-            [72.075, 18.990, new Date(now.getTime() - 180 * 60000).toISOString()],
+            [71.970, 18.910, new Date(now.getTime() - 360 * 60000).toISOString()],
+            [72.065, 18.985, new Date(now.getTime() - 180 * 60000).toISOString()],
             [72.145, 19.048, new Date(now.getTime() - 42 * 60000).toISOString()], // Incident Origin Intercept
             [72.240, 19.120, now.toISOString()],
           ],
@@ -818,14 +818,14 @@ export class AutonomousSimulationEngine {
           hindcast_distance_km: 0.0,
           speed_knots: 13.2,
           heading_degrees: 38,
-          last_lat: 13.290,
-          last_lon: 80.785,
+          last_lat: 13.320,
+          last_lon: 80.805,
           linked_spill: linkedSpillEnnore,
           trajectory: [
-            [80.680, 13.160, "2017-01-27T17:15:00.000Z"], // 22:45 IST (T-6h)
-            [80.710, 13.200, "2017-01-27T20:15:00.000Z"], // 01:45 IST (T-3h)
+            [80.640, 13.110, "2017-01-27T17:15:00.000Z"], // 22:45 IST (T-6h)
+            [80.695, 13.180, "2017-01-27T20:15:00.000Z"], // 01:45 IST (T-3h)
             [80.750, 13.250, "2017-01-27T22:15:00.000Z"], // 03:45 IST (T-1h Intercept/Collision)
-            [80.785, 13.290, "2017-01-27T23:15:00.000Z"], // 04:45 IST (T-0)
+            [80.805, 13.320, "2017-01-27T23:15:00.000Z"], // 04:45 IST (T-0)
           ],
         },
         {
