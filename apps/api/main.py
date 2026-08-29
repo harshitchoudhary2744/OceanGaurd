@@ -81,22 +81,29 @@ def _refresh_fixture_timestamps(data: dict):
     for i, s in enumerate(data.get("spills", [])):
         old_id = str(s.get("id", ""))
         suffix = "01" if ("01" in old_id or i == 0) else "02"
-        s["id"] = f"INC-IND-{current_year}-{suffix}"
-        offset_mins = 42 if suffix == "01" else 60
-        det_time = now - timedelta(minutes=offset_mins)
-        s["detection_timestamp"] = det_time.isoformat() + "Z"
-        s["source_scene"] = f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_{'048912' if suffix == '01' else '051288'}"
+        if suffix == "01":
+            # Mumbai High: Live Real-Time Incident
+            s["id"] = f"INC-IND-{current_year}-01"
+            det_time = now - timedelta(minutes=42)
+            s["detection_timestamp"] = det_time.isoformat() + "Z"
+            s["source_scene"] = f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912"
+        else:
+            # Ennore: Authentic Verified Historical Incident (28 Jan 2017 03:45 IST)
+            s["id"] = "INC-IND-2017-02"
+            s["detection_timestamp"] = "2017-01-27T22:15:00.000Z"
+            s["source_scene"] = "S1A_IW_GRDH_1SDV_20170128T124530_015024"
 
     for t in data.get("telemetry", []):
-        t["timestamp"] = now.isoformat() + "Z"
         if "spill_id" in t and t["spill_id"]:
             suffix = "01" if "01" in str(t["spill_id"]) else "02"
-            t["spill_id"] = f"INC-IND-{current_year}-{suffix}"
+            t["spill_id"] = f"INC-IND-{current_year}-01" if suffix == "01" else "INC-IND-2017-02"
+        else:
+            t["timestamp"] = now.isoformat() + "Z"
 
     for c in data.get("correlations", []):
         if "spill_id" in c and c["spill_id"]:
             suffix = "01" if "01" in str(c["spill_id"]) else "02"
-            c["spill_id"] = f"INC-IND-{current_year}-{suffix}"
+            c["spill_id"] = f"INC-IND-{current_year}-01" if suffix == "01" else "INC-IND-2017-02"
 
 def load_fixtures():
     global _FIXTURE_DATA

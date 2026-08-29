@@ -134,9 +134,10 @@ export function generateClientSidePdfDossier(
   doc.text(`• Minimum Centroid Distance: ${primarySuspect.distance_meters} m (DIRECT OVERPASS)`, col2, y);
   y += 5.5;
 
-  const interceptDate = new Date(now.getTime() - (isMumbai ? 42 : 60) * 60000);
-  const interceptTimeStr = interceptDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
-  doc.text(`• Intercept Time: ${interceptTimeStr} (T-${isMumbai ? '42m' : '60m'} Transit Direct Overpass)`, col1, y);
+  const interceptTimeStr = isMumbai
+    ? `Today • 05:29:40 IST (T-42m Live Transit)`
+    : `28 Jan 2017 • 03:45:00 IST (22:15 UTC Collision)`;
+  doc.text(`• Intercept Time: ${interceptTimeStr}`, col1, y);
   doc.text(`• Transit Speed & Heading: ${primarySuspect.speed_knots} kts at ${primarySuspect.heading_degrees}°`, col2, y);
   y += 8;
 

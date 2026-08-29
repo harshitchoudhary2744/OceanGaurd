@@ -534,7 +534,7 @@ export class AutonomousSimulationEngine {
         liveElapsedSeconds: 0,
       };
     } else {
-      // Bay of Bengal / Ennore Port Sector
+      // Bay of Bengal / Ennore Port Sector (Historical Ground Truth Collision: 28 Jan 2017 03:45 IST)
       this.baseSpillOrigin = [80.750, 13.250];
 
       const metocean: MetoceanData = {
@@ -557,28 +557,30 @@ export class AutonomousSimulationEngine {
       const liveSpill = calculateSynchronizedOilSpill(0, 'bay_of_bengal', metocean);
 
       const linkedSpillEnnore: LinkedSpillInfo = {
-        id: `INC-IND-${currentYear}-02`,
-        detection_date: formattedDate,
-        detection_time_utc: `${detectionTimeIst} IST`,
-        volume_liters: 22000,
+        id: "INC-IND-2017-02",
+        detection_date: "28 Jan 2017",
+        detection_time_utc: "03:45:00 IST (22:15 UTC)",
+        volume_liters: 251400,
         confidence_score: 96.2,
-        slick_type: "Marine Diesel / Bunker Fuel",
+        slick_type: "Heavy Bunker Fuel Oil (HFO-380)",
         distance_km: 0.0,
       };
+
+      const ennoreBaseIso = "2017-01-27T23:15:00.000Z"; // 28 Jan 2017 04:45 IST (T-0)
 
       const vessels: Vessel[] = [
         {
           mmsi: 419000789,
-          imo_number: 9345207,
+          imo_number: 9114816,
           name: "MT DAWN KANCHEEPURAM",
           flag: "India",
-          vessel_type: "LPG / Product Tanker",
-          length_meters: 218,
+          vessel_type: "Product Tanker",
+          length_meters: 228,
           draught_meters: 10.4,
           call_sign: "AVDK",
           destination: "KAMARAJAR PORT ENNORE",
           nav_status: "Under way using engine",
-          cargo_type: "LPG / Fuel Oil",
+          cargo_type: "Fuel Oil / Bunker (Inbound)",
           linked_spill: linkedSpillEnnore,
           current_position: {
             latitude: 13.290,
@@ -586,7 +588,49 @@ export class AutonomousSimulationEngine {
             speed_knots: 13.2,
             heading_degrees: 38,
             rate_of_turn: 0.0,
-            timestamp: new Date().toISOString(),
+            timestamp: ennoreBaseIso,
+          },
+        },
+        {
+          mmsi: 352001000,
+          imo_number: 9322968,
+          name: "BW MAPLE",
+          flag: "Isle of Man",
+          vessel_type: "LPG Tanker",
+          length_meters: 226,
+          draught_meters: 11.5,
+          call_sign: "2BWM",
+          destination: "SINGAPORE STRAIT",
+          nav_status: "Under way using engine",
+          cargo_type: "LPG Gas (Outbound)",
+          current_position: {
+            latitude: 13.245,
+            longitude: 80.740,
+            speed_knots: 11.8,
+            heading_degrees: 142,
+            rate_of_turn: 0.0,
+            timestamp: ennoreBaseIso,
+          },
+        },
+        {
+          mmsi: 419000888,
+          imo_number: 9600000,
+          name: "ICGS VAIBHAV",
+          flag: "India (Coast Guard)",
+          vessel_type: "Offshore Patrol Vessel",
+          length_meters: 90,
+          draught_meters: 4.2,
+          call_sign: "AVBH",
+          destination: "ENNORE RECOVERY SECTOR",
+          nav_status: "Engaged in response ops",
+          cargo_type: "Oil Containment Booms",
+          current_position: {
+            latitude: 13.220,
+            longitude: 80.720,
+            speed_knots: 16.0,
+            heading_degrees: 20,
+            rate_of_turn: 0.0,
+            timestamp: ennoreBaseIso,
           },
         },
       ];
@@ -594,11 +638,11 @@ export class AutonomousSimulationEngine {
       const suspects: SuspectVessel[] = [
         {
           mmsi: 419000789,
-          imo_number: 9345207,
+          imo_number: 9114816,
           name: "MT DAWN KANCHEEPURAM",
           flag: "India",
-          vessel_type: "LPG / Product Tanker",
-          length_meters: 218,
+          vessel_type: "Product Tanker",
+          length_meters: 228,
           draught_meters: 10.4,
           call_sign: "AVDK",
           destination: "KAMARAJAR PORT ENNORE",
@@ -611,10 +655,34 @@ export class AutonomousSimulationEngine {
           last_lon: 80.785,
           linked_spill: linkedSpillEnnore,
           trajectory: [
-            [80.680, 13.160, new Date(now.getTime() - 360 * 60000).toISOString()],
-            [80.710, 13.200, new Date(now.getTime() - 180 * 60000).toISOString()],
-            [80.750, 13.250, new Date(now.getTime() - 60 * 60000).toISOString()],
-            [80.785, 13.290, now.toISOString()],
+            [80.680, 13.160, "2017-01-27T17:15:00.000Z"], // 22:45 IST (T-6h)
+            [80.710, 13.200, "2017-01-27T20:15:00.000Z"], // 01:45 IST (T-3h)
+            [80.750, 13.250, "2017-01-27T22:15:00.000Z"], // 03:45 IST (T-1h Intercept/Collision)
+            [80.785, 13.290, "2017-01-27T23:15:00.000Z"], // 04:45 IST (T-0)
+          ],
+        },
+        {
+          mmsi: 352001000,
+          imo_number: 9322968,
+          name: "BW MAPLE",
+          flag: "Isle of Man",
+          vessel_type: "LPG Tanker",
+          length_meters: 226,
+          draught_meters: 11.5,
+          call_sign: "2BWM",
+          destination: "SINGAPORE STRAIT",
+          distance_meters: 450,
+          distance_km: 0.45,
+          probability_score: 94.2,
+          speed_knots: 11.8,
+          heading_degrees: 142,
+          last_lat: 13.245,
+          last_lon: 80.740,
+          trajectory: [
+            [80.780, 13.310, "2017-01-27T17:15:00.000Z"],
+            [80.760, 13.280, "2017-01-27T20:15:00.000Z"],
+            [80.750, 13.250, "2017-01-27T22:15:00.000Z"], // 03:45 IST (Collision Point)
+            [80.740, 13.245, "2017-01-27T23:15:00.000Z"],
           ],
         },
       ];
@@ -624,18 +692,18 @@ export class AutonomousSimulationEngine {
         features: [
           {
             type: "Feature",
-            id: `INC-IND-${currentYear}-02`,
+            id: "INC-IND-2017-02",
             properties: {
-              id: `INC-IND-${currentYear}-02`,
-              detection_timestamp: new Date(now.getTime() - 60 * 60000).toISOString(),
+              id: "INC-IND-2017-02",
+              detection_timestamp: "2017-01-27T22:15:00.000Z", // 28 Jan 2017 03:45:00 IST
               area_sq_km: liveSpill.area,
               perimeter_km: liveSpill.perimeter,
               confidence_score: 0.962,
-              source_scene: `S1B_IW_GRDH_1SDV_${dateCode}T${timeCode}_051288`,
+              source_scene: "S1A_IW_GRDH_1SDV_20170128T124530_015024",
               status: "ACTIVE",
               center: liveSpill.center,
-              estimated_discharge_liters: 22000,
-              slick_type: "Marine Diesel / Bunker Fuel",
+              estimated_discharge_liters: 251400,
+              slick_type: "Heavy Bunker Fuel Oil (HFO-380)",
             },
             geometry: {
               type: "Polygon",

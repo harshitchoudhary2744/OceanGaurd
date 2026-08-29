@@ -33,14 +33,16 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
     return () => clearInterval(interval);
   }, [isPlaying, playbackSpeed, onChangeTimeOffset]);
 
-  const baseDate = new Date();
+  const isEnnore = scenario === 'bay_of_bengal';
+  const baseDate = isEnnore ? new Date('2017-01-28T04:45:00+05:30') : new Date();
   const currentDate = new Date(baseDate.getTime() + timeOffsetMinutes * 60 * 1000);
   const formattedTime = currentDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
+  const dateStr = isEnnore ? '28 Jan 2017' : currentDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
   const absMins = Math.abs(timeOffsetMinutes);
   const tMinusHours = Math.floor(absMins / 60);
   const tMinusMins = absMins % 60;
   const tMinusString = timeOffsetMinutes === 0
-    ? 'LIVE (T-0)'
+    ? (isEnnore ? 'T+0 (Post-Collision)' : 'LIVE (T-0)')
     : `T-${tMinusHours.toString().padStart(2, '0')}:${tMinusMins.toString().padStart(2, '0')}`;
 
   const interceptMinutes = scenario === 'arabian_sea' ? -42 : -60;
@@ -99,7 +101,8 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
 
       {/* Time display */}
       <div className="hidden xs:block pl-1.5 sm:pl-2 border-l border-slate-700/50 text-right font-mono shrink-0">
-        <span className="text-[10px] sm:text-xs font-bold text-cyan-400 block">{formattedTime}</span>
+        <span className="text-[9px] text-slate-400 block leading-tight">{dateStr}</span>
+        <span className="text-[10px] sm:text-xs font-bold text-cyan-400 block leading-tight">{formattedTime}</span>
       </div>
 
       {/* Speed Selector */}
