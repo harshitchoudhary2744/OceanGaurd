@@ -456,6 +456,24 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     <div className="w-full h-full relative overflow-hidden">
       <div ref={mapContainerRef} className="w-full h-full" />
 
+      {/* Tactical Intercept Banner (Top-Left) */}
+      <div className="absolute top-3 left-14 sm:left-3 z-20 tactical-glass rounded-xl px-3 py-2 border border-rose-500/40 shadow-2xl flex items-center gap-2.5 select-none font-mono max-w-[280px] sm:max-w-md">
+        <div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+        <div className="flex flex-col min-w-0">
+          <div className="text-[10px] text-rose-300 font-bold flex items-center gap-1.5 flex-wrap">
+            <span>🎯 INTERCEPT POINT:</span>
+            <span className="text-white bg-rose-950 px-1.5 py-0.5 rounded border border-rose-600/60 font-bold shadow-sm">
+              {scenario === 'bay_of_bengal' ? '28 JAN 2017 • 03:45:00 IST' : 'TODAY • 05:29:40 IST (T-42m)'}
+            </span>
+          </div>
+          <div className="text-[9px] text-slate-300 truncate mt-0.5">
+            {scenario === 'bay_of_bengal'
+              ? 'Kamarajar Port Ennore (13°14.2\'N, 80°21.8\'E) • BW MAPLE vs MT DAWN KANCHEEPURAM'
+              : 'Mumbai High Sector (19°02.9\'N, 72°08.7\'E) • MT DESH SHANTI (Direct Overlap)'}
+          </div>
+        </div>
+      </div>
+
       {/* Floating Metocean Live Vector Overlay (Top-Right) */}
       {showMetoceanOverlay && (
         <div className="absolute top-3 right-3 z-20 tactical-glass rounded-xl p-3 border border-cyan-500/20 shadow-xl flex flex-col gap-2 select-none w-56 sm:w-60 animate-in fade-in duration-200">

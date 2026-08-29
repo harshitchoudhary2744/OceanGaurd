@@ -89,8 +89,8 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
 
         <div className="flex justify-between font-mono text-[8px] sm:text-[9px] text-slate-400 overflow-hidden">
           <span>T-06:00</span>
-          <span className="hidden xs:inline text-rose-300 font-semibold cursor-pointer" onClick={() => onChangeTimeOffset(interceptMinutes)}>
-            Discharge: T{interceptMinutes}m
+          <span className="hidden xs:inline text-rose-300 font-semibold cursor-pointer hover:text-white transition-colors" onClick={() => onChangeTimeOffset(interceptMinutes)}>
+            🎯 Intercept: {scenario === 'bay_of_bengal' ? '03:45 IST' : '05:29 IST'} (T{interceptMinutes}m)
           </span>
           <span className="text-cyan-300 font-bold">{tMinusString}</span>
           <span>LIVE</span>

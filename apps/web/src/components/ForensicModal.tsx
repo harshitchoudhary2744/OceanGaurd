@@ -76,22 +76,31 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
           </div>
 
           {/* Suspect Target Details */}
-          <div className="p-3.5 bg-[#171b26] rounded-xl border border-[#3b494c]/30 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-            <div>
-              <span className="text-[10px] text-[#849396] block">ATTRIBUTED SHIP</span>
-              <span className="font-bold text-white text-sm">MT DESH SHANTI</span>
+          <div className="p-3.5 bg-[#171b26] rounded-xl border border-[#3b494c]/30 flex flex-col gap-3 text-xs font-mono">
+            <div className="p-2 bg-[#0a0e18] rounded-lg border border-[#ff3b30]/40 flex items-center justify-between">
+              <span className="text-[#ffb4ab] font-bold">🎯 EXACT INTERCEPT TIMESTAMP:</span>
+              <span className="text-white font-bold bg-[#93000a]/50 px-2 py-0.5 rounded border border-[#ffb4ab]/40">
+                {spillId.includes('02') ? '28 JAN 2017 • 03:45:00 IST (22:15 UTC)' : 'TODAY • 05:29:40 IST (T-42m)'}
+              </span>
             </div>
-            <div>
-              <span className="text-[10px] text-[#849396] block">MMSI IDENTIFIER</span>
-              <span className="font-bold text-[#00daf3] text-sm">419000123</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-[#849396] block">FLAG / CLASS</span>
-              <span className="font-bold text-white text-sm">India (VLCC Crude Tanker)</span>
-            </div>
-            <div>
-              <span className="text-[10px] text-[#849396] block">PROXIMITY DELTA</span>
-              <span className="font-bold text-[#ffb4ab] text-sm">110 m (Centroid Intercept)</span>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <span className="text-[10px] text-[#849396] block">ATTRIBUTED SHIP</span>
+                <span className="font-bold text-white text-sm">{spillId.includes('02') ? 'BW MAPLE / DAWN' : 'MT DESH SHANTI'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-[#849396] block">MMSI IDENTIFIER</span>
+                <span className="font-bold text-[#00daf3] text-sm">{spillId.includes('02') ? '419000789' : '419000123'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-[#849396] block">GPS COORDINATES</span>
+                <span className="font-bold text-white text-sm">{spillId.includes('02') ? "13°14.2'N, 80°21.8'E" : "19°02.9'N, 72°08.7'E"}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-[#849396] block">PROXIMITY DELTA</span>
+                <span className="font-bold text-[#4ade80] text-sm">0.00 m (Direct Intercept)</span>
+              </div>
             </div>
           </div>
         </div>

@@ -114,6 +114,15 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
+          {/* Active Intercept Badge */}
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-950/60 border border-rose-500/40 text-[11px] font-mono shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+            <span className="text-rose-300 font-bold">INTERCEPT:</span>
+            <span className="text-white font-semibold">
+              {activeScenario === 'bay_of_bengal' ? '28 JAN 2017 • 03:45:00 IST' : 'TODAY • 05:29:40 IST'}
+            </span>
+          </div>
+
           {/* Refresh */}
           <button
             onClick={onRefresh}
