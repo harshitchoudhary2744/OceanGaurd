@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, History, AlertTriangle } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData } from '../types';
-import { calculateSynchronizedOilSpill, generateForecastCone, generateHindcastCone, generateHindcastTrack } from '../lib/simulationEngine';
+import { calculateSynchronizedOilSpill, generateForecastCone, generateHindcastCone, generateHindcastTrack, moveCoordinate } from '../lib/simulationEngine';
 
 interface TacticalMapProps {
   spills: SpillFeatureCollection;
@@ -36,6 +36,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const prevScenarioRef = useRef<string>(scenario);
   const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const hindcastMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
@@ -425,6 +426,71 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [hindcastFeatures, showHindcast, mapLoaded]);
 
+  // Dedicated Actual Dump Point Marker Beside the Yellow Hindcast Trail
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+
+    if (hindcastMarkerRef.current) {
+      hindcastMarkerRef.current.remove();
+      hindcastMarkerRef.current = null;
+    }
+
+    if (!showHindcast) return;
+
+    const isEnnore = scenario === 'bay_of_bengal';
+    const activeSpill = currentSpills.features[0];
+    const centroid = activeSpill?.properties?.center || (isEnnore ? [80.750, 13.250] : [72.145, 19.048]);
+    const driftDir = metocean?.net_drift_direction_deg || (isEnnore ? 48.2 : 69.3);
+    const driftSpeed = metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95);
+    const reverseBearing = (driftDir + 180) % 360;
+
+    // Actual incident dump time (42m ago for Mumbai High, 60m ago for Ennore collision)
+    const dumpMinutesAgo = isEnnore ? 60 : 42;
+    const dumpDistanceKm = (driftSpeed * 1.852) * (dumpMinutesAgo / 60);
+    const [dumpLon, dumpLat] = moveCoordinate(centroid[0], centroid[1], reverseBearing, dumpDistanceKm);
+
+    const dumpTimeLabel = isEnnore ? '28 Jan 03:45 IST (T-60m)' : '14 Aug 05:29:40 IST (T-42m)';
+    const dumpAction = isEnnore ? 'Collision & Breach Origin' : 'Discharge Dump Origin';
+    const suspectShip = isEnnore ? 'MT DAWN KANCHEEPURAM' : 'MT DESH SHANTI';
+    const cpaDist = isEnnore ? '0.00 km CPA' : '0.34 km CPA';
+
+    const el = document.createElement('div');
+    el.className = 'select-none pointer-events-auto cursor-pointer relative z-20';
+    el.innerHTML = `
+      <div class="relative flex items-center group">
+        <!-- Pulsing Amber Ring at Dump Locus -->
+        <div class="absolute -left-1.5 -top-1.5 w-6 h-6 rounded-full bg-amber-400/40 animate-ping pointer-events-none"></div>
+        <div class="w-3.5 h-3.5 rounded-full bg-amber-400 border-2 border-white shadow-lg flex items-center justify-center relative z-10">
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-950"></div>
+        </div>
+
+        <!-- High-Contrast Small Label Beside Yellow Trail -->
+        <div class="ml-2 bg-slate-950/95 border border-amber-400/80 rounded px-2 py-1 shadow-xl flex flex-col gap-0.5 whitespace-nowrap backdrop-blur-md">
+          <div class="flex items-center gap-1.5 font-mono text-[10px] font-bold text-amber-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+            <span>DUMPED: ${dumpTimeLabel}</span>
+          </div>
+          <div class="text-[8.5px] font-mono text-slate-300">
+            ${dumpAction} • <span class="text-amber-200 font-semibold">${suspectShip}</span> (${cpaDist})
+          </div>
+        </div>
+      </div>
+    `;
+
+    const marker = new maplibregl.Marker({ element: el, anchor: 'left' })
+      .setLngLat([dumpLon, dumpLat])
+      .addTo(mapRef.current);
+
+    hindcastMarkerRef.current = marker;
+
+    return () => {
+      if (hindcastMarkerRef.current) {
+        hindcastMarkerRef.current.remove();
+        hindcastMarkerRef.current = null;
+      }
+    };
+  }, [showHindcast, currentSpills, metocean, scenario, mapLoaded]);
+
   // Update Culprit Trajectory Track
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
@@ -462,6 +528,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   useEffect(() => {
     Object.values(markersRef.current).forEach((m) => m.remove());
     markersRef.current = {};
+    if (hindcastMarkerRef.current) {
+      hindcastMarkerRef.current.remove();
+      hindcastMarkerRef.current = null;
+    }
     if (popupRef.current) {
       popupRef.current.remove();
       popupRef.current = null;
@@ -752,7 +822,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-amber-500/20 border border-amber-400 border-dashed"></span>
-          <span>-6h Hindcast Origin</span>
+          <span>Hindcast Trail (Dump Locus Identified)</span>
         </div>
       </div>
     </div>
