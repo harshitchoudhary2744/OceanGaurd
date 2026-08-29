@@ -71,13 +71,40 @@ _FIXTURE_DATA = {
     "correlations": []
 }
 
+def _refresh_fixture_timestamps(data: dict):
+    now = datetime.utcnow()
+    current_year = now.year
+    date_code = now.strftime("%Y%m%d")
+    time_code = now.strftime("%H%M%S")
+
+    for i, s in enumerate(data.get("spills", [])):
+        old_id = str(s.get("id", ""))
+        suffix = "01" if ("01" in old_id or i == 0) else "02"
+        s["id"] = f"INC-IND-{current_year}-{suffix}"
+        offset_mins = 42 if suffix == "01" else 60
+        det_time = now - timedelta(minutes=offset_mins)
+        s["detection_timestamp"] = det_time.isoformat() + "Z"
+        s["source_scene"] = f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_{'048912' if suffix == '01' else '051288'}"
+
+    for t in data.get("telemetry", []):
+        t["timestamp"] = now.isoformat() + "Z"
+        if "spill_id" in t and t["spill_id"]:
+            suffix = "01" if "01" in str(t["spill_id"]) else "02"
+            t["spill_id"] = f"INC-IND-{current_year}-{suffix}"
+
+    for c in data.get("correlations", []):
+        if "spill_id" in c and c["spill_id"]:
+            suffix = "01" if "01" in str(c["spill_id"]) else "02"
+            c["spill_id"] = f"INC-IND-{current_year}-{suffix}"
+
 def load_fixtures():
     global _FIXTURE_DATA
     if os.path.exists(FIXTURE_PATH):
         try:
             with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
                 _FIXTURE_DATA = json.load(f)
-            logger.info("Loaded demo fixture data into memory.")
+            _refresh_fixture_timestamps(_FIXTURE_DATA)
+            logger.info("Loaded and refreshed demo fixture data into real-time memory.")
         except Exception as e:
             logger.warning(f"Failed to read fixture: {e}")
     else:
@@ -87,6 +114,7 @@ def load_fixtures():
             seed_database_and_fixtures()
             with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
                 _FIXTURE_DATA = json.load(f)
+            _refresh_fixture_timestamps(_FIXTURE_DATA)
         except Exception as e:
             logger.warning(f"Error seeding fixture: {e}")
 

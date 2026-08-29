@@ -116,46 +116,42 @@ def generate_forensic_pdf_report(
             Paragraph("<b>OCEANGUARD MARITIME FORENSIC DOSSIER</b><br/><font size=7 color='#00626e'>SIH PROBLEM STATEMENT: SIH26143 | SATELLITE OIL SPILL DETECTION & VESSEL TRACKING</font>", title_style),
             Paragraph("<b>SECURITY LEVEL</b><br/><font color='#93000a'>OMEGA-7 / EVIDENCE GRADE</font><br/><b>TIMESTAMP:</b> " + datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"), subtitle_style)
         ]
-    ]
-    header_table = Table(header_table_data, colWidths=[340, 190])
-    header_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-    ]))
-    elements.append(header_table)
-    elements.append(Spacer(1, 8))
-    elements.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#00daf3"), spaceAfter=10))
+    elements.append(Paragraph("OCEANGUARD MARITIME INTELLIGENCE COMMAND", title_style))
+    elements.append(Paragraph(f"<b>OFFICIAL SATELLITE FORENSIC AUDIT DOSSIER • INCIDENT {active_spill_id}</b>", ParagraphStyle("Sub", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=10, textColor=colors.HexColor("#00626e"))))
+    elements.append(Spacer(1, 4))
+    elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#00e5ff"), spaceAfter=10))
 
     # 2. Executive Incident Overview
     elements.append(Paragraph("1. SATELLITE DETECTION & INCIDENT OVERVIEW", section_header))
 
+    det_time_str = (now - timedelta(minutes=42)).strftime("%Y-%m-%d %H:%M:%S UTC")
     spill_info = spill_data or {
-        "id": spill_id,
-        "detection_timestamp": datetime.utcnow().strftime("%Y-%m-%d 23:42:01 UTC"),
-        "area_sq_km": 4.20,
-        "perimeter_km": 11.4,
-        "confidence_score": 0.984,
-        "source_scene": "S1A_IW_GRDH_1SDV_20241014T2340",
-        "location": "Strait of Malacca (Northbound Corridor: 2.7500° N, 101.3500° E)",
-        "discharge_type": "Illegal Nighttime Operational Bilge/Sludge Dump"
+        "id": active_spill_id,
+        "detection_timestamp": det_time_str,
+        "area_sq_km": 5.40,
+        "perimeter_km": 14.8,
+        "confidence_score": 0.988,
+        "source_scene": f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912",
+        "location": "Arabian Sea (Mumbai High Sector: 19.0500° N, 72.1500° E)",
+        "discharge_type": "Illegal Nighttime Operational Heavy Fuel Oil Dump"
     }
 
     overview_table_data = [
         [
-            Paragraph("<b>Incident ID:</b>", meta_label), Paragraph(str(spill_info.get("id", spill_id)), meta_val),
+            Paragraph("<b>Incident ID:</b>", meta_label), Paragraph(str(spill_info.get("id", active_spill_id)), meta_val),
             Paragraph("<b>Acquisition Platform:</b>", meta_label), Paragraph("Sentinel-1 SAR C-Band", meta_val)
         ],
         [
-            Paragraph("<b>Detection UTC:</b>", meta_label), Paragraph(str(spill_info.get("detection_timestamp", "2024-10-14 23:42:01 UTC")), meta_val),
-            Paragraph("<b>SAR Scene ID:</b>", meta_label), Paragraph(str(spill_info.get("source_scene", "S1A_IW_GRDH_1SDV")), meta_val)
+            Paragraph("<b>Detection Time:</b>", meta_label), Paragraph(str(spill_info.get("detection_timestamp", det_time_str)), meta_val),
+            Paragraph("<b>SAR Scene ID:</b>", meta_label), Paragraph(str(spill_info.get("source_scene", f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912")), meta_val)
         ],
         [
-            Paragraph("<b>Estimated Area:</b>", meta_label), Paragraph(f"{spill_info.get('area_sq_km', 4.20)} sq km", meta_val),
-            Paragraph("<b>Perimeter:</b>", meta_label), Paragraph(f"{spill_info.get('perimeter_km', 11.4)} km", meta_val)
+            Paragraph("<b>Estimated Area:</b>", meta_label), Paragraph(f"{spill_info.get('area_sq_km', 5.40)} sq km", meta_val),
+            Paragraph("<b>Perimeter:</b>", meta_label), Paragraph(f"{spill_info.get('perimeter_km', 14.8)} km", meta_val)
         ],
         [
-            Paragraph("<b>GIS Coordinates:</b>", meta_label), Paragraph("2.7500° N, 101.3500° E", meta_val),
-            Paragraph("<b>AI Confidence:</b>", meta_label), Paragraph(f"<font color='#00626e'><b>{round(float(spill_info.get('confidence_score', 0.984))*100, 1)}% (U-Net CNN)</b></font>", meta_val)
+            Paragraph("<b>GIS Coordinates:</b>", meta_label), Paragraph("19.0500° N, 72.1500° E", meta_val),
+            Paragraph("<b>AI Confidence:</b>", meta_label), Paragraph(f"<font color='#00626e'><b>{round(float(spill_info.get('confidence_score', 0.988))*100, 1)}% (U-Net CNN)</b></font>", meta_val)
         ]
     ]
     overview_table = Table(overview_table_data, colWidths=[100, 165, 110, 155])
@@ -221,6 +217,12 @@ def generate_forensic_pdf_report(
     # 4. AIS Trajectory Intersection Logs
     elements.append(Paragraph("3. FORENSIC AIS TELEMETRY TIME-SERIES LOGS (T-minus 6h)", section_header))
     
+    t_minus_6h = (now - timedelta(hours=6)).strftime("%Y-%m-%d %H:%M:%S")
+    t_minus_3h = (now - timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
+    t_minus_1h = (now - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+    t_minus_42m = (now - timedelta(minutes=42)).strftime("%Y-%m-%d %H:%M:%S")
+    t_live = now.strftime("%Y-%m-%d %H:%M:%S")
+
     ais_table_data = [
         [
             Paragraph("<b>Timestamp (UTC)</b>", meta_label),
@@ -230,11 +232,11 @@ def generate_forensic_pdf_report(
             Paragraph("<b>Heading</b>", meta_label),
             Paragraph("<b>Proximity to Slick</b>", meta_label)
         ],
-        [Paragraph("2024-10-14 20:00:00", meta_val), Paragraph("2.5800° N", meta_val), Paragraph("101.1800° E", meta_val), Paragraph("14.4 kts", meta_val), Paragraph("130°", meta_val), Paragraph("24.8 km", meta_val)],
-        [Paragraph("2024-10-14 21:00:00", meta_val), Paragraph("2.6400° N", meta_val), Paragraph("101.2400° E", meta_val), Paragraph("14.3 kts", meta_val), Paragraph("129°", meta_val), Paragraph("14.2 km", meta_val)],
-        [Paragraph("2024-10-14 22:00:00", meta_val), Paragraph("2.7000° N", meta_val), Paragraph("101.3000° E", meta_val), Paragraph("14.1 kts", meta_val), Paragraph("128°", meta_val), Paragraph("4.6 km", meta_val)],
-        [Paragraph("2024-10-14 22:45:00*", meta_label), Paragraph("<b>2.7502° N</b>", meta_val), Paragraph("<b>101.3501° E</b>", meta_val), Paragraph("13.9 kts", meta_val), Paragraph("128°", meta_val), Paragraph("<b><font color='#93000a'>0.14 km (CENTROID INTERCEPT)</font></b>", alert_badge)],
-        [Paragraph("2024-10-14 23:42:01", meta_val), Paragraph("2.8100° N", meta_val), Paragraph("101.4100° E", meta_val), Paragraph("14.2 kts", meta_val), Paragraph("127°", meta_val), Paragraph("9.3 km (Downstream)", meta_val)],
+        [Paragraph(t_minus_6h, meta_val), Paragraph("18.9300° N", meta_val), Paragraph("72.0000° E", meta_val), Paragraph("14.8 kts", meta_val), Paragraph("52°", meta_val), Paragraph("28.4 km", meta_val)],
+        [Paragraph(t_minus_3h, meta_val), Paragraph("18.9900° N", meta_val), Paragraph("72.0750° E", meta_val), Paragraph("14.8 kts", meta_val), Paragraph("52°", meta_val), Paragraph("14.6 km", meta_val)],
+        [Paragraph(t_minus_1h, meta_val), Paragraph("19.0300° N", meta_val), Paragraph("72.1200° E", meta_val), Paragraph("14.8 kts", meta_val), Paragraph("52°", meta_val), Paragraph("3.2 km", meta_val)],
+        [Paragraph(f"{t_minus_42m}*", meta_label), Paragraph("<b>19.0480° N</b>", meta_val), Paragraph("<b>72.1450° E</b>", meta_val), Paragraph("14.8 kts", meta_val), Paragraph("52°", meta_val), Paragraph("<b><font color='#93000a'>0.00 km (DISCHARGE INTERCEPT)</font></b>", alert_badge)],
+        [Paragraph(t_live, meta_val), Paragraph("19.1200° N", meta_val), Paragraph("72.2400° E", meta_val), Paragraph("14.8 kts", meta_val), Paragraph("52°", meta_val), Paragraph("12.8 km (Downstream)", meta_val)],
     ]
     ais_table = Table(ais_table_data, colWidths=[100, 75, 75, 55, 55, 170])
     ais_table.setStyle(TableStyle([
@@ -251,9 +253,9 @@ def generate_forensic_pdf_report(
     elements.append(Paragraph("4. QDRANT VECTOR SIMILARITY SEARCH (HISTORICAL DISCHARGE PATTERNS)", section_header))
 
     similar_list = similar_spills or [
-        {"id": "HIST-2024-041", "title": "Strait of Malacca Bunker Dump", "date": "2024-04-12", "culprit_name": "MV OCEAN TITAN", "similarity_score": 97.8},
-        {"id": "HIST-2023-189", "title": "Gulf of Mexico Pipeline Sheen", "date": "2023-11-04", "culprit_name": "SEA TRADER I", "similarity_score": 86.4},
-        {"id": "HIST-2022-105", "title": "Malacca Strait Nighttime Streak", "date": "2022-03-30", "culprit_name": "ASIAN SENTINEL", "similarity_score": 81.2}
+        {"id": f"HIST-IND-{current_year - 1}-08", "title": "Mumbai High Offshore Platform Sheen", "date": f"{current_year - 1}-07-19", "culprit_name": "MT DESH SHANTI", "similarity_score": 99.8},
+        {"id": f"HIST-IND-{current_year - 2}-14", "title": "Gulf of Kutch Tanker Discharge", "date": f"{current_year - 2}-11-12", "culprit_name": "ORIENTAL TITAN", "similarity_score": 94.2},
+        {"id": f"HIST-IND-{current_year - 3}-03", "title": "Chennai Port Ennore Oil Slick", "date": f"{current_year - 3}-01-28", "culprit_name": "BW MAPLE", "similarity_score": 91.5}
     ]
 
     hist_table_data = [

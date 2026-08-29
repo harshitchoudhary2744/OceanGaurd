@@ -46,16 +46,18 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isExporting, setIsExporting] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const fallbackSpillId = `INC-IND-${currentYear}-01`;
 
   const primarySuspect = suspects.find((s) => s.probability_score > 70) || suspects[0];
 
   const handleDownloadPdf = async () => {
     try {
       setIsExporting(true);
-      const url = await downloadPdfReportUrl(spill?.id || 'INC-IND-2024-01', spillFeature, suspects);
+      const url = await downloadPdfReportUrl(spill?.id || fallbackSpillId, spillFeature, suspects);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `OceanGuard_Forensic_${spill?.id || 'INC-IND-2024-01'}.pdf`;
+      a.download = `OceanGuard_Forensic_${spill?.id || fallbackSpillId}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -78,7 +80,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 font-mono text-[10px] font-bold">
-            {spill?.id || 'INC-IND-2024-01'}
+            {spill?.id || fallbackSpillId}
           </span>
           {isMobileModal && onClose && (
             <button
@@ -186,15 +188,26 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         {activeTab === 'overview' && (
           <div className="flex flex-col gap-2.5 animate-in fade-in duration-150">
             <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2 text-xs font-mono">
-              <span className="text-slate-400 text-[10px] uppercase font-semibold">Incident Details</span>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[10px] uppercase font-semibold">Incident Details</span>
+                <span className="text-[10px] text-cyan-400 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  LIVE FEED
+                </span>
+              </div>
               <div className="grid grid-cols-2 gap-1.5 text-[11px] text-slate-300">
                 <div>Type: <span className="text-white font-medium">{spill?.slick_type || 'Heavy Fuel Oil (HFO)'}</span></div>
                 <div>Perimeter: <span className="text-white">{spill?.perimeter_km || 14.8} km</span></div>
                 <div>Sensor: <span className="text-cyan-300">Sentinel-1 C-SAR</span></div>
                 <div>Status: <span className="text-emerald-400 font-bold">ACTIVE SLICK</span></div>
+                <div>Acquisition: <span className="text-white font-semibold">Real-Time Pass</span></div>
+                <div>Correlation: <span className="text-rose-400 font-bold">Verified</span></div>
               </div>
-              <div className="pt-2 border-t border-slate-800 text-[10px] text-slate-400">
-                Center: <span className="text-white">{spill?.center ? `${spill.center[1].toFixed(3)}°N, ${spill.center[0].toFixed(3)}°E` : '19.050°N, 72.150°E'}</span>
+              <div className="pt-2 border-t border-slate-800 flex flex-col gap-1 text-[10px] text-slate-400">
+                <div>Center: <span className="text-white">{spill?.center ? `${spill.center[1].toFixed(3)}°N, ${spill.center[0].toFixed(3)}°E` : '19.050°N, 72.150°E'}</span></div>
+                {spill?.source_scene && (
+                  <div className="truncate text-slate-500">Scene: <span className="text-slate-400">{spill.source_scene}</span></div>
+                )}
               </div>
             </div>
 

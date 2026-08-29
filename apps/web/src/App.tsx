@@ -39,8 +39,8 @@ export function App() {
   const [suspects, setSuspects] = useState<SuspectVessel[]>(INITIAL_SUSPECTS);
   const [vectorMatches, setVectorMatches] = useState<VectorMatch[]>(INITIAL_VECTOR_MATCHES);
   const [metocean, setMetocean] = useState<MetoceanData>(DEFAULT_METOCEAN.arabian_sea);
-
-  const [selectedSpillId, setSelectedSpillId] = useState('INC-IND-2024-01');
+  const currentYear = new Date().getFullYear();
+  const [selectedSpillId, setSelectedSpillId] = useState(`INC-IND-${currentYear}-01`);
   const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(419000123);
   const [activeScenario, setActiveScenario] = useState('arabian_sea');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -155,10 +155,10 @@ export function App() {
     setTimeOffsetMinutes(0);
     setIsPlaying(false);
     if (scenario === 'arabian_sea') {
-      setSelectedSpillId('INC-IND-2024-01');
+      setSelectedSpillId(`INC-IND-${currentYear}-01`);
       setSelectedVesselMmsi(419000123);
     } else {
-      setSelectedSpillId('INC-IND-2024-02');
+      setSelectedSpillId(`INC-IND-${currentYear}-02`);
       setSelectedVesselMmsi(419000789);
     }
   };

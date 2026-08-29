@@ -51,7 +51,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const spillData = calculateSynchronizedOilSpill(timeOffsetMinutes, scenario, metocean);
 
     const activeSpill = spills.features.find((f) => f.properties.id === selectedSpillId) || spills.features[0];
-    const spillId = activeSpill?.properties?.id || (isArabian ? 'INC-IND-2024-01' : 'INC-IND-2024-02');
+    const currentYear = new Date().getFullYear();
+    const spillId = activeSpill?.properties?.id || (isArabian ? `INC-IND-${currentYear}-01` : `INC-IND-${currentYear}-02`);
 
     return {
       type: "FeatureCollection",

@@ -2,21 +2,24 @@ import { jsPDF } from 'jspdf';
 import { SuspectVessel, SpillGeoFeature } from '../types';
 
 export function generateClientSidePdfDossier(
-  spillId: string = 'INC-IND-2024-01',
+  spillId?: string,
   spillFeature?: SpillGeoFeature | null,
   suspects?: SuspectVessel[]
 ): Blob {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const activeSpillId = spillId || `INC-IND-${currentYear}-01`;
+
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
     format: 'a4',
   });
 
-  const now = new Date();
   const dateStr = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
   const timeStr = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
 
-  const isMumbai = spillId.includes('01') || spillId.includes('IND');
+  const isMumbai = activeSpillId.includes('01') || activeSpillId.includes('IND');
   const sectorName = isMumbai ? 'Arabian Sea • Mumbai High Sector' : 'Bay of Bengal • Chennai-Ennore Sector';
   const centerCoords = isMumbai ? '19.0500° N, 72.1500° E' : '13.2500° N, 80.7500° E';
   const primarySuspect = suspects?.[0] || {
@@ -86,7 +89,7 @@ export function generateClientSidePdfDossier(
   const col1 = 16;
   const col2 = 105;
 
-  doc.text(`• Incident Reference ID: ${spillId}`, col1, y);
+  doc.text(`• Incident Reference ID: ${activeSpillId}`, col1, y);
   doc.text(`• Radar Sensor: Sentinel-1A C-Band SAR (IW Mode)`, col2, y);
   y += 5.5;
 
@@ -131,7 +134,9 @@ export function generateClientSidePdfDossier(
   doc.text(`• Minimum Centroid Distance: ${primarySuspect.distance_meters} m (DIRECT OVERPASS)`, col2, y);
   y += 5.5;
 
-  doc.text(`• Intercept Time: ${isMumbai ? '04:15:00' : '03:55:00'} IST (T-6h Analysis)`, col1, y);
+  const interceptDate = new Date(now.getTime() - (isMumbai ? 42 : 60) * 60000);
+  const interceptTimeStr = interceptDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
+  doc.text(`• Intercept Time: ${interceptTimeStr} (T-${isMumbai ? '42m' : '60m'} Transit Direct Overpass)`, col1, y);
   doc.text(`• Transit Speed & Heading: ${primarySuspect.speed_knots} kts at ${primarySuspect.heading_degrees}°`, col2, y);
   y += 8;
 
@@ -210,7 +215,7 @@ export function generateClientSidePdfDossier(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.setTextColor(30, 30, 30);
-  doc.text('• Best Historical Match: Mumbai High Offshore Platform Sheen Archive (2024)', 16, y);
+  doc.text('• Best Historical Match: Mumbai High Offshore Platform Sheen (Qdrant Historical Archive)', 16, y);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 140, 70);
   doc.text('• Vector Cosine Similarity: 99.8% Match', 135, y);

@@ -15,10 +15,12 @@ export const INITIAL_SPILLS: SpillFeatureCollection = {
 export const INITIAL_VESSELS: Vessel[] = initialState.vessels;
 export const INITIAL_SUSPECTS: SuspectVessel[] = initialState.suspects;
 
+const curYr = new Date().getFullYear();
+
 export const INITIAL_VECTOR_MATCHES: VectorMatch[] = [
   {
     id: "SIG-IND-MH-01",
-    spill_id: "MH-2024-SHEEN-08",
+    spill_id: `MH-${curYr}-SHEEN-08`,
     title: "Mumbai High Offshore Platform Sheen Archive",
     date: new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10),
     location: "Arabian Sea (19.4°N, 71.3°E)",
@@ -31,7 +33,7 @@ export const INITIAL_VECTOR_MATCHES: VectorMatch[] = [
   },
   {
     id: "SIG-IND-GK-02",
-    spill_id: "GK-2024-DISCH-03",
+    spill_id: `GK-${curYr}-DISCH-03`,
     title: "Gulf of Kutch Tanker Discharge Pattern",
     date: new Date(Date.now() - 65 * 86400000).toISOString().slice(0, 10),
     location: "Gulf of Kutch (22.5°N, 69.2°E)",
@@ -44,7 +46,7 @@ export const INITIAL_VECTOR_MATCHES: VectorMatch[] = [
   },
   {
     id: "SIG-IND-EN-03",
-    spill_id: "EN-2023-SLICK-11",
+    spill_id: `EN-${curYr - 1}-SLICK-11`,
     title: "Chennai Port Ennore Oil Slick Archive",
     date: new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10),
     location: "Bay of Bengal (13.3°N, 80.4°E)",
@@ -57,7 +59,7 @@ export const INITIAL_VECTOR_MATCHES: VectorMatch[] = [
   },
   {
     id: "SIG-IND-CH-04",
-    spill_id: "CH-2024-ANCH-05",
+    spill_id: `CH-${curYr}-ANCH-05`,
     title: "Cochin Outer Anchorage Sheen",
     date: new Date(Date.now() - 150 * 86400000).toISOString().slice(0, 10),
     location: "Lakshadweep Sea (9.9°N, 76.1°E)",

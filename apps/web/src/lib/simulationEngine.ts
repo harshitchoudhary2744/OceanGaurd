@@ -308,8 +308,11 @@ export class AutonomousSimulationEngine {
     this.elapsedSeconds = 0;
     const isMumbai = scenario === 'arabian_sea';
     const now = new Date();
+    const currentYear = now.getFullYear();
     const formattedDate = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
     const detectionTimeIst = new Date(now.getTime() - (isMumbai ? 42 : 60) * 60000).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
+    const dateCode = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const timeCode = now.toISOString().slice(11, 19).replace(/:/g, '');
 
     if (isMumbai) {
       this.baseSpillOrigin = [72.145, 19.048];
@@ -335,7 +338,7 @@ export class AutonomousSimulationEngine {
       const liveSpill = calculateSynchronizedOilSpill(0, 'arabian_sea', metocean);
 
       const linkedSpillMHO: LinkedSpillInfo = {
-        id: "INC-IND-2024-01",
+        id: `INC-IND-${currentYear}-01`,
         detection_date: formattedDate,
         detection_time_utc: `${detectionTimeIst} IST`,
         volume_liters: 58000,
@@ -501,14 +504,14 @@ export class AutonomousSimulationEngine {
         features: [
           {
             type: "Feature",
-            id: "INC-IND-2024-01",
+            id: `INC-IND-${currentYear}-01`,
             properties: {
-              id: "INC-IND-2024-01",
+              id: `INC-IND-${currentYear}-01`,
               detection_timestamp: new Date(now.getTime() - 42 * 60000).toISOString(),
               area_sq_km: liveSpill.area,
               perimeter_km: liveSpill.perimeter,
               confidence_score: 0.988,
-              source_scene: "S1A_IW_GRDH_1SDV_20260828T174510_048912",
+              source_scene: `S1A_IW_GRDH_1SDV_${dateCode}T${timeCode}_048912`,
               status: "ACTIVE",
               center: liveSpill.center,
               estimated_discharge_liters: 58000,
@@ -554,7 +557,7 @@ export class AutonomousSimulationEngine {
       const liveSpill = calculateSynchronizedOilSpill(0, 'bay_of_bengal', metocean);
 
       const linkedSpillEnnore: LinkedSpillInfo = {
-        id: "INC-IND-2024-02",
+        id: `INC-IND-${currentYear}-02`,
         detection_date: formattedDate,
         detection_time_utc: `${detectionTimeIst} IST`,
         volume_liters: 22000,
@@ -621,14 +624,14 @@ export class AutonomousSimulationEngine {
         features: [
           {
             type: "Feature",
-            id: "INC-IND-2024-02",
+            id: `INC-IND-${currentYear}-02`,
             properties: {
-              id: "INC-IND-2024-02",
+              id: `INC-IND-${currentYear}-02`,
               detection_timestamp: new Date(now.getTime() - 60 * 60000).toISOString(),
               area_sq_km: liveSpill.area,
               perimeter_km: liveSpill.perimeter,
               confidence_score: 0.962,
-              source_scene: "S1B_IW_GRDH_1SDV_BAY_OF_BENGAL_02",
+              source_scene: `S1B_IW_GRDH_1SDV_${dateCode}T${timeCode}_051288`,
               status: "ACTIVE",
               center: liveSpill.center,
               estimated_discharge_liters: 22000,
