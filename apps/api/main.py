@@ -31,7 +31,7 @@ from geoalchemy2.shape import to_shape
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from apps.api.db.session import get_db, is_db_available
+from apps.api.db.session import get_db, is_db_available, get_db_info
 from apps.api.db.models import Vessel, AISTelemetry, OilSpill, Correlation
 from apps.api.ml.segmentation import sar_pipeline, metocean_engine
 from apps.api.services.correlation import correlation_engine
@@ -134,12 +134,15 @@ async def startup_event():
 @app.get("/api/v1/health")
 def health_check():
     """System status and component diagnostics"""
+    db_info = get_db_info()
     return {
         "status": "healthy",
         "system": "OceanGuard Tactical Command",
         "problem_statement": "SIH26143",
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "database_connected": is_db_available(),
+        "database_connected": db_info["connected"],
+        "database_provider": db_info["provider"],
+        "database_endpoint": db_info["endpoint"],
         "qdrant_connected": vector_service._connected,
         "qdrant_endpoint": vector_service._endpoint_info,
         "pytorch_unet_available": sar_pipeline.model is not None,
