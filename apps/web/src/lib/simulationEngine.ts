@@ -292,13 +292,13 @@ export class AutonomousSimulationEngine {
   private listeners: ((state: SimulationState) => void)[] = [];
   private intervalId: any = null;
   private state: SimulationState;
-  private currentScenario: string = 'arabian_sea';
+  private currentScenario: string = 'bay_of_bengal';
   private elapsedSeconds: number = 0;
 
-  // Base spill origin coordinates at discharge time (T-42m)
-  private baseSpillOrigin: [number, number] = [72.145, 19.048];
+  // Base spill origin coordinates at discharge time
+  private baseSpillOrigin: [number, number] = [80.750, 13.250];
 
-  constructor(initialScenario: string = 'arabian_sea') {
+  constructor(initialScenario: string = 'bay_of_bengal') {
     this.currentScenario = initialScenario;
     this.state = this.buildInitialState(initialScenario);
   }
@@ -865,5 +865,5 @@ export class AutonomousSimulationEngine {
   }
 }
 
-export const globalSimulation = new AutonomousSimulationEngine('arabian_sea');
+export const globalSimulation = new AutonomousSimulationEngine('bay_of_bengal');
 globalSimulation.start();

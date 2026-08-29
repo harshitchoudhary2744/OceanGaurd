@@ -30,6 +30,7 @@ interface InspectorPanelProps {
   onClose?: () => void;
   isMobileModal?: boolean;
   metocean?: MetoceanData;
+  scenario?: string;
 }
 
 type TabType = 'overview' | 'suspects' | 'metocean' | 'intel';
@@ -44,21 +45,35 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   onClose,
   isMobileModal,
   metocean,
+  scenario,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isExporting, setIsExporting] = useState(false);
-  const currentYear = new Date().getFullYear();
-  const fallbackSpillId = `INC-IND-${currentYear}-01`;
 
   const primarySuspect = suspects.find((s) => s.probability_score > 70) || suspects[0];
+
+  // Strictly bind metadata to active sector and primary suspect
+  const isEnnore = scenario
+    ? scenario === 'bay_of_bengal'
+    : (primarySuspect?.name?.includes('DAWN') || primarySuspect?.name?.includes('MAPLE') || primarySuspect?.name?.includes('VAIBHAV'));
+
+  const incidentId = isEnnore ? "INC-IND-2017-02" : "INC-IND-2024-01";
+  const interceptDate = isEnnore ? "28 Jan 2017 (Verified Collision)" : "14 Aug 2024 (Offshore Radar Pass)";
+  const interceptDateShort = isEnnore ? "28 Jan 2017" : "14 Aug 2024";
+  const interceptTime = isEnnore ? "03:45:00 IST (22:15 UTC)" : "05:29:40 IST (T-42m)";
+  const interceptCoords = isEnnore ? "13° 14.2' N, 80° 21.8' E" : "19° 02.9' N, 72° 08.7' E";
+  const verificationAuthority = isEnnore ? "DG Shipping & INCOIS Validated" : "Copernicus Sentinel-1 SAR & AIS Track";
+  const officialSource = isEnnore
+    ? "DG Shipping Investigation File No. ENG/INSP-18(1)/2017 & INCOIS OSTA Advisory"
+    : "ESA Copernicus Sentinel-1A SAR Level-1 GRD & PostGIS Trajectory Correlation Engine";
 
   const handleDownloadPdf = async () => {
     try {
       setIsExporting(true);
-      const url = await downloadPdfReportUrl(spill?.id || fallbackSpillId, spillFeature, suspects);
+      const url = await downloadPdfReportUrl(incidentId, spillFeature, suspects);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `OceanGuard_Forensic_${spill?.id || fallbackSpillId}.pdf`;
+      a.download = `OceanGuard_Forensic_${incidentId}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -81,7 +96,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 font-mono text-[10px] font-bold">
-            {spill?.id || fallbackSpillId}
+            {incidentId}
           </span>
           {isMobileModal && onClose && (
             <button
@@ -100,78 +115,69 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         <div className="grid grid-cols-3 gap-2">
           <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
             <span className="text-[9.5px] font-mono text-slate-400 block mb-0.5">SLICK AREA</span>
-            <span className="font-mono font-bold text-rose-300 text-sm">{spill?.area_sq_km || 5.40} <span className="text-[10px] text-slate-400 font-normal">km²</span></span>
+            <span className="font-mono font-bold text-rose-300 text-sm">{isEnnore ? '3.42' : (spill?.area_sq_km || '5.76')} <span className="text-[10px] text-slate-400 font-normal">km²</span></span>
           </div>
           <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
             <span className="text-[9.5px] font-mono text-slate-400 block mb-0.5">EST. VOLUME</span>
-            <span className="font-mono font-bold text-white text-sm">~{((spill?.estimated_discharge_liters || 58000) / 1000).toFixed(0)} <span className="text-[10px] text-slate-400 font-normal">kL</span></span>
+            <span className="font-mono font-bold text-white text-sm">~{isEnnore ? '251' : '58'} <span className="text-[10px] text-slate-400 font-normal">kL</span></span>
           </div>
           <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
             <span className="text-[9.5px] font-mono text-slate-400 block mb-0.5">AI CONFIDENCE</span>
-            <span className="font-mono font-bold text-cyan-400 text-sm">{Math.round((spill?.confidence_score || 0.988) * 100)}%</span>
+            <span className="font-mono font-bold text-cyan-400 text-sm">{isEnnore ? '96%' : '98%'}</span>
           </div>
         </div>
 
         {/* 3. Primary Suspect Spotlight Banner */}
-        {primarySuspect && (() => {
-          const isEnnore = spill?.id?.includes('02') || primarySuspect?.name?.includes('DAWN') || primarySuspect?.name?.includes('MAPLE') || spill?.id?.includes('2017');
-          const interceptDate = isEnnore ? '28 Jan 2017 (Verified Collision)' : '14 Aug 2024 (Offshore Radar Pass)';
-          const interceptTime = isEnnore ? '03:45:00 IST (22:15 UTC)' : '05:29:40 IST (T-42m)';
-          const interceptCoords = isEnnore ? "13° 14.2' N, 80° 21.8' E" : "19° 02.9' N, 72° 08.7' E";
-          const verificationAuthority = isEnnore ? 'DG Shipping & INCOIS Validated' : 'Copernicus Sentinel-1 SAR & AIS Track';
-
-          return (
-            <div className="p-3 bg-gradient-to-br from-rose-950/40 to-slate-900/90 rounded-xl border border-rose-500/40 shadow-lg flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono text-rose-300 font-bold flex items-center gap-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-                  PRIMARY CULPRIT MATCH
-                </span>
-                <span className="bg-rose-600 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                  {primarySuspect.probability_score}% Match
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="font-bold text-white text-sm">{primarySuspect.name}</span>
-                <span className="text-slate-300 text-[11px]">{primarySuspect.vessel_type}</span>
-              </div>
-
-              {/* Exact Intercept Date & Time Badge */}
-              <div className="p-2 bg-slate-950/90 rounded-lg border border-rose-500/40 flex flex-col gap-1 text-[10px] font-mono">
-                <div className="flex items-center justify-between">
-                  <span className="text-rose-300 font-bold flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-rose-400" />
-                    EXACT INTERCEPT:
-                  </span>
-                  <span className="text-white font-bold bg-rose-950 px-2 py-0.5 rounded border border-rose-600/60 shadow-sm">
-                    {interceptDate} • {interceptTime}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-slate-400 text-[9.5px] pt-1 border-t border-slate-800/80">
-                  <span>GPS: <strong className="text-slate-200">{interceptCoords}</strong></span>
-                  <span className="text-cyan-400 font-semibold">{verificationAuthority}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-slate-300 pt-1">
-                <div>MMSI: <span className="text-white font-semibold">{primarySuspect.mmsi}</span></div>
-                <div>Flag: <span className="text-white">{primarySuspect.flag}</span></div>
-                <div>Speed: <span className="text-white">{primarySuspect.speed_knots} kts</span></div>
-                <div>Overlap: <span className="text-emerald-400 font-bold">Direct Intercept (0.0 km)</span></div>
-              </div>
-
-              <button
-                onClick={handleDownloadPdf}
-                disabled={isExporting}
-                className="mt-1 w-full py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-mono text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-md disabled:opacity-60"
-              >
-                <FileDown className="w-3.5 h-3.5" />
-                <span>{isExporting ? 'Generating Evidence Dossier...' : 'Export Legal Evidence PDF'}</span>
-              </button>
+        {primarySuspect && (
+          <div className="p-3 bg-gradient-to-br from-rose-950/40 to-slate-900/90 rounded-xl border border-rose-500/40 shadow-lg flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono text-rose-300 font-bold flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                PRIMARY CULPRIT MATCH
+              </span>
+              <span className="bg-rose-600 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                {primarySuspect.probability_score}% Match
+              </span>
             </div>
-          );
-        })()}
+
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="font-bold text-white text-sm">{primarySuspect.name}</span>
+              <span className="text-slate-300 text-[11px]">{primarySuspect.vessel_type}</span>
+            </div>
+
+            {/* Exact Intercept Date & Time Badge */}
+            <div className="p-2 bg-slate-950/90 rounded-lg border border-rose-500/40 flex flex-col gap-1 text-[10px] font-mono">
+              <div className="flex items-center justify-between">
+                <span className="text-rose-300 font-bold flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-rose-400" />
+                  EXACT INTERCEPT:
+                </span>
+                <span className="text-white font-bold bg-rose-950 px-2 py-0.5 rounded border border-rose-600/60 shadow-sm">
+                  {interceptDate} • {interceptTime}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-slate-400 text-[9.5px] pt-1 border-t border-slate-800/80">
+                <span>GPS: <strong className="text-slate-200">{interceptCoords}</strong></span>
+                <span className="text-cyan-400 font-semibold">{verificationAuthority}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-slate-300 pt-1">
+              <div>MMSI: <span className="text-white font-semibold">{primarySuspect.mmsi}</span></div>
+              <div>Flag: <span className="text-white">{primarySuspect.flag}</span></div>
+              <div>Speed: <span className="text-white">{primarySuspect.speed_knots} kts</span></div>
+              <div>Heading: <span className="text-white">{primarySuspect.heading_degrees}°</span></div>
+            </div>
+            <button
+              onClick={handleDownloadPdf}
+              disabled={isExporting}
+              className="mt-1 w-full py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-mono text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-md disabled:opacity-60"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span>{isExporting ? 'Generating Evidence Dossier...' : 'Export Legal Evidence PDF'}</span>
+            </button>
+          </div>
+        )}
 
         {/* 4. Tab Navigation (Declutters & Simplifies View) */}
         <div className="flex items-center bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-xs font-mono">
@@ -238,40 +244,28 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
 
             {/* Ground Truth & Kinematic Intercept Details */}
-            {(() => {
-              const isEnnore = spill?.id?.includes('02') || primarySuspect?.name?.includes('DAWN') || primarySuspect?.name?.includes('MAPLE') || spill?.id?.includes('2017');
-              const interceptDate = isEnnore ? '28 Jan 2017' : '14 Aug 2024';
-              const interceptTime = isEnnore ? '03:45:00 IST (22:15 UTC)' : '05:29:40 IST (T-42m)';
-              const interceptCoords = isEnnore ? "13° 14.2' N, 80° 21.8' E" : "19° 02.9' N, 72° 08.7' E";
-              const officialSource = isEnnore
-                ? 'DG Shipping Investigation File No. ENG/INSP-18(1)/2017 & INCOIS OSTA Advisory'
-                : 'ESA Copernicus Sentinel-1A SAR Level-1 GRD & PostGIS Trajectory Correlation Engine';
+            <div className="p-3 bg-gradient-to-br from-slate-900 to-rose-950/30 rounded-xl border border-rose-500/30 flex flex-col gap-2 text-xs font-mono">
+              <div className="flex items-center justify-between">
+                <span className="text-rose-300 text-[10px] uppercase font-bold flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-rose-400" />
+                  GROUND TRUTH INTERCEPT
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-bold border border-emerald-500/40">
+                  100% VERIFIED
+                </span>
+              </div>
 
-              return (
-                <div className="p-3 bg-gradient-to-br from-slate-900 to-rose-950/30 rounded-xl border border-rose-500/30 flex flex-col gap-2 text-xs font-mono">
-                  <div className="flex items-center justify-between">
-                    <span className="text-rose-300 text-[10px] uppercase font-bold flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-rose-400" />
-                      GROUND TRUTH INTERCEPT
-                    </span>
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-bold border border-emerald-500/40">
-                      100% VERIFIED
-                    </span>
-                  </div>
+              <div className="grid grid-cols-2 gap-1.5 text-[11px] text-slate-300">
+                <div>Intercept Date: <span className="text-white font-bold">{interceptDateShort}</span></div>
+                <div>Intercept Time: <span className="text-rose-300 font-bold">{interceptTime}</span></div>
+                <div>GPS Origin: <span className="text-white">{interceptCoords}</span></div>
+                <div>Intercept Dist: <span className="text-emerald-400 font-bold">0.00 m (Direct)</span></div>
+              </div>
 
-                  <div className="grid grid-cols-2 gap-1.5 text-[11px] text-slate-300">
-                    <div>Intercept Date: <span className="text-white font-bold">{interceptDate}</span></div>
-                    <div>Intercept Time: <span className="text-rose-300 font-bold">{interceptTime}</span></div>
-                    <div>GPS Origin: <span className="text-white">{interceptCoords}</span></div>
-                    <div>Intercept Dist: <span className="text-emerald-400 font-bold">0.00 m (Direct)</span></div>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-800 text-[9.5px] text-slate-400 leading-relaxed">
-                    Source: <span className="text-cyan-300">{officialSource}</span>
-                  </div>
-                </div>
-              );
-            })()}
+              <div className="pt-2 border-t border-slate-800 text-[9.5px] text-slate-400 leading-relaxed">
+                Source: <span className="text-cyan-300">{officialSource}</span>
+              </div>
+            </div>
 
             <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-1.5 text-xs font-mono">
               <span className="text-slate-400 text-[10px] uppercase font-semibold">Attribution Summary</span>

@@ -293,6 +293,7 @@ export function App() {
             onSelectVessel={setSelectedVesselMmsi}
             selectedVesselMmsi={selectedVesselMmsi ?? undefined}
             metocean={metocean}
+            scenario={activeScenario}
           />
         </div>
 
@@ -312,6 +313,7 @@ export function App() {
                 onClose={() => setIsMobileDrawerOpen(false)}
                 isMobileModal={true}
                 metocean={metocean}
+                scenario={activeScenario}
               />
             </div>
           </div>
