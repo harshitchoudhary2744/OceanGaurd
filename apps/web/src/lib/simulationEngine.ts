@@ -211,8 +211,8 @@ export const WAYPOINT_TIMELINES: Record<string, { mmsi: number; name: string; is
     },
   ],
   bay_of_bengal: [
-    // MT DAWN KANCHEEPURAM (Ennore Port Sector)
-    // Discharges oil at T - 60m at [80.750, 13.250]
+    // MT DAWN KANCHEEPURAM (Ennore Port Sector - Inbound Product Tanker)
+    // Collides and discharges oil at T - 60m at [80.750, 13.250]
     {
       mmsi: 419000789,
       name: "MT DAWN KANCHEEPURAM",
@@ -220,20 +220,43 @@ export const WAYPOINT_TIMELINES: Record<string, { mmsi: number; name: string; is
       waypoints: [
         { tMinutes: -360, lon: 80.640, lat: 13.110, heading: 38, speed: 13.2 },
         { tMinutes: -180, lon: 80.695, lat: 13.180, heading: 38, speed: 13.2 },
-        { tMinutes: -60,  lon: 80.750, lat: 13.250, heading: 38, speed: 13.2 }, // Exact Spill Origin!
+        { tMinutes: -60,  lon: 80.750, lat: 13.250, heading: 38, speed: 13.2 }, // Exact Collision Origin!
         { tMinutes: 0,    lon: 80.805, lat: 13.320, heading: 38, speed: 13.2 }, // Live Present
         { tMinutes: 180,  lon: 80.860, lat: 13.390, heading: 38, speed: 13.2 },
       ],
     },
-    // BW MAPLE (VLGC Gas Carrier)
+    // BW MAPLE (VLGC Gas Carrier - Outbound)
     {
       mmsi: 352001000,
       name: "BW MAPLE",
       waypoints: [
-        { tMinutes: -360, lon: 80.920, lat: 13.410, heading: 215, speed: 15.0 },
-        { tMinutes: -180, lon: 80.820, lat: 13.310, heading: 215, speed: 15.0 },
-        { tMinutes: 0,    lon: 80.720, lat: 13.210, heading: 215, speed: 15.0 },
-        { tMinutes: 180,  lon: 80.620, lat: 13.110, heading: 215, speed: 15.0 },
+        { tMinutes: -360, lon: 80.880, lat: 13.390, heading: 215, speed: 15.0 },
+        { tMinutes: -180, lon: 80.810, lat: 13.320, heading: 215, speed: 15.0 },
+        { tMinutes: -60,  lon: 80.750, lat: 13.250, heading: 142, speed: 5.6 }, // Collision Intercept & Evasive Turn
+        { tMinutes: 0,    lon: 80.740, lat: 13.245, heading: 142, speed: 11.8 },
+        { tMinutes: 180,  lon: 80.670, lat: 13.170, heading: 215, speed: 15.0 },
+      ],
+    },
+    // ICGS VAIBHAV (Pollution Control Patrol)
+    {
+      mmsi: 419000888,
+      name: "ICGS VAIBHAV",
+      waypoints: [
+        { tMinutes: -360, lon: 80.850, lat: 13.120, heading: 335, speed: 18.0 },
+        { tMinutes: -180, lon: 80.780, lat: 13.170, heading: 335, speed: 18.0 },
+        { tMinutes: 0,    lon: 80.710, lat: 13.220, heading: 335, speed: 18.0 },
+        { tMinutes: 180,  lon: 80.640, lat: 13.270, heading: 335, speed: 18.0 },
+      ],
+    },
+    // COROMANDEL EXPRESS (Cargo Feeder)
+    {
+      mmsi: 419000555,
+      name: "COROMANDEL EXPRESS",
+      waypoints: [
+        { tMinutes: -360, lon: 80.600, lat: 13.350, heading: 120, speed: 14.5 },
+        { tMinutes: -180, lon: 80.720, lat: 13.300, heading: 120, speed: 14.5 },
+        { tMinutes: 0,    lon: 80.840, lat: 13.250, heading: 120, speed: 14.5 },
+        { tMinutes: 180,  lon: 80.960, lat: 13.200, heading: 120, speed: 14.5 },
       ],
     },
   ],
@@ -243,47 +266,59 @@ export const WAYPOINT_TIMELINES: Record<string, { mmsi: number; name: string; is
 export function interpolateVesselPosition(
   mmsi: number,
   timeOffsetMinutes: number,
-  scenario: string = 'arabian_sea'
-): { lon: number; lat: number; heading: number; speed: number } | null {
+  scenario: string = 'arabian_sea',
+  vesselCurrentPos?: { longitude: number; latitude: number; heading_degrees: number; speed_knots: number }
+): { lon: number; lat: number; heading: number; speed: number } {
   const tracks = WAYPOINT_TIMELINES[scenario] || WAYPOINT_TIMELINES.arabian_sea;
   const vesselTrack = tracks.find((t) => t.mmsi === mmsi);
-  if (!vesselTrack || !vesselTrack.waypoints.length) return null;
 
-  const wps = vesselTrack.waypoints;
+  if (vesselTrack && vesselTrack.waypoints.length) {
+    const wps = vesselTrack.waypoints;
 
-  // Clamp or extrapolate
-  if (timeOffsetMinutes <= wps[0].tMinutes) {
-    return { lon: wps[0].lon, lat: wps[0].lat, heading: wps[0].heading, speed: wps[0].speed };
-  }
-  if (timeOffsetMinutes >= wps[wps.length - 1].tMinutes) {
-    const last = wps[wps.length - 1];
-    return { lon: last.lon, lat: last.lat, heading: last.heading, speed: last.speed };
-  }
+    // Clamp or extrapolate
+    if (timeOffsetMinutes <= wps[0].tMinutes) {
+      return { lon: wps[0].lon, lat: wps[0].lat, heading: wps[0].heading, speed: wps[0].speed };
+    }
+    if (timeOffsetMinutes >= wps[wps.length - 1].tMinutes) {
+      const last = wps[wps.length - 1];
+      return { lon: last.lon, lat: last.lat, heading: last.heading, speed: last.speed };
+    }
 
-  // Find surrounding waypoint segment
-  for (let i = 0; i < wps.length - 1; i++) {
-    const w1 = wps[i];
-    const w2 = wps[i + 1];
-    if (timeOffsetMinutes >= w1.tMinutes && timeOffsetMinutes <= w2.tMinutes) {
-      const segSpan = w2.tMinutes - w1.tMinutes;
-      const progress = segSpan === 0 ? 0 : (timeOffsetMinutes - w1.tMinutes) / segSpan;
+    // Find surrounding waypoint segment
+    for (let i = 0; i < wps.length - 1; i++) {
+      const w1 = wps[i];
+      const w2 = wps[i + 1];
+      if (timeOffsetMinutes >= w1.tMinutes && timeOffsetMinutes <= w2.tMinutes) {
+        const segSpan = w2.tMinutes - w1.tMinutes;
+        const progress = segSpan === 0 ? 0 : (timeOffsetMinutes - w1.tMinutes) / segSpan;
 
-      const lon = w1.lon + (w2.lon - w1.lon) * progress;
-      const lat = w1.lat + (w2.lat - w1.lat) * progress;
-      const heading = w1.heading;
-      const speed = w1.speed;
+        const lon = w1.lon + (w2.lon - w1.lon) * progress;
+        const lat = w1.lat + (w2.lat - w1.lat) * progress;
+        const heading = w1.heading;
+        const speed = w1.speed;
 
-      return {
-        lon: Number(lon.toFixed(6)),
-        lat: Number(lat.toFixed(6)),
-        heading,
-        speed,
-      };
+        return {
+          lon: Number(lon.toFixed(6)),
+          lat: Number(lat.toFixed(6)),
+          heading,
+          speed,
+        };
+      }
     }
   }
 
-  const last = wps[wps.length - 1];
-  return { lon: last.lon, lat: last.lat, heading: last.heading, speed: last.speed };
+  // Smooth fallback: kinematic dead reckoning along vessel's actual course
+  const curLon = vesselCurrentPos?.longitude ?? (scenario === 'bay_of_bengal' ? 80.750 : 72.150);
+  const curLat = vesselCurrentPos?.latitude ?? (scenario === 'bay_of_bengal' ? 13.250 : 19.050);
+  const curHeading = vesselCurrentPos?.heading_degrees ?? 52;
+  const curSpeed = vesselCurrentPos?.speed_knots ?? 14.0;
+
+  const reverseHeading = (curHeading + 180) % 360;
+  const elapsedHours = Math.abs(timeOffsetMinutes) / 60.0;
+  const distanceKm = (curSpeed * 1.852) * elapsedHours;
+  const [lon, lat] = moveCoordinate(curLon, curLat, reverseHeading, distanceKm);
+
+  return { lon, lat, heading: curHeading, speed: curSpeed };
 }
 
 // Calculate oil slick center and polygon at any arbitrary timeline point
@@ -291,7 +326,7 @@ export function calculateSynchronizedOilSpill(
   timeOffsetMinutes: number, // -360 to 0 (and live +)
   scenario: string = 'arabian_sea',
   metocean?: MetoceanData
-): { center: [number, number]; polygon: number[][]; area: number; perimeter: number; isNascent: boolean } {
+): { center: [number, number]; polygon: number[][]; area: number; perimeter: number; isNascent: boolean; hasDischarged: boolean } {
   const isArabian = scenario === 'arabian_sea';
   const dischargeOffset = isArabian ? -42 : -60; // Incident time in minutes before live
   const baseOrigin: [number, number] = isArabian ? [72.145, 19.048] : [80.750, 13.250];
@@ -300,15 +335,15 @@ export function calculateSynchronizedOilSpill(
   const driftSpeedKts = metocean?.net_drift_speed_kts || (isArabian ? 1.95 : 1.52);
   const driftDir = metocean?.net_drift_direction_deg || (isArabian ? 69.3 : 48.2);
 
-  // If before discharge: spill has not happened yet (or show initial discharge spot)
+  // If before discharge: spill has not happened yet
   if (timeOffsetMinutes < dischargeOffset) {
-    const freshPoly = generateRealisticSpillPolygon(baseOrigin[0], baseOrigin[1], trackHeading, 1.8, 0.5);
     return {
       center: baseOrigin,
-      polygon: freshPoly,
-      area: 0.8,
-      perimeter: 4.2,
+      polygon: [],
+      area: 0.0,
+      perimeter: 0.0,
       isNascent: true,
+      hasDischarged: false,
     };
   }
 
@@ -336,7 +371,8 @@ export function calculateSynchronizedOilSpill(
     polygon: poly,
     area,
     perimeter,
-    isNascent: false,
+    isNascent: elapsedSinceDischargeHours < 0.1,
+    hasDischarged: true,
   };
 }
 

@@ -75,6 +75,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [showMetoceanOverlay, setShowMetoceanOverlay] = useState(true);
 
   const isEnnore = scenario === 'bay_of_bengal';
+  const dischargeOffset = isEnnore ? -60 : -42;
+  const isPostDischarge = timeOffsetMinutes >= dischargeOffset;
   
   // Exact Ground-Truth Spill Discharge Origin Coordinates (Where vessel spilled oil)
   const baseOrigin = useMemo<[number, number]>(() => {
@@ -95,6 +97,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const activeSpill = spills.features.find((f) => f.properties.id === selectedSpillId) || spills.features[0];
     const currentYear = new Date().getFullYear();
     const spillId = activeSpill?.properties?.id || (isArabian ? `INC-IND-${currentYear}-01` : `INC-IND-${currentYear}-02`);
+
+    if (!spillData.hasDischarged || !spillData.polygon || spillData.polygon.length === 0) {
+      return {
+        type: "FeatureCollection",
+        features: [],
+      };
+    }
 
     return {
       type: "FeatureCollection",
@@ -130,24 +139,28 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   // Hydrodynamic Hindcast Back-Tracing (Connecting Current Slick Centroid directly to Dump Origin)
   const hindcastFeatures = useMemo(() => {
+    if (!isPostDischarge) {
+      return { type: "FeatureCollection" as const, features: [] };
+    }
+
     const isAtOrigin = Math.abs(slickCentroid[0] - baseOrigin[0]) < 0.001 && Math.abs(slickCentroid[1] - baseOrigin[1]) < 0.001;
 
     // Generate locked amber cone enveloping the line from slickCentroid to baseOrigin
     const coneCoords = isAtOrigin
       ? [
-          [baseOrigin[0] - 0.005, baseOrigin[1] - 0.005],
-          [baseOrigin[0] + 0.005, baseOrigin[1] - 0.005],
-          [baseOrigin[0] + 0.005, baseOrigin[1] + 0.005],
-          [baseOrigin[0] - 0.005, baseOrigin[1] + 0.005],
-          [baseOrigin[0] - 0.005, baseOrigin[1] - 0.005],
+          [baseOrigin[0] - 0.003, baseOrigin[1] - 0.003],
+          [baseOrigin[0] + 0.003, baseOrigin[1] - 0.003],
+          [baseOrigin[0] + 0.003, baseOrigin[1] + 0.003],
+          [baseOrigin[0] - 0.003, baseOrigin[1] + 0.003],
+          [baseOrigin[0] - 0.003, baseOrigin[1] - 0.003],
         ]
       : generateConeBetweenPoints(
           slickCentroid[0],
           slickCentroid[1],
           baseOrigin[0],
           baseOrigin[1],
-          0.35,
-          0.85
+          0.30,
+          0.75
         );
 
     const coneFeature = {
@@ -176,7 +189,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       type: "FeatureCollection" as const,
       features: [coneFeature, lineFeature],
     };
-  }, [slickCentroid, baseOrigin]);
+  }, [slickCentroid, baseOrigin, isPostDischarge]);
 
   // Dump Origin Point GeoJSON Feature (Rendered natively in WebGL on GPU)
   const dumpOriginFeature = useMemo(() => {
@@ -200,6 +213,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   // +6h Hydrodynamic Forecast Dispersal Fan (Cyan)
   const forecastConeFeature = useMemo(() => {
+    if (!isPostDischarge) return null;
+
     const forwardBearing = calculateBearing(baseOrigin[0], baseOrigin[1], slickCentroid[0], slickCentroid[1]);
     const driftSpeed = metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95);
     const forecastDistanceKm = (driftSpeed * 1.852) * 6.0;
@@ -210,8 +225,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       slickCentroid[1],
       endLon,
       endLat,
-      0.4,
-      2.2
+      0.35,
+      2.0
     );
 
     return {
@@ -222,7 +237,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         coordinates: [coneCoords],
       },
     };
-  }, [slickCentroid, baseOrigin, metocean, isEnnore]);
+  }, [slickCentroid, baseOrigin, metocean, isEnnore, isPostDischarge]);
 
   // Initialize MapLibre GL Map
   useEffect(() => {
@@ -293,7 +308,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'forecast-source',
         paint: {
           'fill-color': '#06b6d4',
-          'fill-opacity': 0.14,
+          'fill-opacity': 0.12,
         },
       });
 
@@ -321,7 +336,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         filter: ['==', '$type', 'Polygon'],
         paint: {
           'fill-color': '#f59e0b',
-          'fill-opacity': 0.16,
+          'fill-opacity': 0.14,
         },
       });
 
@@ -348,7 +363,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: 'circle',
         source: 'dump-origin-source',
         paint: {
-          'circle-radius': 13,
+          'circle-radius': 12,
           'circle-color': '#f59e0b',
           'circle-opacity': 0.35,
         },
@@ -500,7 +515,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const src = mapRef.current.getSource('forecast-source') as maplibregl.GeoJSONSource;
     if (!src) return;
 
-    if (showForecast && forecastConeFeature) {
+    if (showForecast && forecastConeFeature && isPostDischarge) {
       src.setData({
         type: 'FeatureCollection',
         features: [forecastConeFeature],
@@ -508,7 +523,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     } else {
       src.setData({ type: 'FeatureCollection', features: [] });
     }
-  }, [forecastConeFeature, showForecast, mapLoaded]);
+  }, [forecastConeFeature, showForecast, isPostDischarge, mapLoaded]);
 
   // Update Hindcast Trail & Cone Layer
   useEffect(() => {
@@ -516,12 +531,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const src = mapRef.current.getSource('hindcast-source') as maplibregl.GeoJSONSource;
     if (!src) return;
 
-    if (showHindcast && hindcastFeatures) {
+    if (showHindcast && hindcastFeatures && isPostDischarge) {
       src.setData(hindcastFeatures);
     } else {
       src.setData({ type: 'FeatureCollection', features: [] });
     }
-  }, [hindcastFeatures, showHindcast, mapLoaded]);
+  }, [hindcastFeatures, showHindcast, isPostDischarge, mapLoaded]);
 
   // Update Dump Origin WebGL Point Layer
   useEffect(() => {
@@ -565,7 +580,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     });
   }, [primarySuspect, showTrails, mapLoaded]);
 
-  // Render Pinned Dump Origin Tactical Label Badge (Directly below WebGL Circle)
+  // Render Clean Pinned Dump Origin Tactical Label Badge (Directly below WebGL Circle)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
@@ -579,19 +594,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const dumpTimeLabel = isEnnore ? '28 Jan 03:45 IST (T-60m)' : '14 Aug 05:29:40 IST (T-42m)';
     const dumpAction = isEnnore ? 'Collision & Breach Origin' : 'Discharge Dump Origin';
     const suspectShip = isEnnore ? 'MT DAWN KANCHEEPURAM' : 'MT DESH SHANTI';
-    const cpaDist = isEnnore ? '0.00 km CPA' : '0.00 km CPA (Direct Intercept)';
+    const cpaDist = '0.00 km CPA';
 
     const el = document.createElement('div');
     el.className = 'select-none pointer-events-auto cursor-pointer relative z-20 flex flex-col items-center';
     el.innerHTML = `
-      <div class="mt-2.5 bg-slate-950/95 border border-amber-400/90 rounded px-2 py-0.5 shadow-2xl flex flex-col items-center gap-0.5 whitespace-nowrap backdrop-blur-md hover:scale-105 transition-transform">
-        <div class="flex items-center gap-1 font-mono text-[9.5px] font-bold text-amber-300">
-          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-          <span>DUMPED: ${dumpTimeLabel}</span>
-        </div>
-        <div class="text-[8px] font-mono text-slate-300">
-          ${dumpAction} • <span class="text-amber-200 font-semibold">${suspectShip}</span> (${cpaDist})
-        </div>
+      <div class="mt-2 bg-slate-950/95 border border-amber-400/90 rounded px-2 py-0.5 shadow-2xl flex items-center gap-1.5 whitespace-nowrap backdrop-blur-md hover:scale-105 transition-transform">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+        <span class="font-mono text-[9px] font-bold text-amber-300">DUMPED: ${dumpTimeLabel}</span>
+        <span class="text-slate-500 text-[8px]">•</span>
+        <span class="text-[8px] font-mono text-amber-200 font-semibold">${suspectShip}</span>
       </div>
     `;
 
@@ -649,7 +661,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
   }, [scenario]);
 
-  // Update Vessel HTML Markers
+  // Update Vessel HTML Markers (Clean, Uncluttered & Crisp)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
@@ -695,31 +707,33 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         const el = existing.getElement();
         const arrow = el.querySelector('.ship-heading-arrow') as HTMLElement;
         if (arrow) arrow.style.transform = `rotate(${p.heading}deg)`;
+        const speedText = el.querySelector('.ship-speed-tag');
+        if (speedText) speedText.textContent = `${p.speed} kts`;
       } else {
         const el = document.createElement('div');
         el.className = 'group select-none cursor-pointer relative';
 
         el.innerHTML = `
           <div class="relative flex items-center justify-center">
-            ${p.isPrimary ? '<div class="absolute w-10 h-10 rounded-full bg-rose-500/25 animate-ping pointer-events-none"></div>' : ''}
+            ${p.isPrimary ? '<div class="absolute w-8 h-8 rounded-full bg-rose-500/25 animate-ping pointer-events-none"></div>' : ''}
             
             <!-- Ship Icon Circle -->
-            <div class="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg ${
+            <div class="w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110 shadow-lg ${
               p.isPrimary
-                ? 'bg-rose-600 border border-white text-white shadow-rose-500/50'
+                ? 'bg-rose-600 border border-white text-white shadow-rose-500/50 ring-2 ring-rose-500/40'
                 : 'bg-slate-900 border border-cyan-400 text-cyan-400 shadow-cyan-500/30'
             }">
-              <svg class="w-3.5 h-3.5 ship-heading-arrow transition-transform duration-300" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
+              <svg class="w-3 h-3 ship-heading-arrow transition-transform duration-200" style="transform: rotate(${p.heading}deg);" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
               </svg>
             </div>
 
-            <!-- Clean Label -->
-            <div class="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-slate-900/90 border ${
-              p.isPrimary ? 'border-rose-500/60 text-rose-200 font-semibold' : 'border-slate-700/60 text-slate-200'
-            } px-2 py-0.5 rounded text-[10px] font-mono whitespace-nowrap shadow-md pointer-events-none transition-opacity duration-200">
+            <!-- Clean, Compact Label (Uncluttered) -->
+            <div class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-950/90 border ${
+              p.isPrimary ? 'border-rose-500/70 text-rose-200 font-bold' : 'border-slate-800 text-slate-300'
+            } px-1.5 py-0.2 rounded text-[9px] font-mono whitespace-nowrap shadow-md pointer-events-none transition-opacity duration-200 flex items-center gap-1">
               <span>${p.name}</span>
-              <span class="text-slate-400 ml-1">${p.speed} kts</span>
+              <span class="ship-speed-tag text-slate-400 font-normal">${p.speed} kts</span>
             </div>
           </div>
         `;
@@ -772,74 +786,74 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {/* Map Container */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Top Banner (Maritime Incident Status) */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-[94%] sm:w-auto max-w-lg">
-        <div className="tactical-glass rounded-xl px-3 sm:px-4 py-2 border border-rose-500/40 shadow-2xl flex flex-col gap-0.5 text-center font-mono">
+      {/* Top Banner (Maritime Incident Status - Compact & Clean) */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none w-[94%] sm:w-auto max-w-md">
+        <div className="tactical-glass rounded-xl px-3 py-1.5 border border-rose-500/30 shadow-2xl flex flex-col gap-0.5 text-center font-mono">
           <div className="flex items-center justify-center gap-2 text-xs">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-            <span className="text-rose-400 font-bold">TARGET INCIDENT LOG</span>
-            <span className="text-slate-400">•</span>
-            <span className="text-white bg-rose-950 px-1.5 py-0.5 rounded border border-rose-600/60 font-bold shadow-sm">
-              {isEnnore ? '28 JAN 2017 • 03:45:00 IST (22:15 UTC)' : '14 AUG 2024 • 05:29:40 IST (T-42m)'}
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <span className="text-rose-400 font-bold">INCIDENT LOG</span>
+            <span className="text-slate-500">•</span>
+            <span className="text-white bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-600/50 font-bold text-[10.5px]">
+              {isEnnore ? '28 JAN 2017 • 03:45 IST' : '14 AUG 2024 • 05:29 IST'}
             </span>
           </div>
-          <div className="text-[9px] text-slate-300 truncate mt-0.5">
+          <div className="text-[8.5px] text-slate-400 truncate">
             {isEnnore
-              ? 'Kamarajar Port Ennore (13°14.2\'N, 80°21.8\'E) • BW MAPLE vs MT DAWN KANCHEEPURAM (DG Shipping Validated)'
-              : 'Mumbai High Sector (19°02.9\'N, 72°08.7\'E) • MT DESH SHANTI (Copernicus C-SAR Feed)'}
+              ? 'Ennore Port Sector • BW MAPLE vs MT DAWN KANCHEEPURAM'
+              : 'Mumbai High Sector • MT DESH SHANTI (Sentinel-1 SAR)'}
           </div>
         </div>
       </div>
 
       {/* Floating Metocean Live Vector Overlay (Top-Right) */}
       {showMetoceanOverlay && (
-        <div className="absolute top-3 right-3 z-20 tactical-glass rounded-xl p-3 border border-cyan-500/20 shadow-xl flex flex-col gap-2 select-none w-56 sm:w-60 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between border-b border-slate-700/40 pb-1.5">
-            <div className="flex items-center gap-1.5 text-white font-mono text-xs font-semibold">
+        <div className="absolute top-3 right-3 z-20 tactical-glass rounded-xl p-2.5 border border-cyan-500/20 shadow-xl flex flex-col gap-1.5 select-none w-52 sm:w-56 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between border-b border-slate-700/40 pb-1">
+            <div className="flex items-center gap-1.5 text-white font-mono text-[11px] font-semibold">
               <Compass className="w-3.5 h-3.5 text-cyan-400" />
               <span>Surface Metocean</span>
             </div>
-            <span className="text-[10px] font-mono text-emerald-400 font-bold flex items-center gap-1">
+            <span className="text-[9px] font-mono text-emerald-400 font-bold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               LIVE
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-1.5 font-mono text-[10px]">
+          <div className="grid grid-cols-2 gap-1 font-mono text-[9px]">
             {/* Wind Vector */}
-            <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800 flex flex-col">
-              <div className="flex items-center gap-1 text-slate-400 text-[9px]">
-                <Wind className="w-3 h-3 text-cyan-400" />
+            <div className="p-1 bg-slate-900/80 rounded border border-slate-800 flex flex-col">
+              <div className="flex items-center gap-1 text-slate-400 text-[8.5px]">
+                <Wind className="w-2.5 h-2.5 text-cyan-400" />
                 <span>WIND</span>
               </div>
-              <span className="font-bold text-white text-xs mt-0.5">{metocean?.wind_speed_kts || (isEnnore ? 12.8 : 16.2)} kts</span>
-              <span className="text-[9px] text-slate-400 mt-0.5">
+              <span className="font-bold text-white text-[10.5px] mt-0.5">{metocean?.wind_speed_kts || (isEnnore ? 12.8 : 16.2)} kts</span>
+              <span className="text-[8px] text-slate-400">
                 {metocean?.wind_direction_deg || (isEnnore ? 190 : 245)}° ({metocean?.wind_cardinal || (isEnnore ? 'S' : 'WSW')})
               </span>
             </div>
 
             {/* Current Vector */}
-            <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800 flex flex-col">
-              <div className="flex items-center gap-1 text-slate-400 text-[9px]">
-                <Waves className="w-3 h-3 text-cyan-400" />
+            <div className="p-1 bg-slate-900/80 rounded border border-slate-800 flex flex-col">
+              <div className="flex items-center gap-1 text-slate-400 text-[8.5px]">
+                <Waves className="w-2.5 h-2.5 text-cyan-400" />
                 <span>CURRENT</span>
               </div>
-              <span className="font-bold text-white text-xs mt-0.5">{metocean?.current_speed_kts || (isEnnore ? 1.1 : 1.4)} kts</span>
-              <span className="text-[9px] text-slate-400 mt-0.5">
+              <span className="font-bold text-white text-[10.5px] mt-0.5">{metocean?.current_speed_kts || (isEnnore ? 1.1 : 1.4)} kts</span>
+              <span className="text-[8px] text-slate-400">
                 {metocean?.current_direction_deg || (isEnnore ? 40 : 65)}° ({metocean?.current_cardinal || (isEnnore ? 'NE' : 'ENE')})
               </span>
             </div>
           </div>
 
-          {/* Net Slick Drift Vector & Hindcast Vector */}
-          <div className="flex flex-col gap-1 text-[9.5px] font-mono">
-            <div className="p-1 bg-slate-900/90 rounded border border-cyan-500/20 flex items-center justify-between">
+          {/* Net Drift & Hindcast */}
+          <div className="flex flex-col gap-0.5 text-[8.5px] font-mono">
+            <div className="px-1 py-0.5 bg-slate-900/90 rounded border border-cyan-500/20 flex items-center justify-between">
               <span className="text-slate-400">Forward Drift:</span>
               <span className="text-cyan-300 font-bold">
                 {metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95)} kts @ {metocean?.net_drift_direction_deg || (isEnnore ? 48.2 : 69.3)}°
               </span>
             </div>
-            <div className="p-1 bg-amber-950/40 rounded border border-amber-500/30 flex items-center justify-between text-amber-300">
+            <div className="px-1 py-0.5 bg-amber-950/40 rounded border border-amber-500/30 flex items-center justify-between text-amber-300">
               <span className="text-amber-400/80">Reverse Hindcast:</span>
               <span className="font-bold">
                 {metocean?.net_drift_speed_kts || (isEnnore ? 1.52 : 1.95)} kts @ {((metocean?.net_drift_direction_deg || (isEnnore ? 48.2 : 69.3)) + 180) % 360}°
@@ -925,23 +939,23 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </button>
       </div>
 
-      {/* Clean Bottom Legend */}
-      <div className="absolute bottom-20 sm:bottom-4 left-4 z-20 tactical-glass rounded-lg px-3 py-1.5 border border-slate-700/40 flex items-center gap-3 text-[10px] font-mono text-slate-300 select-none shadow-lg flex-wrap">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-rose-600 border border-rose-300"></span>
+      {/* Clean Bottom Legend (Compact & Sleek) */}
+      <div className="absolute bottom-20 sm:bottom-4 left-4 z-20 tactical-glass rounded-lg px-2.5 py-1 border border-slate-700/40 flex items-center gap-2.5 text-[9px] font-mono text-slate-300 select-none shadow-lg flex-wrap">
+        <div className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-sm bg-rose-600 border border-rose-300"></span>
           <span>Oil Slick (SAR)</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 border-t-2 border-dashed border-rose-400"></span>
+        <div className="flex items-center gap-1">
+          <span className="w-2.5 border-t-2 border-dashed border-rose-400"></span>
           <span>Tanker Track</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500/20 border border-cyan-400 border-dashed"></span>
-          <span>+6h Forecast</span>
+        <div className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-sm bg-cyan-500/20 border border-cyan-400 border-dashed"></span>
+          <span>Forecast</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-amber-500/20 border border-amber-400 border-dashed"></span>
-          <span>Hindcast Trail & Dump Locus</span>
+        <div className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-sm bg-amber-500/20 border border-amber-400 border-dashed"></span>
+          <span>Hindcast</span>
         </div>
       </div>
     </div>

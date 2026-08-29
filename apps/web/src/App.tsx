@@ -167,23 +167,20 @@ export function App() {
     if (timeOffsetMinutes === 0) return undefined;
 
     return vessels.map((v) => {
-      const interp = interpolateVesselPosition(v.mmsi, timeOffsetMinutes, activeScenario);
-      if (interp) {
-        return {
-          mmsi: v.mmsi,
-          lon: interp.lon,
-          lat: interp.lat,
-          heading: interp.heading,
-          speed: interp.speed,
-        };
-      }
-      const cur = v.current_position;
+      const curPos = v.current_position ? {
+        longitude: v.current_position.longitude,
+        latitude: v.current_position.latitude,
+        heading_degrees: v.current_position.heading_degrees,
+        speed_knots: v.current_position.speed_knots,
+      } : undefined;
+
+      const interp = interpolateVesselPosition(v.mmsi, timeOffsetMinutes, activeScenario, curPos);
       return {
         mmsi: v.mmsi,
-        lon: cur?.longitude || 72.15,
-        lat: cur?.latitude || 19.05,
-        heading: cur?.heading_degrees || 52,
-        speed: cur?.speed_knots || 14.0,
+        lon: interp.lon,
+        lat: interp.lat,
+        heading: interp.heading,
+        speed: interp.speed,
       };
     });
   }, [timeOffsetMinutes, vessels, activeScenario]);
