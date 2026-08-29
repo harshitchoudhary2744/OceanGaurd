@@ -463,13 +463,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           <div className="text-[10px] text-rose-300 font-bold flex items-center gap-1.5 flex-wrap">
             <span>🎯 INTERCEPT POINT:</span>
             <span className="text-white bg-rose-950 px-1.5 py-0.5 rounded border border-rose-600/60 font-bold shadow-sm">
-              {scenario === 'bay_of_bengal' ? '28 JAN 2017 • 03:45:00 IST' : 'TODAY • 05:29:40 IST (T-42m)'}
+              {scenario === 'bay_of_bengal' ? 'TODAY • 03:45:00 IST (T-60m)' : 'TODAY • 05:29:40 IST (T-42m)'}
             </span>
           </div>
           <div className="text-[9px] text-slate-300 truncate mt-0.5">
             {scenario === 'bay_of_bengal'
-              ? 'Kamarajar Port Ennore (13°14.2\'N, 80°21.8\'E) • BW MAPLE vs MT DAWN KANCHEEPURAM'
-              : 'Mumbai High Sector (19°02.9\'N, 72°08.7\'E) • MT DESH SHANTI (Direct Overlap)'}
+              ? 'Kamarajar Port Ennore (13°14.2\'N, 80°21.8\'E) • Live Sentinel-1 C-SAR Feed'
+              : 'Mumbai High Sector (19°02.9\'N, 72°08.7\'E) • Live Sentinel-1 C-SAR Feed'}
           </div>
         </div>
       </div>

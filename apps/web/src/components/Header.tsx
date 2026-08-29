@@ -119,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
             <span className="text-rose-300 font-bold">INTERCEPT:</span>
             <span className="text-white font-semibold">
-              {activeScenario === 'bay_of_bengal' ? '28 JAN 2017 • 03:45:00 IST' : 'TODAY • 05:29:40 IST'}
+              {activeScenario === 'bay_of_bengal' ? 'TODAY • 03:45:00 IST (T-60m)' : 'TODAY • 05:29:40 IST (T-42m)'}
             </span>
           </div>
 

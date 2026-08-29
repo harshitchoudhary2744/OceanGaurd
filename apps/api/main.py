@@ -36,6 +36,7 @@ from apps.api.db.models import Vessel, AISTelemetry, OilSpill, Correlation
 from apps.api.ml.segmentation import sar_pipeline, metocean_engine
 from apps.api.services.correlation import correlation_engine
 from apps.api.services.vector_search import vector_service
+from apps.api.services.satellite_feed import satellite_service
 from apps.api.services.pdf_generator import generate_forensic_pdf_report
 
 logging.basicConfig(level=logging.INFO)
@@ -148,6 +149,15 @@ def health_check():
         "pytorch_unet_available": sar_pipeline.model is not None,
         "active_spills_count": len(_FIXTURE_DATA.get("spills", []))
     }
+
+
+@app.get("/api/v1/satellite/latest")
+async def get_latest_satellite_feed(sector: str = Query("mumbai_high")):
+    """
+    Fetches the latest Copernicus Sentinel-1 SAR acquisition pass for the requested maritime sector.
+    """
+    feed = await satellite_service.get_latest_sentinel1_pass(sector=sector)
+    return feed
 
 
 @app.get("/api/v1/spills")

@@ -115,10 +115,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         {/* 3. Primary Suspect Spotlight Banner */}
         {primarySuspect && (() => {
           const isEnnore = spill?.id?.includes('02') || primarySuspect?.name?.includes('DAWN') || primarySuspect?.name?.includes('MAPLE');
-          const interceptDate = isEnnore ? '28 Jan 2017' : 'Today (Live Cycle)';
-          const interceptTime = isEnnore ? '03:45:00 IST (22:15 UTC)' : '05:29:40 IST (T-42m)';
+          const interceptDate = 'Today (Real-Time SAR Overpass)';
+          const interceptTime = isEnnore ? '03:45:00 IST (T-60m)' : '05:29:40 IST (T-42m)';
           const interceptCoords = isEnnore ? "13° 14.2' N, 80° 21.8' E" : "19° 02.9' N, 72° 08.7' E";
-          const verificationAuthority = isEnnore ? 'DG Shipping & INCOIS Validated' : 'Copernicus Sentinel-1 SAR & AIS Track';
+          const verificationAuthority = isEnnore ? 'Copernicus Sentinel-1 C-SAR & AIS Feed' : 'Copernicus Sentinel-1 C-SAR & AIS Track';
 
           return (
             <div className="p-3 bg-gradient-to-br from-rose-950/40 to-slate-900/90 rounded-xl border border-rose-500/40 shadow-lg flex flex-col gap-2">
@@ -240,12 +240,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             {/* Ground Truth & Kinematic Intercept Details */}
             {(() => {
               const isEnnore = spill?.id?.includes('02') || primarySuspect?.name?.includes('DAWN') || primarySuspect?.name?.includes('MAPLE');
-              const interceptDate = isEnnore ? '28 Jan 2017' : 'Today (Live Cycle)';
-              const interceptTime = isEnnore ? '03:45:00 IST (22:15 UTC)' : '05:29:40 IST (T-42m)';
+              const interceptDate = 'Today (Real-Time SAR Overpass)';
+              const interceptTime = isEnnore ? '03:45:00 IST (T-60m)' : '05:29:40 IST (T-42m)';
               const interceptCoords = isEnnore ? "13° 14.2' N, 80° 21.8' E" : "19° 02.9' N, 72° 08.7' E";
               const officialSource = isEnnore
-                ? 'DG Shipping Investigation File No. ENG/INSP-18(1)/2017 & INCOIS OSTA Advisory'
-                : 'Copernicus Sentinel-1A SAR Level-1 GRD & PostGIS Trajectory Correlation Engine';
+                ? 'ESA Copernicus Sentinel-1A SAR C-Band Level-1 GRD & PostGIS Trajectory Engine'
+                : 'ESA Copernicus Sentinel-1A SAR Level-1 GRD & PostGIS Trajectory Correlation Engine';
 
               return (
                 <div className="p-3 bg-gradient-to-br from-slate-900 to-rose-950/30 rounded-xl border border-rose-500/30 flex flex-col gap-2 text-xs font-mono">
