@@ -645,7 +645,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       if (!marker) {
         const el = document.createElement('div');
-        el.className = 'vessel-marker group cursor-pointer relative';
+        el.className = 'vessel-marker group cursor-pointer';
         el.style.width = '42px';
         el.style.height = '42px';
         el.style.display = 'flex';
@@ -720,13 +720,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           path.setAttribute('stroke-width', '2');
           label.className = 'marker-label absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-md bg-slate-950/95 border-2 border-rose-500 text-[10px] font-mono font-bold text-rose-300 whitespace-nowrap shadow-2xl z-30 flex items-center gap-1.5 backdrop-blur-sm';
           label.innerText = `🎯 ${name} (${v.speed ? v.speed.toFixed(1) : '14.8'} kts)`;
-        } else if (isIncidentCulprit) {
-          ring.className = 'marker-ring absolute inset-1 rounded-full border border-rose-500/60 bg-rose-500/10 pointer-events-none';
-          path.setAttribute('fill', '#f43f5e');
-          path.setAttribute('stroke', '#020617');
-          path.setAttribute('stroke-width', '1.5');
-          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-rose-900/60 text-[9px] font-mono text-rose-300 whitespace-nowrap pointer-events-none z-30';
-          label.innerText = name.split(' ')[0];
         } else if (isCoastGuard) {
           ring.className = 'marker-ring absolute inset-1 rounded-full border border-cyan-500/40 pointer-events-none';
           path.setAttribute('fill', '#06b6d4');
@@ -736,8 +729,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           label.innerText = '🛡️ ICGS PRAHARI';
         } else {
           ring.className = 'marker-ring hidden';
-          path.setAttribute('fill', '#94a3b8');
-          path.setAttribute('stroke', '#020617');
+          path.setAttribute('fill', '#64748b');
+          path.setAttribute('stroke', '#0f172a');
           path.setAttribute('stroke-width', '1.5');
           label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-400 whitespace-nowrap pointer-events-none z-30';
           label.innerText = name.split(' ')[0];

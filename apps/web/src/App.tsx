@@ -85,7 +85,11 @@ export function App() {
 
       if (spillsData?.features?.length) setSpills(spillsData);
       if (vesselsData?.length) setVessels(vesselsData);
-      if (suspectsData?.length) setSuspects(suspectsData);
+      if (suspectsData?.length) {
+        setSuspects(suspectsData);
+        const config = MUMBAI_INCIDENTS[selectedSpillId];
+        setSelectedVesselMmsi(config?.culpritMmsi || suspectsData[0].mmsi);
+      }
       if (vectorData?.length) setVectorMatches(vectorData);
       if (metoceanData) setMetocean(metoceanData);
     } catch (e) {

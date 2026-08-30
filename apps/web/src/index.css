@@ -58,3 +58,16 @@
 .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: #1c1f2a !important; }
 .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: #1c1f2a !important; }
 .maplibregl-popup-close-button { color: #849396 !important; }
+
+/* MapLibre Canvas Container & Marker Positioning Fixes */
+.maplibregl-canvas-container {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.vessel-marker {
+  position: absolute !important;
+  user-select: none;
+  -webkit-user-select: none;
+}

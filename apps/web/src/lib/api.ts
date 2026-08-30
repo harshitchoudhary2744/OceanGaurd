@@ -12,6 +12,7 @@ import {
   INITIAL_SUSPECTS,
   INITIAL_VECTOR_MATCHES
 } from './mockData';
+import { globalSimulation } from './simulationEngine';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -32,9 +33,9 @@ export async function fetchCorrelations(spillId: string): Promise<SuspectVessel[
     const res = await fetch(`${API_BASE}/api/v1/spills/${spillId}/correlate`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    return data.suspects || INITIAL_SUSPECTS;
+    return data.suspects || globalSimulation.buildInitialState(spillId).suspects;
   } catch (err) {
-    return INITIAL_SUSPECTS;
+    return globalSimulation.buildInitialState(spillId).suspects;
   }
 }
 
@@ -43,9 +44,10 @@ export async function fetchVectorMatches(spillId: string): Promise<VectorMatch[]
     const res = await fetch(`${API_BASE}/api/v1/spills/${spillId}/similar`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    return data.matches || INITIAL_VECTOR_MATCHES;
+    return data.matches || INITIAL_VECTOR_MATCHES.filter((m) => m.spill_id === spillId);
   } catch (err) {
-    return INITIAL_VECTOR_MATCHES;
+    const filtered = INITIAL_VECTOR_MATCHES.filter((m) => m.spill_id === spillId);
+    return filtered.length > 0 ? filtered : INITIAL_VECTOR_MATCHES;
   }
 }
 
