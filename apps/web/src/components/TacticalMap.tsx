@@ -809,13 +809,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       </div>
 
       {/* Active Incident Legend Indicator (Bottom-Right) */}
-      <div className="absolute bottom-20 right-4 z-10 hidden sm:flex flex-col gap-1.5 p-2.5 bg-[#111622]/90 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-xl max-w-xs">
+      <div className="absolute bottom-20 right-4 z-10 hidden sm:flex flex-col gap-1.5 p-3 bg-[#111622]/95 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-2xl max-w-xs ring-1 ring-slate-800/80">
         <div className="flex items-center justify-between font-bold text-white border-b border-slate-800 pb-1">
           <span className="flex items-center gap-1.5 text-cyan-400">
             <Compass className="w-3.5 h-3.5" />
             MUMBAI TACTICAL RADAR
           </span>
-          <span className="text-rose-400">{timeOffsetMinutes === 0 ? 'LIVE' : `T${timeOffsetMinutes}m`}</span>
+          <span className="text-rose-400 font-bold">{timeOffsetMinutes === 0 ? 'LIVE' : `T${timeOffsetMinutes}m`}</span>
         </div>
         <div className="flex justify-between items-center text-[10px]">
           <span className="text-slate-400">Target Vessel:</span>
@@ -826,8 +826,19 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           <strong className="text-amber-300">{currentIncident.name}</strong>
         </div>
         <div className="flex justify-between items-center text-[10px]">
-          <span className="text-slate-400">Hindcast CPA:</span>
-          <strong className="text-emerald-400">0.00 km Direct Intercept</strong>
+          <span className="text-slate-400">Coast Distance:</span>
+          <strong className="text-rose-300">{currentIncident.threat.coast_distance_km} km</strong>
+        </div>
+        <div className="flex justify-between items-center text-[10px]">
+          <span className="text-slate-400">Landfall Arrival:</span>
+          <strong className="text-amber-400">{currentIncident.threat.predicted_arrival_hours} hrs</strong>
+        </div>
+        <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-800/80">
+          <span className="text-slate-400">Threat Severity:</span>
+          <span className="flex items-center gap-1 text-rose-400 font-bold">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            {currentIncident.threat.overall_severity_score}/100 ({currentIncident.threat.overall_severity_level})
+          </span>
         </div>
       </div>
     </div>

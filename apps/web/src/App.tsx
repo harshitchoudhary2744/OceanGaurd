@@ -337,6 +337,7 @@ export function App() {
             selectedVesselMmsi={selectedVesselMmsi ?? undefined}
             onSelectVessel={handleSelectVessel}
             metocean={metocean}
+            timeOffsetMinutes={timeOffsetMinutes}
           />
         </div>
       </div>
@@ -413,6 +414,7 @@ export function App() {
               onClose={() => setIsMobileDrawerOpen(false)}
               isMobileModal={true}
               metocean={metocean}
+              timeOffsetMinutes={timeOffsetMinutes}
             />
           </div>
         </div>

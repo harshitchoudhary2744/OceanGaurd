@@ -54,6 +54,20 @@ export interface AnomalyBreakdown {
   evidence_tags: string[];
 }
 
+export interface EnvironmentalThreat {
+  coast_distance_km: number;
+  growth_rate_pct_per_hour: number;
+  fishing_zone_risk: 'HIGH' | 'MEDIUM' | 'LOW';
+  fishing_zone_name: string;
+  marine_habitat_risk: 'HIGH' | 'MEDIUM' | 'LOW';
+  marine_habitat_name: string;
+  overall_severity_score: number; // 0 - 100
+  overall_severity_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  predicted_arrival_hours: number;
+  coastal_threat_risk: 'HIGH' | 'MEDIUM' | 'LOW';
+  projected_impact_zone: string;
+}
+
 export interface HindcastPoint {
   time_offset_minutes: number;
   timestamp: string;

@@ -20,11 +20,14 @@ import {
   Gauge,
   ZapOff,
   Navigation,
-  Target
+  Target,
+  Anchor,
+  Fish,
+  TreePine
 } from 'lucide-react';
 import { SuspectVessel, VectorMatch, SpillProperties, SpillGeoFeature, MetoceanData } from '../types';
 import { downloadPdfReportUrl } from '../lib/api';
-import { MUMBAI_INCIDENTS } from '../lib/simulationEngine';
+import { MUMBAI_INCIDENTS, calculateEnvironmentalThreat } from '../lib/simulationEngine';
 
 interface InspectorPanelProps {
   spill?: SpillProperties;
@@ -36,10 +39,11 @@ interface InspectorPanelProps {
   onClose?: () => void;
   isMobileModal?: boolean;
   metocean?: MetoceanData;
+  timeOffsetMinutes?: number;
   scenario?: string;
 }
 
-type TabType = 'overview' | 'suspects' | 'hindcast' | 'metocean' | 'intel';
+type TabType = 'overview' | 'threat' | 'suspects' | 'hindcast' | 'metocean' | 'intel';
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   spill,
@@ -51,12 +55,16 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   onClose,
   isMobileModal,
   metocean,
+  timeOffsetMinutes = 0,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isExporting, setIsExporting] = useState(false);
 
   const incidentId = spill?.id || "INC-MUM-2024-01";
   const currentIncident = MUMBAI_INCIDENTS[incidentId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
+
+  // Dynamic Environmental Threat & Coastal Impact
+  const threat = calculateEnvironmentalThreat(incidentId, timeOffsetMinutes, metocean);
 
   // Active inspected vessel (priority: explicitly selected MMSI -> incident culprit -> highest match -> first)
   const activeVessel =
@@ -110,30 +118,126 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         </div>
       </div>
 
-      <div className="p-3.5 sm:p-4 flex flex-col gap-3.5 pb-20 lg:pb-6">
+      <div className="p-3.5 sm:p-4 flex flex-col gap-3 pb-20 lg:pb-6">
         {/* 2. Top Key Metrics Row */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
-            <span className="text-[9.5px] font-mono text-slate-400 block mb-0.5">SLICK AREA</span>
-            <span className="font-mono font-bold text-rose-300 text-sm">
+          <div className="p-2 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
+            <span className="text-[9px] font-mono text-slate-400 block mb-0.5">SLICK AREA</span>
+            <span className="font-mono font-bold text-rose-300 text-xs sm:text-sm">
               {spill?.area_sq_km || currentIncident.baseAreaSqKm} <span className="text-[10px] text-slate-400 font-normal">km²</span>
             </span>
           </div>
-          <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
-            <span className="text-[9.5px] font-mono text-slate-400 block mb-0.5">EST. VOLUME</span>
-            <span className="font-mono font-bold text-white text-sm">
+          <div className="p-2 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
+            <span className="text-[9px] font-mono text-slate-400 block mb-0.5">EST. VOLUME</span>
+            <span className="font-mono font-bold text-white text-xs sm:text-sm">
               ~{Math.round(currentIncident.volumeLiters / 1000)} <span className="text-[10px] text-slate-400 font-normal">kL</span>
             </span>
           </div>
-          <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
-            <span className="text-[9.5px] font-mono text-slate-400 block mb-0.5">ANOMALY RISK</span>
-            <span className="font-mono font-bold text-rose-400 text-sm">
-              {activeVessel?.anomaly_score || activeVessel?.probability_score || 98.4}%
+          <div className="p-2 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
+            <span className="text-[9px] font-mono text-slate-400 block mb-0.5">SEVERITY INDEX</span>
+            <span className="font-mono font-bold text-rose-400 text-xs sm:text-sm flex items-center justify-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              {threat.overall_severity_score}/100
             </span>
           </div>
         </div>
 
-        {/* 3. Active Inspected Suspect Spotlight Banner */}
+        {/* 3. SPILL SEVERITY & COASTAL THREAT DUAL CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Card 1: SPILL SEVERITY */}
+          <div className="p-2.5 bg-slate-900/85 rounded-xl border border-slate-800/90 flex flex-col gap-1.5 font-mono text-xs shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-1">
+              <span className="text-[10px] text-rose-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 text-rose-400" />
+                SPILL SEVERITY
+              </span>
+              <span className="bg-rose-950/80 text-rose-300 text-[9px] px-1.5 py-0.2 rounded font-bold border border-rose-600/40">
+                {threat.overall_severity_level}
+              </span>
+            </div>
+            <div className="flex flex-col gap-1 text-[10.5px]">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Area:</span>
+                <strong className="text-white">{spill?.area_sq_km || currentIncident.baseAreaSqKm} km²</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Growth:</span>
+                <strong className="text-amber-300">+{threat.growth_rate_pct_per_hour}% /h</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Coast distance:</span>
+                <strong className="text-white">{threat.coast_distance_km} km</strong>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Fishing zones:</span>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-950 text-rose-300 border border-rose-600/40">
+                  {threat.fishing_zone_risk} RISK
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Marine habitat:</span>
+                <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+                  threat.marine_habitat_risk === 'HIGH'
+                    ? 'bg-rose-950 text-rose-300 border border-rose-600/40'
+                    : 'bg-amber-950 text-amber-300 border border-amber-600/40'
+                }`}>
+                  {threat.marine_habitat_risk} RISK
+                </span>
+              </div>
+            </div>
+            <div className="pt-1 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+              <span className="text-slate-400">Overall severity:</span>
+              <span className="flex items-center gap-1 font-bold text-rose-400">
+                <span className="w-2 h-2 rounded-full bg-rose-500 shadow-sm shadow-rose-500" />
+                {threat.overall_severity_score} / 100
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2: COASTAL THREAT */}
+          <div className="p-2.5 bg-slate-900/85 rounded-xl border border-slate-800/90 flex flex-col gap-1.5 font-mono text-xs shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-1">
+              <span className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                <Anchor className="w-3 h-3 text-cyan-400" />
+                COASTAL THREAT
+              </span>
+              <span className="bg-rose-950/80 text-rose-300 text-[9px] px-1.5 py-0.2 rounded font-bold border border-rose-600/40">
+                {threat.coastal_threat_risk}
+              </span>
+            </div>
+            <div className="flex flex-col gap-1 text-[10.5px]">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Current distance:</span>
+                <strong className="text-white">{threat.coast_distance_km} km</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Predicted arrival:</span>
+                <strong className="text-amber-300">{threat.predicted_arrival_hours} hours</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Impact Zone:</span>
+                <span className="text-slate-200 text-[9.5px] truncate max-w-[110px]" title={threat.projected_impact_zone}>
+                  {threat.projected_impact_zone}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Drift Vector:</span>
+                <strong className="text-cyan-300 text-[9.5px]">
+                  {metocean?.net_drift_direction_deg || 69.3}° @ {metocean?.net_drift_speed_kts || 1.95} kts
+                </strong>
+              </div>
+            </div>
+            <div className="pt-1 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+              <span className="text-slate-400">Risk:</span>
+              <span className="flex items-center gap-1.5 font-bold text-rose-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm" />
+                {threat.coastal_threat_risk}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Active Inspected Suspect Spotlight Banner */}
         {activeVessel && (
           <div className="p-3 bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-slate-900/90 rounded-xl border border-rose-500/40 shadow-lg flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -202,7 +306,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           </div>
         )}
 
-        {/* 4. Tab Navigation */}
+        {/* 5. Tab Navigation */}
         <div className="flex items-center bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-[11px] font-mono overflow-x-auto">
           <button
             onClick={() => setActiveTab('overview')}
@@ -211,6 +315,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             }`}
           >
             Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('threat')}
+            className={`flex-1 py-1.5 px-2 rounded-md text-center transition-all whitespace-nowrap ${
+              activeTab === 'threat' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Ecology & Risk
           </button>
           <button
             onClick={() => setActiveTab('suspects')}
@@ -246,7 +358,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           </button>
         </div>
 
-        {/* 5. Tab Content Area */}
+        {/* 6. Tab Content Area */}
         {activeTab === 'overview' && (
           <div className="flex flex-col gap-3 font-mono text-xs">
             <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2">
@@ -283,6 +395,61 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 <div>Location: <strong className="text-white">{currentIncident.locationName}</strong></div>
                 <div>Origin GPS: <strong className="text-cyan-300">{interceptCoords}</strong></div>
                 <div>Discharge Time: <strong className="text-rose-300">T{currentIncident.dischargeOffsetMinutes}m Before Real-Time</strong></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'threat' && (
+          <div className="flex flex-col gap-3 font-mono text-xs">
+            <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2">
+              <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Ecological Impact & Protected Habitats
+              </span>
+              <div className="flex flex-col gap-2 text-[11px]">
+                <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
+                  <span className="text-slate-400 block text-[10px] flex items-center gap-1">
+                    <Fish className="w-3 h-3 text-cyan-400" />
+                    Commercial Fishery Sector:
+                  </span>
+                  <strong className="text-white">{threat.fishing_zone_name}</strong>
+                  <span className="text-rose-400 block font-bold text-[10px] mt-0.5">Status: {threat.fishing_zone_risk} RISK</span>
+                </div>
+
+                <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
+                  <span className="text-slate-400 block text-[10px] flex items-center gap-1">
+                    <TreePine className="w-3 h-3 text-emerald-400" />
+                    Sensitive Marine Habitat:
+                  </span>
+                  <strong className="text-white">{threat.marine_habitat_name}</strong>
+                  <span className="text-rose-400 block font-bold text-[10px] mt-0.5">Status: {threat.marine_habitat_risk} RISK</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2">
+              <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Navigation className="w-3.5 h-3.5" />
+                Coastline Threat & Containment Priority
+              </span>
+              <div className="text-[11px] text-slate-300 flex flex-col gap-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Shoreline Distance:</span>
+                  <strong className="text-white">{threat.coast_distance_km} km</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Estimated Landfall Time:</span>
+                  <strong className="text-amber-300">{threat.predicted_arrival_hours} hours</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Target Coastal Corridor:</span>
+                  <strong className="text-rose-300">{threat.projected_impact_zone}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Spill Growth Velocity:</span>
+                  <strong className="text-cyan-300">+{threat.growth_rate_pct_per_hour}% area increase per hour</strong>
+                </div>
               </div>
             </div>
           </div>

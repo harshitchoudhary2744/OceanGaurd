@@ -3,7 +3,15 @@
  * Mumbai Maritime Corridor (Arabian Sea, Mumbai High, JNPT Port & Approaches)
  * Real-Time Multi-Incident Surveillance & Vessel Kinematic Correlation
  */
-import { Vessel, SuspectVessel, SpillFeatureCollection, MetoceanData, LinkedSpillInfo, SpillGeoFeature } from '../types';
+import {
+  Vessel,
+  SuspectVessel,
+  SpillFeatureCollection,
+  MetoceanData,
+  LinkedSpillInfo,
+  SpillGeoFeature,
+  EnvironmentalThreat
+} from '../types';
 
 export interface TelemetryPacket {
   id: string;
@@ -176,6 +184,7 @@ export interface MumbaiIncidentConfig {
   slickType: string;
   confidence: number;
   sourceScene: string;
+  threat: EnvironmentalThreat;
 }
 
 export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
@@ -194,7 +203,20 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     volumeLiters: 58000,
     slickType: "Heavy Crude Oil (Arabian Heavy)",
     confidence: 0.988,
-    sourceScene: "S1A_IW_GRDH_1SDV_MUMBAI_HIGH_ALPHA"
+    sourceScene: "S1A_IW_GRDH_1SDV_MUMBAI_HIGH_ALPHA",
+    threat: {
+      coast_distance_km: 42.0,
+      growth_rate_pct_per_hour: 18.5,
+      fishing_zone_risk: 'HIGH',
+      fishing_zone_name: 'North Konkan Marine Fishery Zone',
+      marine_habitat_risk: 'HIGH',
+      marine_habitat_name: 'Pelagic Dolphin & Sea Turtle Corridor',
+      overall_severity_score: 92,
+      overall_severity_level: 'CRITICAL',
+      predicted_arrival_hours: 11.5,
+      coastal_threat_risk: 'HIGH',
+      projected_impact_zone: 'South Mumbai & Alibaug Shoreline'
+    }
   },
   "INC-MUM-2024-02": {
     id: "INC-MUM-2024-02",
@@ -211,7 +233,20 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     volumeLiters: 31000,
     slickType: "Heavy Fuel Oil (HFO-380 Bilge Sludge)",
     confidence: 0.965,
-    sourceScene: "S1A_IW_GRDH_1SDV_JNPT_CHANNEL"
+    sourceScene: "S1A_IW_GRDH_1SDV_JNPT_CHANNEL",
+    threat: {
+      coast_distance_km: 8.5,
+      growth_rate_pct_per_hour: 22.4,
+      fishing_zone_risk: 'HIGH',
+      fishing_zone_name: 'Uran & Karanja Artisanal Fisheries',
+      marine_habitat_risk: 'HIGH',
+      marine_habitat_name: 'Elephanta Sanctuary & Mangrove Estuaries',
+      overall_severity_score: 86,
+      overall_severity_level: 'HIGH',
+      predicted_arrival_hours: 2.4,
+      coastal_threat_risk: 'HIGH',
+      projected_impact_zone: 'JNPT Port & Elephanta Islands'
+    }
   },
   "INC-MUM-2024-03": {
     id: "INC-MUM-2024-03",
@@ -228,7 +263,20 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     volumeLiters: 18500,
     slickType: "Intermediate Fuel Oil (IFO-180)",
     confidence: 0.942,
-    sourceScene: "S1A_IW_GRDH_1SDV_PRONGS_REEF"
+    sourceScene: "S1A_IW_GRDH_1SDV_PRONGS_REEF",
+    threat: {
+      coast_distance_km: 4.2,
+      growth_rate_pct_per_hour: 14.8,
+      fishing_zone_risk: 'HIGH',
+      fishing_zone_name: 'Sassoon Docks & Colaba Trawler Hub',
+      marine_habitat_risk: 'HIGH',
+      marine_habitat_name: 'Prongs Reef Intertidal Coral Shelf',
+      overall_severity_score: 84,
+      overall_severity_level: 'HIGH',
+      predicted_arrival_hours: 1.2,
+      coastal_threat_risk: 'HIGH',
+      projected_impact_zone: 'Colaba Point & Marine Drive Reefs'
+    }
   },
   "INC-MUM-2024-04": {
     id: "INC-MUM-2024-04",
@@ -245,7 +293,20 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     volumeLiters: 42000,
     slickType: "Condensate & Light Crude Sheen",
     confidence: 0.958,
-    sourceScene: "S1A_IW_GRDH_1SDV_NEELAM_SOUTH"
+    sourceScene: "S1A_IW_GRDH_1SDV_NEELAM_SOUTH",
+    threat: {
+      coast_distance_km: 38.0,
+      growth_rate_pct_per_hour: 16.0,
+      fishing_zone_risk: 'MEDIUM',
+      fishing_zone_name: 'Offshore Commercial Trawl Fairway',
+      marine_habitat_risk: 'MEDIUM',
+      marine_habitat_name: 'Benthic Deepwater Reefs',
+      overall_severity_score: 78,
+      overall_severity_level: 'MEDIUM',
+      predicted_arrival_hours: 10.4,
+      coastal_threat_risk: 'MEDIUM',
+      projected_impact_zone: 'Vasai & Manori Coastal Corridor'
+    }
   }
 };
 
@@ -448,6 +509,30 @@ export function calculateSynchronizedOilSpill(
     perimeter,
     isNascent: elapsedSinceDischargeHours < 0.1,
     hasDischarged: true,
+  };
+}
+
+// Compute live Environmental Threat and Coastal Impact metrics
+export function calculateEnvironmentalThreat(
+  spillId: string = "INC-MUM-2024-01",
+  timeOffsetMinutes: number = 0,
+  metocean?: MetoceanData
+): EnvironmentalThreat {
+  const config = MUMBAI_INCIDENTS[spillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
+  const baseThreat = config.threat;
+  const driftSpeedKts = metocean?.net_drift_speed_kts || 1.95;
+  const driftSpeedKmH = driftSpeedKts * 1.852;
+
+  // Real-time dynamic drift towards coastline
+  const elapsedSinceDischarge = Math.max(0, (timeOffsetMinutes - config.dischargeOffsetMinutes) / 60.0);
+  const driftedDistanceKm = driftSpeedKmH * elapsedSinceDischarge;
+  const currentCoastDistance = Math.max(0.5, Number((baseThreat.coast_distance_km - (driftedDistanceKm * 0.4)).toFixed(1)));
+  const predictedArrival = Math.max(0.2, Number((currentCoastDistance / Math.max(0.5, driftSpeedKmH)).toFixed(1)));
+
+  return {
+    ...baseThreat,
+    coast_distance_km: currentCoastDistance,
+    predicted_arrival_hours: predictedArrival,
   };
 }
 
