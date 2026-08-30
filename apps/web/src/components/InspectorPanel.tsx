@@ -19,7 +19,8 @@ import {
   History,
   Gauge,
   ZapOff,
-  Navigation
+  Navigation,
+  Target
 } from 'lucide-react';
 import { SuspectVessel, VectorMatch, SpillProperties, SpillGeoFeature, MetoceanData } from '../types';
 import { downloadPdfReportUrl } from '../lib/api';
@@ -57,8 +58,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   const incidentId = spill?.id || "INC-MUM-2024-01";
   const currentIncident = MUMBAI_INCIDENTS[incidentId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
 
-  // Primary suspect for active spill
-  const primarySuspect = suspects.find(s => s.mmsi === currentIncident.culpritMmsi) ||
+  // Active inspected vessel (priority: explicitly selected MMSI -> incident culprit -> highest match -> first)
+  const activeVessel =
+    suspects.find((s) => s.mmsi === selectedVesselMmsi) ||
+    suspects.find((s) => s.mmsi === currentIncident.culpritMmsi) ||
     suspects.find((s) => s.probability_score > 70) ||
     suspects[0];
 
@@ -81,14 +84,12 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     }
   };
 
-  const selectedVessel = suspects.find(s => s.mmsi === selectedVesselMmsi) || primarySuspect;
-
   return (
     <div className="w-full h-full bg-[#111622] flex flex-col overflow-y-auto select-none border-l border-slate-800">
       {/* 1. Panel Header */}
       <div className="p-3.5 sm:p-4 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-[#111622]/95 backdrop-blur-md z-10">
         <div className="flex items-center gap-2">
-          <Radar className="w-4 h-4 text-cyan-400" />
+          <Radar className="w-4 h-4 text-cyan-400 animate-pulse" />
           <h2 className="font-mono text-xs font-bold text-white uppercase tracking-wider">
             Incident Inspector
           </h2>
@@ -114,41 +115,52 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         <div className="grid grid-cols-3 gap-2">
           <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
             <span className="text-[9.5px] font-mono text-slate-400 block mb-0.5">SLICK AREA</span>
-            <span className="font-mono font-bold text-rose-300 text-sm">{spill?.area_sq_km || currentIncident.baseAreaSqKm} <span className="text-[10px] text-slate-400 font-normal">km²</span></span>
+            <span className="font-mono font-bold text-rose-300 text-sm">
+              {spill?.area_sq_km || currentIncident.baseAreaSqKm} <span className="text-[10px] text-slate-400 font-normal">km²</span>
+            </span>
           </div>
           <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
             <span className="text-[9.5px] font-mono text-slate-400 block mb-0.5">EST. VOLUME</span>
-            <span className="font-mono font-bold text-white text-sm">~{Math.round(currentIncident.volumeLiters / 1000)} <span className="text-[10px] text-slate-400 font-normal">kL</span></span>
+            <span className="font-mono font-bold text-white text-sm">
+              ~{Math.round(currentIncident.volumeLiters / 1000)} <span className="text-[10px] text-slate-400 font-normal">kL</span>
+            </span>
           </div>
           <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
             <span className="text-[9.5px] font-mono text-slate-400 block mb-0.5">ANOMALY RISK</span>
-            <span className="font-mono font-bold text-rose-400 text-sm">{primarySuspect?.anomaly_score || primarySuspect?.probability_score || 98}%</span>
+            <span className="font-mono font-bold text-rose-400 text-sm">
+              {activeVessel?.anomaly_score || activeVessel?.probability_score || 98.4}%
+            </span>
           </div>
         </div>
 
-        {/* 3. Primary Suspect Spotlight Banner */}
-        {primarySuspect && (
-          <div className="p-3 bg-gradient-to-br from-rose-950/40 to-slate-900/90 rounded-xl border border-rose-500/40 shadow-lg flex flex-col gap-2">
+        {/* 3. Active Inspected Suspect Spotlight Banner */}
+        {activeVessel && (
+          <div className="p-3 bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-slate-900/90 rounded-xl border border-rose-500/40 shadow-lg flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono text-rose-300 font-bold flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-                PRIMARY CULPRIT MATCH
+                {activeVessel.mmsi === currentIncident.culpritMmsi ? 'PRIMARY CULPRIT MATCH' : 'CORRELATED ANOMALY FOCUS'}
               </span>
               <span className="bg-rose-600 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                {primarySuspect.anomaly_score || primarySuspect.probability_score}% Anomaly
+                {activeVessel.anomaly_score || activeVessel.probability_score}% Anomaly
               </span>
             </div>
 
             <div className="flex items-center justify-between text-xs font-mono">
-              <span className="font-bold text-white text-sm">{primarySuspect.name}</span>
-              <span className="text-slate-300 text-[11px]">{primarySuspect.vessel_type}</span>
+              <span className="font-bold text-white text-sm flex items-center gap-1.5">
+                <Ship className="w-4 h-4 text-cyan-400" />
+                {activeVessel.name}
+              </span>
+              <span className="text-slate-300 text-[11px] bg-slate-800/80 px-2 py-0.5 rounded">
+                {activeVessel.vessel_type}
+              </span>
             </div>
 
-            {/* Exact Intercept Date & Time Badge */}
+            {/* Exact Intercept / Sector Info */}
             <div className="p-2 bg-slate-950/90 rounded-lg border border-rose-500/40 flex flex-col gap-1 text-[10px] font-mono">
               <div className="flex items-center justify-between">
                 <span className="text-rose-300 font-bold flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-rose-400" />
+                  <Target className="w-3 h-3 text-rose-400" />
                   INCIDENT SECTOR:
                 </span>
                 <span className="text-white font-bold bg-rose-950 px-2 py-0.5 rounded border border-rose-600/60 shadow-sm">
@@ -162,9 +174,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </div>
 
             {/* Evidence Tags */}
-            {primarySuspect.evidence_tags && primarySuspect.evidence_tags.length > 0 && (
+            {activeVessel.evidence_tags && activeVessel.evidence_tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-0.5">
-                {primarySuspect.evidence_tags.map((tag, i) => (
+                {activeVessel.evidence_tags.map((tag, i) => (
                   <span key={i} className="text-[9px] font-mono bg-rose-950/70 text-rose-200 px-2 py-0.5 rounded border border-rose-800/50">
                     {tag}
                   </span>
@@ -173,10 +185,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             )}
 
             <div className="grid grid-cols-2 gap-1 text-[10px] font-mono text-slate-300 pt-1">
-              <div>MMSI: <span className="text-white font-semibold">{primarySuspect.mmsi}</span></div>
-              <div>Flag: <span className="text-white">{primarySuspect.flag}</span></div>
-              <div>Speed: <span className="text-white">{primarySuspect.speed_knots} kts</span></div>
-              <div>Heading: <span className="text-white">{primarySuspect.heading_degrees}°</span></div>
+              <div>MMSI: <span className="text-white font-semibold">{activeVessel.mmsi}</span></div>
+              <div>Flag: <span className="text-white">{activeVessel.flag}</span></div>
+              <div>Speed: <span className="text-white">{activeVessel.speed_knots} kts</span></div>
+              <div>Heading: <span className="text-white">{activeVessel.heading_degrees}°</span></div>
             </div>
 
             <button
@@ -278,11 +290,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
         {activeTab === 'suspects' && (
           <div className="flex flex-col gap-2 font-mono text-xs">
-            <span className="text-[10px] text-slate-400 uppercase font-bold px-1">
-              Ranked Kinematic Suspects ({suspects.length})
-            </span>
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] text-slate-400 uppercase font-bold">
+                Ranked Kinematic Suspects ({suspects.length})
+              </span>
+              <span className="text-[9px] text-cyan-400">Click any card to switch focus & map</span>
+            </div>
             {suspects.map((vessel) => {
-              const isSelected = vessel.mmsi === selectedVessel?.mmsi;
+              const isSelected = vessel.mmsi === activeVessel?.mmsi;
               const isCulprit = vessel.probability_score > 70;
               return (
                 <div
@@ -290,16 +305,21 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   onClick={() => onSelectVessel(vessel.mmsi)}
                   className={`p-3 rounded-xl border cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-slate-900 border-cyan-500 shadow-md ring-1 ring-cyan-500/40'
+                      ? 'bg-slate-900/95 border-cyan-400 shadow-xl ring-2 ring-cyan-400/50 scale-[1.01]'
                       : isCulprit
-                      ? 'bg-slate-900/80 border-rose-500/40 hover:border-rose-400'
+                      ? 'bg-slate-900/80 border-rose-500/40 hover:border-rose-400 hover:bg-slate-900'
                       : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="font-bold text-white text-xs flex items-center gap-1.5">
-                      <Ship className="w-3.5 h-3.5 text-slate-400" />
+                      <Ship className={`w-3.5 h-3.5 ${isSelected ? 'text-cyan-400' : 'text-slate-400'}`} />
                       {vessel.name}
+                      {isSelected && (
+                        <span className="text-[8.5px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-1.5 py-0.2 rounded font-bold">
+                          ACTIVE
+                        </span>
+                      )}
                     </span>
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${

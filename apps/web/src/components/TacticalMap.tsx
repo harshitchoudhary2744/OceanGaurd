@@ -2,14 +2,20 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, History, ShieldAlert } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData, SpillGeoFeature } from '../types';
-import { calculateSynchronizedOilSpill, moveCoordinate, generateForecastCone, MUMBAI_INCIDENTS } from '../lib/simulationEngine';
+import {
+  calculateSynchronizedOilSpill,
+  moveCoordinate,
+  generateForecastCone,
+  MUMBAI_INCIDENTS,
+  MUMBAI_VESSEL_WAYPOINTS
+} from '../lib/simulationEngine';
 
 // Precise Great-Circle Bearing (degrees clockwise from North)
 function calculateBearing(lon1: number, lat1: number, lon2: number, lat2: number): number {
   const rad = (d: number) => (d * Math.PI) / 180;
   const deg = (r: number) => (r * 180) / Math.PI;
   const y = Math.sin(rad(lon2 - lon1)) * Math.cos(rad(lat2));
-  const x = Math.cos(rad(lat1)) * Math.sin(rad(lat2)) - Math.sin(rad(lat1)) * Math.cos(rad(lat2)) * Math.cos(rad(lon2 - lon1));
+  const x = Math.cos(rad(lat1)) * Math.sin(rad(lat2)) - Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.cos(rad(lon2 - lon1));
   return (deg(Math.atan2(y, x)) + 360) % 360;
 }
 
@@ -40,6 +46,7 @@ interface TacticalMapProps {
   vessels: Vessel[];
   suspects: SuspectVessel[];
   selectedSpillId: string;
+  selectedVesselMmsi?: number | null;
   onSelectSpill: (id: string) => void;
   onSelectVessel: (mmsi: number) => void;
   scrubbedVessels?: { mmsi: number; lon: number; lat: number; heading: number; speed?: number }[];
@@ -54,6 +61,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   vessels,
   suspects,
   selectedSpillId,
+  selectedVesselMmsi,
   onSelectSpill,
   onSelectVessel,
   scrubbedVessels,
@@ -64,7 +72,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
-  const popupRef = useRef<maplibregl.Popup | null>(null);
   const onSelectVesselRef = useRef(onSelectVessel);
   onSelectVesselRef.current = onSelectVessel;
   const onSelectSpillRef = useRef(onSelectSpill);
@@ -74,7 +81,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
   const [showHindcast, setShowHindcast] = useState(true);
-  const [showMetoceanOverlay, setShowMetoceanOverlay] = useState(true);
 
   // Active Incident Config
   const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
@@ -82,18 +88,20 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const isPostDischarge = timeOffsetMinutes >= dischargeOffset;
   const baseOrigin = currentIncident.originCoords;
 
-  // Primary suspect for active spill
-  const primarySuspect = useMemo(() => {
+  // Active Inspected Suspect Vessel (matches selectedVesselMmsi or incident culprit)
+  const activeSuspect = useMemo(() => {
     if (!suspects || suspects.length === 0) return null;
-    return suspects.find(s => s.mmsi === currentIncident.culpritMmsi) ||
-      suspects.reduce((prev, curr) => (curr.probability_score > prev.probability_score ? curr : prev), suspects[0]);
-  }, [suspects, currentIncident]);
+    return (
+      suspects.find((s) => s.mmsi === selectedVesselMmsi) ||
+      suspects.find((s) => s.mmsi === currentIncident.culpritMmsi) ||
+      suspects[0]
+    );
+  }, [suspects, selectedVesselMmsi, currentIncident]);
 
   // Synchronized Hydrodynamic Oil Spill Polygons for ALL Mumbai incidents
   const currentSpills = useMemo<SpillFeatureCollection>(() => {
     const features: SpillGeoFeature[] = Object.values(MUMBAI_INCIDENTS).map((config) => {
       const live = calculateSynchronizedOilSpill(timeOffsetMinutes, config.id, metocean);
-      const isSelected = config.id === selectedSpillId;
 
       return {
         type: "Feature",
@@ -119,13 +127,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
     return {
       type: "FeatureCollection",
-      features: features.filter(f => f.geometry.coordinates.length > 0),
+      features: features.filter((f) => f.geometry.coordinates.length > 0),
     };
   }, [selectedSpillId, timeOffsetMinutes, metocean]);
 
   // Current Slick Centroid Position for Active Spill
   const slickCentroid = useMemo<[number, number]>(() => {
-    const activeSpill = currentSpills.features.find(f => f.properties.id === selectedSpillId);
+    const activeSpill = currentSpills.features.find((f) => f.properties.id === selectedSpillId);
     if (activeSpill?.properties?.center) {
       return activeSpill.properties.center as [number, number];
     }
@@ -134,11 +142,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   // Hydrodynamic Hindcast Back-Tracing for Active Spill
   const hindcastFeatures = useMemo(() => {
-    if (!isPostDischarge) {
+    if (!showHindcast || !isPostDischarge) {
       return { type: "FeatureCollection" as const, features: [] };
     }
 
-    const isAtOrigin = Math.abs(slickCentroid[0] - baseOrigin[0]) < 0.001 && Math.abs(slickCentroid[1] - baseOrigin[1]) < 0.001;
+    const isAtOrigin =
+      Math.abs(slickCentroid[0] - baseOrigin[0]) < 0.001 && Math.abs(slickCentroid[1] - baseOrigin[1]) < 0.001;
 
     const coneCoords = isAtOrigin
       ? [
@@ -182,11 +191,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       type: "FeatureCollection" as const,
       features: [coneFeature, lineFeature],
     };
-  }, [slickCentroid, baseOrigin, isPostDischarge]);
+  }, [slickCentroid, baseOrigin, isPostDischarge, showHindcast]);
 
   // +6h Hydrodynamic Forecast Dispersal Fan
   const forecastFeatures = useMemo(() => {
-    if (!isPostDischarge) {
+    if (!showForecast || !isPostDischarge) {
       return { type: "FeatureCollection" as const, features: [] };
     }
     const driftDir = metocean?.net_drift_direction_deg || 69.3;
@@ -213,7 +222,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       ],
     };
-  }, [slickCentroid, metocean, isPostDischarge]);
+  }, [slickCentroid, metocean, isPostDischarge, showForecast]);
 
   // Dump Origin Point GeoJSON Feature
   const dumpOriginFeature = useMemo(() => {
@@ -235,7 +244,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, [currentIncident, selectedSpillId, baseOrigin]);
 
-  // Initialize MapLibre GL Map (Centered on Mumbai Waters)
+  // Initialize MapLibre GL Map
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -358,7 +367,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: 'circle',
         source: 'dump-origin-source',
         paint: {
-          'circle-radius': 12,
+          'circle-radius': 14,
           'circle-color': '#f59e0b',
           'circle-opacity': 0.35,
         },
@@ -369,7 +378,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: 'circle',
         source: 'dump-origin-source',
         paint: {
-          'circle-radius': 6.5,
+          'circle-radius': 7.5,
           'circle-color': '#fbbf24',
           'circle-stroke-color': '#ffffff',
           'circle-stroke-width': 2,
@@ -381,12 +390,30 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         type: 'circle',
         source: 'dump-origin-source',
         paint: {
-          'circle-radius': 2.2,
+          'circle-radius': 2.5,
           'circle-color': '#020617',
         },
       });
 
-      // 4. Culprit Trajectory Layers
+      // 4. Secondary Background Trajectories
+      map.addSource('all-trajectories', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addLayer({
+        id: 'all-trajectories-line',
+        type: 'line',
+        source: 'all-trajectories',
+        paint: {
+          'line-color': '#64748b',
+          'line-width': 1.5,
+          'line-dasharray': [3, 3],
+          'line-opacity': 0.45,
+        },
+      });
+
+      // 5. Active Culprit Trajectory Layers
       map.addSource('culprit-trajectory', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -398,8 +425,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'culprit-trajectory',
         paint: {
           'line-color': '#f43f5e',
-          'line-width': 5,
-          'line-opacity': 0.25,
+          'line-width': 6,
+          'line-opacity': 0.30,
         },
       });
 
@@ -409,12 +436,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'culprit-trajectory',
         paint: {
           'line-color': '#fb7185',
-          'line-width': 2.5,
+          'line-width': 2.8,
           'line-dasharray': [4, 2],
         },
       });
 
-      // 5. Oil Spill Layers (Crimson Multi-Spill Polygons)
+      // 6. Oil Spill Layers (Multi-Spill Polygons)
       map.addSource('spills-source', {
         type: 'geojson',
         data: currentSpills,
@@ -445,7 +472,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           'fill-opacity': [
             'case',
             ['==', ['get', 'id'], selectedSpillId],
-            0.55,
+            0.60,
             0.35
           ],
         },
@@ -465,7 +492,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           'line-width': [
             'case',
             ['==', ['get', 'id'], selectedSpillId],
-            2.5,
+            2.8,
             1.5
           ],
         },
@@ -495,7 +522,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     };
   }, []);
 
-  // Update Dynamic Map Layers
+  // Update Dynamic Map Layers & Persistent Trajectories
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
@@ -516,17 +543,42 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const dumpSrc = map.getSource('dump-origin-source') as maplibregl.GeoJSONSource;
     if (dumpSrc) dumpSrc.setData(dumpOriginFeature);
 
-    // 5. Update Culprit Trajectory Track
+    // 5. Update Background Trajectories for all vessels
+    const allTrajSrc = map.getSource('all-trajectories') as maplibregl.GeoJSONSource;
+    if (allTrajSrc && showTrails) {
+      const bgFeatures = MUMBAI_VESSEL_WAYPOINTS.map((vw) => ({
+        type: 'Feature' as const,
+        properties: { mmsi: vw.mmsi, name: vw.name },
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: vw.waypoints.map((w) => [w.lon, w.lat]),
+        },
+      }));
+      allTrajSrc.setData({ type: 'FeatureCollection', features: bgFeatures });
+    } else if (allTrajSrc) {
+      allTrajSrc.setData({ type: 'FeatureCollection', features: [] });
+    }
+
+    // 6. Update Active Inspected Culprit Trajectory Track (Persisted Always)
     const trajSrc = map.getSource('culprit-trajectory') as maplibregl.GeoJSONSource;
-    if (trajSrc) {
-      if (primarySuspect?.trajectory && primarySuspect.trajectory.length > 1) {
-        const lineCoords = primarySuspect.trajectory.map((t) => [t[0], t[1]]);
+    if (trajSrc && showTrails) {
+      // Find track points from suspect data or waypoints
+      const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === activeSuspect?.mmsi);
+      let lineCoords: number[][] = [];
+
+      if (activeSuspect?.trajectory && activeSuspect.trajectory.length > 1) {
+        lineCoords = activeSuspect.trajectory.map((t) => [t[0], t[1]]);
+      } else if (activeWaypointTrack) {
+        lineCoords = activeWaypointTrack.waypoints.map((w) => [w.lon, w.lat]);
+      }
+
+      if (lineCoords.length > 1) {
         trajSrc.setData({
           type: 'FeatureCollection',
           features: [
             {
               type: 'Feature',
-              properties: { name: primarySuspect.name },
+              properties: { name: activeSuspect?.name || 'Inspected Vessel' },
               geometry: { type: 'LineString', coordinates: lineCoords },
             },
           ],
@@ -534,22 +586,29 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       } else {
         trajSrc.setData({ type: 'FeatureCollection', features: [] });
       }
+    } else if (trajSrc) {
+      trajSrc.setData({ type: 'FeatureCollection', features: [] });
     }
-  }, [mapLoaded, currentSpills, hindcastFeatures, forecastFeatures, dumpOriginFeature, primarySuspect]);
+  }, [mapLoaded, currentSpills, hindcastFeatures, forecastFeatures, dumpOriginFeature, activeSuspect, showTrails]);
 
-  // Smooth camera fly-to when selected incident changes
+  // Smooth camera fly-to when selected incident or vessel changes
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
-    map.flyTo({
-      center: baseOrigin,
-      zoom: 10.2,
-      duration: 1200,
-      essential: true
-    });
-  }, [selectedSpillId, baseOrigin, mapLoaded]);
 
-  // Render & Update Vessel Markers
+    // Center on active vessel position or incident origin
+    const targetLon = activeSuspect?.last_lon ?? baseOrigin[0];
+    const targetLat = activeSuspect?.last_lat ?? baseOrigin[1];
+
+    map.flyTo({
+      center: [targetLon, targetLat],
+      zoom: 10.4,
+      duration: 1200,
+      essential: true,
+    });
+  }, [selectedSpillId, selectedVesselMmsi, mapLoaded, baseOrigin, activeSuspect]);
+
+  // Render & Update Vessel Markers with Active Focus Highlight
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
@@ -563,7 +622,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }));
 
     displayVessels.forEach((v) => {
-      const isCulprit = primarySuspect?.mmsi === v.mmsi;
+      const isSelected = activeSuspect?.mmsi === v.mmsi;
+      const isIncidentCulprit = currentIncident.culpritMmsi === v.mmsi;
       const isCoastGuard = v.mmsi === 419000999;
       const fullVessel = vessels.find((item) => item.mmsi === v.mmsi);
       const name = fullVessel?.name || `MMSI ${v.mmsi}`;
@@ -573,27 +633,45 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       if (!marker) {
         const el = document.createElement('div');
-        el.className = 'vessel-marker group cursor-pointer';
-        el.style.width = '36px';
-        el.style.height = '36px';
+        el.className = 'vessel-marker group cursor-pointer relative';
+        el.style.width = '42px';
+        el.style.height = '42px';
         el.style.display = 'flex';
         el.style.alignItems = 'center';
         el.style.justifyContent = 'center';
+
+        // Outer focus pulse ring for selected vessel
+        const ring = document.createElement('div');
+        ring.className = 'marker-ring absolute inset-0 rounded-full transition-all';
+        el.appendChild(ring);
+
+        // Vessel SVG Ship icon
+        const svgContainer = document.createElement('div');
+        svgContainer.className = 'marker-icon-container relative z-10 flex items-center justify-center';
+        svgContainer.style.width = '26px';
+        svgContainer.style.height = '26px';
 
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('viewBox', '0 0 24 24');
         svg.setAttribute('width', '24');
         svg.setAttribute('height', '24');
-        svg.style.transition = 'transform 0.2s ease';
+        svg.style.transition = 'transform 0.15s ease';
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', 'M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z');
-        path.setAttribute('fill', isCulprit ? '#f43f5e' : isCoastGuard ? '#06b6d4' : '#94a3b8');
         path.setAttribute('stroke', '#020617');
         path.setAttribute('stroke-width', '1.5');
+        path.setAttribute('class', 'marker-arrow-path');
 
         svg.appendChild(path);
-        el.appendChild(svg);
+        svgContainer.appendChild(svg);
+        el.appendChild(svgContainer);
+
+        // Label tooltip above marker
+        const label = document.createElement('div');
+        label.className = 'marker-label absolute -top-6 px-1.5 py-0.5 rounded bg-slate-950/90 border border-slate-700 text-[9px] font-mono text-white whitespace-nowrap pointer-events-none transition-all shadow-md';
+        label.innerText = name.split(' ')[0] || name;
+        el.appendChild(label);
 
         el.addEventListener('click', (ev) => {
           ev.stopPropagation();
@@ -609,18 +687,56 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         marker.setLngLat([v.lon, v.lat]);
       }
 
+      // Update styling based on selected / culprit status
+      const el = marker.getElement();
+      const ring = el.querySelector('.marker-ring') as HTMLElement;
+      const path = el.querySelector('.marker-arrow-path') as SVGPathElement;
+      const label = el.querySelector('.marker-label') as HTMLElement;
+
+      if (ring && path && label) {
+        if (isSelected) {
+          ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-cyan-400 bg-cyan-400/20 animate-ping';
+          path.setAttribute('fill', '#f43f5e');
+          path.setAttribute('stroke', '#38bdf8');
+          path.setAttribute('stroke-width', '2');
+          label.className = 'marker-label absolute -top-6 px-2 py-0.5 rounded bg-rose-950 border border-rose-500 text-[10px] font-mono font-bold text-rose-200 whitespace-nowrap shadow-lg z-30';
+          label.innerText = `🎯 ${name} (${v.speed ? v.speed.toFixed(1) : '14.8'} kts)`;
+        } else if (isIncidentCulprit) {
+          ring.className = 'marker-ring absolute inset-1 rounded-full border border-rose-500/50 bg-rose-500/10';
+          path.setAttribute('fill', '#f43f5e');
+          path.setAttribute('stroke', '#020617');
+          path.setAttribute('stroke-width', '1.5');
+          label.className = 'marker-label absolute -top-6 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-300 whitespace-nowrap';
+          label.innerText = name.split(' ')[0];
+        } else if (isCoastGuard) {
+          ring.className = 'marker-ring absolute inset-1 rounded-full border border-cyan-500/30';
+          path.setAttribute('fill', '#06b6d4');
+          path.setAttribute('stroke', '#020617');
+          path.setAttribute('stroke-width', '1.5');
+          label.className = 'marker-label absolute -top-6 px-1.5 py-0.5 rounded bg-slate-950/80 border border-cyan-800 text-[9px] font-mono text-cyan-300 whitespace-nowrap';
+          label.innerText = 'ICGS PRAHARI';
+        } else {
+          ring.className = 'marker-ring hidden';
+          path.setAttribute('fill', '#94a3b8');
+          path.setAttribute('stroke', '#020617');
+          path.setAttribute('stroke-width', '1.5');
+          label.className = 'marker-label absolute -top-6 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-400 whitespace-nowrap';
+          label.innerText = name.split(' ')[0];
+        }
+      }
+
       marker.setRotation(v.heading);
     });
 
-    // Cleanup markers that are no longer in fleet
-    const activeKeys = new Set(displayVessels.map(v => `vessel-${v.mmsi}`));
-    Object.keys(markersRef.current).forEach(key => {
+    // Cleanup markers no longer active
+    const activeKeys = new Set(displayVessels.map((v) => `vessel-${v.mmsi}`));
+    Object.keys(markersRef.current).forEach((key) => {
       if (!activeKeys.has(key)) {
         markersRef.current[key].remove();
         delete markersRef.current[key];
       }
     });
-  }, [mapLoaded, vessels, scrubbedVessels, primarySuspect]);
+  }, [mapLoaded, vessels, scrubbedVessels, activeSuspect, currentIncident]);
 
   return (
     <div className="relative w-full h-full bg-[#0b0f19] overflow-hidden">
@@ -657,55 +773,62 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               showTrails ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold' : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Crosshair className="w-3.5 h-3.5" />
-            <span>AIS Culprit Track</span>
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>AIS Kinematic Tracks</span>
           </button>
         </div>
       </div>
 
-      {/* Active Incident HUD Badge */}
-      <div className="absolute top-4 right-4 z-10 font-mono text-xs select-none hidden sm:block">
-        <div className="bg-[#111622]/90 border border-slate-800 rounded-lg p-2.5 flex items-center gap-3 backdrop-blur-md shadow-lg">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-            <div>
-              <div className="text-white font-bold text-[11px]">{currentIncident.name}</div>
-              <div className="text-[10px] text-slate-400">{currentIncident.locationName}</div>
-            </div>
-          </div>
-          <div className="pl-3 border-l border-slate-800 text-right">
-            <div className="text-rose-400 font-bold">{currentIncident.baseAreaSqKm} km²</div>
-            <div className="text-[9px] text-slate-500">{currentIncident.volumeLiters.toLocaleString()} L</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Zoom Controls Bottom-Right */}
-      <div className="absolute bottom-6 right-4 flex flex-col gap-1 z-10">
+      {/* Map Zoom & Center Controls */}
+      <div className="absolute top-4 right-4 flex flex-col gap-1.5 z-10 select-none">
         <button
           onClick={() => mapRef.current?.zoomIn()}
-          aria-label="Zoom in"
-          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white flex items-center justify-center backdrop-blur-md shadow-md"
+          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
+          title="Zoom In"
         >
           <Plus className="w-4 h-4" />
         </button>
         <button
           onClick={() => mapRef.current?.zoomOut()}
-          aria-label="Zoom out"
-          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white flex items-center justify-center backdrop-blur-md shadow-md"
+          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
+          title="Zoom Out"
         >
           <Minus className="w-4 h-4" />
         </button>
         <button
           onClick={() => {
-            mapRef.current?.flyTo({ center: baseOrigin, zoom: 10.2, duration: 1000 });
+            const targetLon = activeSuspect?.last_lon ?? baseOrigin[0];
+            const targetLat = activeSuspect?.last_lat ?? baseOrigin[1];
+            mapRef.current?.flyTo({ center: [targetLon, targetLat], zoom: 10.4, duration: 1000 });
           }}
-          aria-label="Recenter camera on breach origin"
-          title="Recenter camera on breach origin"
-          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-cyan-400 hover:text-cyan-300 flex items-center justify-center backdrop-blur-md shadow-md"
+          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-cyan-400 hover:text-cyan-300 hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
+          title="Recenter on Active Target"
         >
           <Crosshair className="w-4 h-4" />
         </button>
+      </div>
+
+      {/* Active Incident Legend Indicator (Bottom-Right) */}
+      <div className="absolute bottom-20 right-4 z-10 hidden sm:flex flex-col gap-1.5 p-2.5 bg-[#111622]/90 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-xl max-w-xs">
+        <div className="flex items-center justify-between font-bold text-white border-b border-slate-800 pb-1">
+          <span className="flex items-center gap-1.5 text-cyan-400">
+            <Compass className="w-3.5 h-3.5" />
+            MUMBAI TACTICAL RADAR
+          </span>
+          <span className="text-rose-400">{timeOffsetMinutes === 0 ? 'LIVE' : `T${timeOffsetMinutes}m`}</span>
+        </div>
+        <div className="flex justify-between items-center text-[10px]">
+          <span className="text-slate-400">Target Vessel:</span>
+          <strong className="text-white">{activeSuspect?.name || 'Inspecting...'}</strong>
+        </div>
+        <div className="flex justify-between items-center text-[10px]">
+          <span className="text-slate-400">Breach Origin:</span>
+          <strong className="text-amber-300">{currentIncident.name}</strong>
+        </div>
+        <div className="flex justify-between items-center text-[10px]">
+          <span className="text-slate-400">Hindcast CPA:</span>
+          <strong className="text-emerald-400">0.00 km Direct Intercept</strong>
+        </div>
       </div>
     </div>
   );

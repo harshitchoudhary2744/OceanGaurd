@@ -31,7 +31,12 @@ import {
   DEFAULT_METOCEAN
 } from './lib/mockData';
 
-import { globalSimulation, interpolateVesselPosition, MUMBAI_INCIDENTS } from './lib/simulationEngine';
+import {
+  globalSimulation,
+  interpolateVesselPosition,
+  MUMBAI_INCIDENTS,
+  MMSI_TO_INCIDENT
+} from './lib/simulationEngine';
 
 export function App() {
   const [spills, setSpills] = useState<SpillFeatureCollection>(INITIAL_SPILLS);
@@ -149,14 +154,59 @@ export function App() {
     setSuspects(newState.suspects);
     setSpills(newState.spills);
     setMetocean(newState.metocean);
-    setTimeOffsetMinutes(0);
-    setIsPlaying(false);
 
     const config = MUMBAI_INCIDENTS[spillId];
     if (config) {
       setSelectedVesselMmsi(config.culpritMmsi);
     }
   };
+
+  // Handle Anomaly / Vessel Click Selection (Bidirectional synchronization)
+  const handleSelectVessel = (mmsi: number) => {
+    setSelectedVesselMmsi(mmsi);
+    const targetSpillId = MMSI_TO_INCIDENT[mmsi] || selectedSpillId;
+
+    if (targetSpillId !== selectedSpillId) {
+      setSelectedSpillId(targetSpillId);
+      globalSimulation.setActiveSpill(targetSpillId);
+      const newState = globalSimulation.getState();
+      setVessels(newState.vessels);
+      setSuspects(newState.suspects);
+      setSpills(newState.spills);
+      setMetocean(newState.metocean);
+    }
+  };
+
+  // Handle Timeline Playback
+  const handleTogglePlay = () => {
+    if (!isPlaying) {
+      // If at the end of the timeline, restart replay from -360m (-6h)
+      if (timeOffsetMinutes >= 0) {
+        setTimeOffsetMinutes(-360);
+      }
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(false);
+    }
+  };
+
+  // Synchronized Replay Timer Loop
+  useEffect(() => {
+    let interval: any = null;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setTimeOffsetMinutes((prev) => {
+          const next = prev + playbackSpeed * 2;
+          if (next >= 0) {
+            setIsPlaying(false);
+            return 0; // Cleanly park at LIVE
+          }
+          return next;
+        });
+      }, 140);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, playbackSpeed]);
 
   // Interpolated Vessel Positions based on Time Scrubber (-360 to 0)
   const scrubbedVessels = useMemo(() => {
@@ -254,8 +304,9 @@ export function App() {
             vessels={vessels}
             suspects={suspects}
             selectedSpillId={selectedSpillId}
+            selectedVesselMmsi={selectedVesselMmsi}
             onSelectSpill={handleSelectSpillId}
-            onSelectVessel={(mmsi) => setSelectedVesselMmsi(mmsi)}
+            onSelectVessel={handleSelectVessel}
             scrubbedVessels={scrubbedVessels}
             centerCoordinates={mapCenter}
             timeOffsetMinutes={timeOffsetMinutes}
@@ -268,9 +319,10 @@ export function App() {
               timeOffsetMinutes={timeOffsetMinutes}
               onChangeTimeOffset={setTimeOffsetMinutes}
               isPlaying={isPlaying}
-              onTogglePlay={() => setIsPlaying(!isPlaying)}
+              onTogglePlay={handleTogglePlay}
               playbackSpeed={playbackSpeed}
               onChangeSpeed={(spd: number) => setPlaybackSpeed(spd)}
+              activeSpillId={selectedSpillId}
             />
           </div>
         </div>
@@ -283,7 +335,7 @@ export function App() {
             suspects={suspects}
             vectorMatches={vectorMatches}
             selectedVesselMmsi={selectedVesselMmsi ?? undefined}
-            onSelectVessel={(mmsi) => setSelectedVesselMmsi(mmsi)}
+            onSelectVessel={handleSelectVessel}
             metocean={metocean}
           />
         </div>
@@ -355,7 +407,7 @@ export function App() {
               vectorMatches={vectorMatches}
               selectedVesselMmsi={selectedVesselMmsi ?? undefined}
               onSelectVessel={(mmsi) => {
-                setSelectedVesselMmsi(mmsi);
+                handleSelectVessel(mmsi);
                 setIsMobileDrawerOpen(false);
               }}
               onClose={() => setIsMobileDrawerOpen(false)}

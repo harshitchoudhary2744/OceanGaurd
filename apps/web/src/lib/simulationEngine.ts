@@ -249,6 +249,15 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
   }
 };
 
+export const MMSI_TO_INCIDENT: Record<number, string> = {
+  419000123: "INC-MUM-2024-01",
+  255806000: "INC-MUM-2024-02",
+  419000789: "INC-MUM-2024-03",
+  563032000: "INC-MUM-2024-04",
+  419000456: "INC-MUM-2024-01",
+  419000999: "INC-MUM-2024-01",
+};
+
 // Deterministic Timed Waypoint Tracks for Mumbai Maritime Fleet
 export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: boolean; linkedSpillId?: string; waypoints: TimedWaypoint[] }[] = [
   // 1. MT DESH SHANTI (VLCC Crude Tanker - Transits SW to NE through Mumbai High)
