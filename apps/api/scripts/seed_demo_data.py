@@ -36,8 +36,8 @@ def generate_mumbai_demo_data():
             "call_sign": "CQES",
             "destination": "JNPT PORT MUMBAI",
             "current_position": {
-                "latitude": 18.935,
-                "longitude": 72.905,
+                "latitude": 18.955,
+                "longitude": 72.920,
                 "speed_knots": 15.6,
                 "heading_degrees": 40.0,
                 "timestamp": base_time.isoformat()
@@ -54,8 +54,8 @@ def generate_mumbai_demo_data():
             "call_sign": "AWXZ",
             "destination": "MUMBAI REFINERY BERTH",
             "current_position": {
-                "latitude": 18.950,
-                "longitude": 72.835,
+                "latitude": 18.960,
+                "longitude": 72.840,
                 "speed_knots": 11.2,
                 "heading_degrees": 38.0,
                 "timestamp": base_time.isoformat()
@@ -141,10 +141,10 @@ def generate_mumbai_demo_data():
 
     # MSC KANOKO (Primary Culprit for INC-MUM-2024-02)
     msc_pts = [
-        {"lon": 72.780, "lat": 18.780, "t_offset_m": 360, "speed": 17.2, "heading": 35.0, "status": "Under way using engine"},
-        {"lon": 72.825, "lat": 18.835, "t_offset_m": 180, "speed": 17.2, "heading": 35.0, "status": "Under way using engine"},
-        {"lon": 72.870, "lat": 18.895, "t_offset_m": 30,  "speed": 6.8,  "heading": 35.0, "status": "Under way using engine"}, # Spill 2 Origin
-        {"lon": 72.905, "lat": 18.935, "t_offset_m": 0,   "speed": 15.6, "heading": 40.0, "status": "Under way using engine"}
+        {"lon": 72.770, "lat": 18.775, "t_offset_m": 360, "speed": 16.5, "heading": 40.0, "status": "Under way using engine"},
+        {"lon": 72.820, "lat": 18.835, "t_offset_m": 180, "speed": 16.5, "heading": 40.0, "status": "Under way using engine"},
+        {"lon": 72.870, "lat": 18.895, "t_offset_m": 30,  "speed": 6.8,  "heading": 40.0, "status": "Under way using engine"}, # Spill 2 Origin
+        {"lon": 72.920, "lat": 18.955, "t_offset_m": 0,   "speed": 15.6, "heading": 40.0, "status": "Under way using engine"}
     ]
     for p in msc_pts:
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])
@@ -160,10 +160,10 @@ def generate_mumbai_demo_data():
 
     # MT SWARNA SINDHU (Primary Culprit for INC-MUM-2024-03)
     swarna_pts = [
-        {"lon": 72.720, "lat": 18.820, "t_offset_m": 360, "speed": 12.5, "heading": 38.0, "status": "Under way using engine"},
-        {"lon": 72.760, "lat": 18.865, "t_offset_m": 180, "speed": 12.5, "heading": 38.0, "status": "Under way using engine"},
+        {"lon": 72.705, "lat": 18.795, "t_offset_m": 360, "speed": 12.0, "heading": 38.0, "status": "Under way using engine"},
+        {"lon": 72.750, "lat": 18.850, "t_offset_m": 180, "speed": 12.0, "heading": 38.0, "status": "Under way using engine"},
         {"lon": 72.795, "lat": 18.905, "t_offset_m": 25,  "speed": 4.5,  "heading": 38.0, "status": "Under way using engine"}, # Spill 3 Origin
-        {"lon": 72.835, "lat": 18.950, "t_offset_m": 0,   "speed": 11.2, "heading": 38.0, "status": "Under way using engine"}
+        {"lon": 72.840, "lat": 18.960, "t_offset_m": 0,   "speed": 11.2, "heading": 38.0, "status": "Under way using engine"}
     ]
     for p in swarna_pts:
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])
@@ -179,7 +179,7 @@ def generate_mumbai_demo_data():
 
     # CHEMBULK GIBRALTAR (Primary Culprit for INC-MUM-2024-04)
     chem_pts = [
-        {"lon": 71.860, "lat": 19.120, "t_offset_m": 360, "speed": 13.4, "heading": 45.0, "status": "Under way using engine"},
+        {"lon": 71.855, "lat": 19.115, "t_offset_m": 360, "speed": 13.4, "heading": 45.0, "status": "Under way using engine"},
         {"lon": 71.920, "lat": 19.180, "t_offset_m": 180, "speed": 13.4, "heading": 45.0, "status": "Under way using engine"},
         {"lon": 71.985, "lat": 19.245, "t_offset_m": 20,  "speed": 5.8,  "heading": 45.0, "status": "Under way using engine"}, # Spill 4 Origin
         {"lon": 72.050, "lat": 19.310, "t_offset_m": 0,   "speed": 12.8, "heading": 45.0, "status": "Under way using engine"}

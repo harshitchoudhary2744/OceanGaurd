@@ -714,26 +714,26 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       if (ring && path && label) {
         if (isSelected) {
-          ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-cyan-400 bg-cyan-400/20 animate-ping pointer-events-none';
+          ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-rose-500 bg-rose-500/20 animate-ping pointer-events-none';
           path.setAttribute('fill', '#f43f5e');
-          path.setAttribute('stroke', '#38bdf8');
+          path.setAttribute('stroke', '#ffffff');
           path.setAttribute('stroke-width', '2');
-          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-rose-950/95 border border-rose-500 text-[10px] font-mono font-bold text-rose-200 whitespace-nowrap shadow-xl z-30 flex items-center gap-1';
+          label.className = 'marker-label absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-md bg-slate-950/95 border-2 border-rose-500 text-[10px] font-mono font-bold text-rose-300 whitespace-nowrap shadow-2xl z-30 flex items-center gap-1.5 backdrop-blur-sm';
           label.innerText = `🎯 ${name} (${v.speed ? v.speed.toFixed(1) : '14.8'} kts)`;
         } else if (isIncidentCulprit) {
-          ring.className = 'marker-ring absolute inset-1 rounded-full border border-rose-500/50 bg-rose-500/10 pointer-events-none';
+          ring.className = 'marker-ring absolute inset-1 rounded-full border border-rose-500/60 bg-rose-500/10 pointer-events-none';
           path.setAttribute('fill', '#f43f5e');
           path.setAttribute('stroke', '#020617');
           path.setAttribute('stroke-width', '1.5');
-          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-300 whitespace-nowrap pointer-events-none z-30';
+          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-rose-900/60 text-[9px] font-mono text-rose-300 whitespace-nowrap pointer-events-none z-30';
           label.innerText = name.split(' ')[0];
         } else if (isCoastGuard) {
-          ring.className = 'marker-ring absolute inset-1 rounded-full border border-cyan-500/30 pointer-events-none';
+          ring.className = 'marker-ring absolute inset-1 rounded-full border border-cyan-500/40 pointer-events-none';
           path.setAttribute('fill', '#06b6d4');
           path.setAttribute('stroke', '#020617');
           path.setAttribute('stroke-width', '1.5');
-          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-cyan-800 text-[9px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30';
-          label.innerText = 'ICGS PRAHARI';
+          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-cyan-700/70 text-[9px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-1';
+          label.innerText = '🛡️ ICGS PRAHARI';
         } else {
           ring.className = 'marker-ring hidden';
           path.setAttribute('fill', '#94a3b8');
