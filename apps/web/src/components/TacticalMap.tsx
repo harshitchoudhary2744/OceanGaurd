@@ -643,20 +643,22 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
         // Outer focus pulse ring for selected vessel
         const ring = document.createElement('div');
-        ring.className = 'marker-ring absolute inset-0 rounded-full transition-all';
+        ring.className = 'marker-ring absolute inset-0 rounded-full transition-all pointer-events-none';
         el.appendChild(ring);
 
-        // Vessel SVG Ship icon
+        // Vessel SVG Ship icon container (rotates with vessel heading)
         const svgContainer = document.createElement('div');
-        svgContainer.className = 'marker-icon-container relative z-10 flex items-center justify-center';
+        svgContainer.className = 'marker-icon-container relative z-10 flex items-center justify-center pointer-events-none';
         svgContainer.style.width = '26px';
         svgContainer.style.height = '26px';
+        svgContainer.style.transformOrigin = 'center center';
+        svgContainer.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+        svgContainer.style.transform = `rotate(${v.heading}deg)`;
 
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('viewBox', '0 0 24 24');
         svg.setAttribute('width', '24');
         svg.setAttribute('height', '24');
-        svg.style.transition = 'transform 0.15s ease';
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', 'M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z');
@@ -668,9 +670,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         svgContainer.appendChild(svg);
         el.appendChild(svgContainer);
 
-        // Label tooltip above marker
+        // Label tooltip centered above marker (stays strictly horizontal)
         const label = document.createElement('div');
-        label.className = 'marker-label absolute -top-6 px-1.5 py-0.5 rounded bg-slate-950/90 border border-slate-700 text-[9px] font-mono text-white whitespace-nowrap pointer-events-none transition-all shadow-md';
+        label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-slate-700 text-[9px] font-mono text-white whitespace-nowrap pointer-events-none transition-all shadow-md z-30 flex items-center gap-1';
         label.innerText = name.split(' ')[0] || name;
         el.appendChild(label);
 
@@ -679,7 +681,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           onSelectVesselRef.current(v.mmsi);
         });
 
-        marker = new maplibregl.Marker({ element: el, rotationAlignment: 'map' })
+        marker = new maplibregl.Marker({ element: el })
           .setLngLat([v.lon, v.lat])
           .addTo(map);
 
@@ -688,45 +690,48 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         marker.setLngLat([v.lon, v.lat]);
       }
 
-      // Update styling based on selected / culprit status
+      // Update styling and heading rotation
       const el = marker.getElement();
       const ring = el.querySelector('.marker-ring') as HTMLElement;
+      const svgContainer = el.querySelector('.marker-icon-container') as HTMLElement;
       const path = el.querySelector('.marker-arrow-path') as SVGPathElement;
       const label = el.querySelector('.marker-label') as HTMLElement;
 
+      if (svgContainer) {
+        svgContainer.style.transform = `rotate(${v.heading}deg)`;
+      }
+
       if (ring && path && label) {
         if (isSelected) {
-          ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-cyan-400 bg-cyan-400/20 animate-ping';
+          ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-cyan-400 bg-cyan-400/20 animate-ping pointer-events-none';
           path.setAttribute('fill', '#f43f5e');
           path.setAttribute('stroke', '#38bdf8');
           path.setAttribute('stroke-width', '2');
-          label.className = 'marker-label absolute -top-6 px-2 py-0.5 rounded bg-rose-950 border border-rose-500 text-[10px] font-mono font-bold text-rose-200 whitespace-nowrap shadow-lg z-30';
+          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-rose-950/95 border border-rose-500 text-[10px] font-mono font-bold text-rose-200 whitespace-nowrap shadow-xl z-30 flex items-center gap-1';
           label.innerText = `🎯 ${name} (${v.speed ? v.speed.toFixed(1) : '14.8'} kts)`;
         } else if (isIncidentCulprit) {
-          ring.className = 'marker-ring absolute inset-1 rounded-full border border-rose-500/50 bg-rose-500/10';
+          ring.className = 'marker-ring absolute inset-1 rounded-full border border-rose-500/50 bg-rose-500/10 pointer-events-none';
           path.setAttribute('fill', '#f43f5e');
           path.setAttribute('stroke', '#020617');
           path.setAttribute('stroke-width', '1.5');
-          label.className = 'marker-label absolute -top-6 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-300 whitespace-nowrap';
+          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-300 whitespace-nowrap pointer-events-none z-30';
           label.innerText = name.split(' ')[0];
         } else if (isCoastGuard) {
-          ring.className = 'marker-ring absolute inset-1 rounded-full border border-cyan-500/30';
+          ring.className = 'marker-ring absolute inset-1 rounded-full border border-cyan-500/30 pointer-events-none';
           path.setAttribute('fill', '#06b6d4');
           path.setAttribute('stroke', '#020617');
           path.setAttribute('stroke-width', '1.5');
-          label.className = 'marker-label absolute -top-6 px-1.5 py-0.5 rounded bg-slate-950/80 border border-cyan-800 text-[9px] font-mono text-cyan-300 whitespace-nowrap';
+          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-cyan-800 text-[9px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30';
           label.innerText = 'ICGS PRAHARI';
         } else {
           ring.className = 'marker-ring hidden';
           path.setAttribute('fill', '#94a3b8');
           path.setAttribute('stroke', '#020617');
           path.setAttribute('stroke-width', '1.5');
-          label.className = 'marker-label absolute -top-6 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-400 whitespace-nowrap';
+          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-400 whitespace-nowrap pointer-events-none z-30';
           label.innerText = name.split(' ')[0];
         }
       }
-
-      marker.setRotation(v.heading);
     });
 
     // Cleanup markers no longer active

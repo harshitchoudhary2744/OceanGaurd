@@ -32,14 +32,14 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
       id: 'scene-jnpt-channel',
       title: 'Sentinel-1A JNPT Access Channel Approach',
       sceneId: 'S1A_IW_GRDH_1SDV_JNPT_CHANNEL',
-      coords: [72.712, 18.895] as [number, number],
+      coords: [72.870, 18.895] as [number, number],
       desc: 'Deep Water Approach - Bilge sludge flush'
     },
     {
       id: 'scene-prongs-reef',
       title: 'Sentinel-1A Mumbai Outer Anchorage / Prongs Reef',
       sceneId: 'S1A_IW_GRDH_1SDV_PRONGS_REEF',
-      coords: [72.635, 18.942] as [number, number],
+      coords: [72.795, 18.905] as [number, number],
       desc: 'Anchorage Bunkering Zone - Intermediate Fuel Oil breach'
     },
   ];

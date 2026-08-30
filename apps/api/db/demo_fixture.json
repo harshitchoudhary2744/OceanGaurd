@@ -15,7 +15,7 @@
         "longitude": 72.24,
         "speed_knots": 14.8,
         "heading_degrees": 52.0,
-        "timestamp": "2026-08-30T04:25:04.695062+00:00"
+        "timestamp": "2026-08-30T16:52:25.757561+00:00"
       }
     },
     {
@@ -29,11 +29,11 @@
       "call_sign": "CQES",
       "destination": "JNPT PORT MUMBAI",
       "current_position": {
-        "latitude": 18.93,
-        "longitude": 72.76,
+        "latitude": 18.935,
+        "longitude": 72.905,
         "speed_knots": 15.6,
-        "heading_degrees": 68.0,
-        "timestamp": "2026-08-30T04:25:04.695062+00:00"
+        "heading_degrees": 40.0,
+        "timestamp": "2026-08-30T16:52:25.757561+00:00"
       }
     },
     {
@@ -47,11 +47,11 @@
       "call_sign": "AWXZ",
       "destination": "MUMBAI REFINERY BERTH",
       "current_position": {
-        "latitude": 18.98,
-        "longitude": 72.67,
+        "latitude": 18.95,
+        "longitude": 72.835,
         "speed_knots": 11.2,
         "heading_degrees": 38.0,
-        "timestamp": "2026-08-30T04:25:04.695062+00:00"
+        "timestamp": "2026-08-30T16:52:25.757561+00:00"
       }
     },
     {
@@ -69,7 +69,7 @@
         "longitude": 72.04,
         "speed_knots": 12.8,
         "heading_degrees": 45.0,
-        "timestamp": "2026-08-30T04:25:04.695062+00:00"
+        "timestamp": "2026-08-30T16:52:25.757561+00:00"
       }
     },
     {
@@ -87,7 +87,7 @@
         "longitude": 72.275,
         "speed_knots": 12.4,
         "heading_degrees": 98.0,
-        "timestamp": "2026-08-30T04:25:04.695062+00:00"
+        "timestamp": "2026-08-30T16:52:25.757561+00:00"
       }
     },
     {
@@ -105,14 +105,14 @@
         "longitude": 72.18,
         "speed_knots": 18.5,
         "heading_degrees": 310.0,
-        "timestamp": "2026-08-30T04:25:04.695062+00:00"
+        "timestamp": "2026-08-30T16:52:25.757561+00:00"
       }
     }
   ],
   "telemetry": [
     {
       "mmsi": 419000123,
-      "timestamp": "2026-08-29T22:25:04.695062+00:00",
+      "timestamp": "2026-08-30T10:52:25.757561+00:00",
       "latitude": 18.91,
       "longitude": 71.97,
       "speed_knots": 14.8,
@@ -121,7 +121,7 @@
     },
     {
       "mmsi": 419000123,
-      "timestamp": "2026-08-30T01:25:04.695062+00:00",
+      "timestamp": "2026-08-30T13:52:25.757561+00:00",
       "latitude": 18.985,
       "longitude": 72.065,
       "speed_knots": 14.8,
@@ -130,7 +130,7 @@
     },
     {
       "mmsi": 419000123,
-      "timestamp": "2026-08-30T03:43:04.695062+00:00",
+      "timestamp": "2026-08-30T16:10:25.757561+00:00",
       "latitude": 19.048,
       "longitude": 72.145,
       "speed_knots": 5.2,
@@ -139,7 +139,7 @@
     },
     {
       "mmsi": 419000123,
-      "timestamp": "2026-08-30T04:25:04.695062+00:00",
+      "timestamp": "2026-08-30T16:52:25.757561+00:00",
       "latitude": 19.12,
       "longitude": 72.24,
       "speed_knots": 14.8,
@@ -148,79 +148,79 @@
     },
     {
       "mmsi": 255806000,
-      "timestamp": "2026-08-29T22:25:04.695062+00:00",
+      "timestamp": "2026-08-30T10:52:25.757561+00:00",
       "latitude": 18.78,
-      "longitude": 72.58,
+      "longitude": 72.78,
       "speed_knots": 17.2,
-      "heading_degrees": 68.0,
+      "heading_degrees": 35.0,
       "nav_status": "Under way using engine"
     },
     {
       "mmsi": 255806000,
-      "timestamp": "2026-08-30T01:25:04.695062+00:00",
-      "latitude": 18.84,
-      "longitude": 72.65,
+      "timestamp": "2026-08-30T13:52:25.757561+00:00",
+      "latitude": 18.835,
+      "longitude": 72.825,
       "speed_knots": 17.2,
-      "heading_degrees": 68.0,
+      "heading_degrees": 35.0,
       "nav_status": "Under way using engine"
     },
     {
       "mmsi": 255806000,
-      "timestamp": "2026-08-30T03:55:04.695062+00:00",
+      "timestamp": "2026-08-30T16:22:25.757561+00:00",
       "latitude": 18.895,
-      "longitude": 72.712,
+      "longitude": 72.87,
       "speed_knots": 6.8,
-      "heading_degrees": 68.0,
+      "heading_degrees": 35.0,
       "nav_status": "Under way using engine"
     },
     {
       "mmsi": 255806000,
-      "timestamp": "2026-08-30T04:25:04.695062+00:00",
-      "latitude": 18.93,
-      "longitude": 72.76,
+      "timestamp": "2026-08-30T16:52:25.757561+00:00",
+      "latitude": 18.935,
+      "longitude": 72.905,
       "speed_knots": 15.6,
-      "heading_degrees": 68.0,
+      "heading_degrees": 40.0,
       "nav_status": "Under way using engine"
     },
     {
       "mmsi": 419000789,
-      "timestamp": "2026-08-29T22:25:04.695062+00:00",
-      "latitude": 18.84,
-      "longitude": 72.54,
+      "timestamp": "2026-08-30T10:52:25.757561+00:00",
+      "latitude": 18.82,
+      "longitude": 72.72,
       "speed_knots": 12.5,
       "heading_degrees": 38.0,
       "nav_status": "Under way using engine"
     },
     {
       "mmsi": 419000789,
-      "timestamp": "2026-08-30T01:25:04.695062+00:00",
-      "latitude": 18.89,
-      "longitude": 72.585,
+      "timestamp": "2026-08-30T13:52:25.757561+00:00",
+      "latitude": 18.865,
+      "longitude": 72.76,
       "speed_knots": 12.5,
       "heading_degrees": 38.0,
       "nav_status": "Under way using engine"
     },
     {
       "mmsi": 419000789,
-      "timestamp": "2026-08-30T04:00:04.695062+00:00",
-      "latitude": 18.942,
-      "longitude": 72.635,
+      "timestamp": "2026-08-30T16:27:25.757561+00:00",
+      "latitude": 18.905,
+      "longitude": 72.795,
       "speed_knots": 4.5,
       "heading_degrees": 38.0,
       "nav_status": "Under way using engine"
     },
     {
       "mmsi": 419000789,
-      "timestamp": "2026-08-30T04:25:04.695062+00:00",
-      "latitude": 18.98,
-      "longitude": 72.67,
+      "timestamp": "2026-08-30T16:52:25.757561+00:00",
+      "latitude": 18.95,
+      "longitude": 72.835,
       "speed_knots": 11.2,
       "heading_degrees": 38.0,
       "nav_status": "Under way using engine"
     },
     {
       "mmsi": 563032000,
-      "timestamp": "2026-08-29T22:25:04.695062+00:00",
+      "timestamp": "2026-08-30T10:52:25.757561+00:00",
       "latitude": 19.12,
       "longitude": 71.86,
       "speed_knots": 13.4,
@@ -229,7 +229,7 @@
     },
     {
       "mmsi": 563032000,
-      "timestamp": "2026-08-30T01:25:04.695062+00:00",
+      "timestamp": "2026-08-30T13:52:25.757561+00:00",
       "latitude": 19.18,
       "longitude": 71.92,
       "speed_knots": 13.4,
@@ -238,7 +238,7 @@
     },
     {
       "mmsi": 563032000,
-      "timestamp": "2026-08-30T04:05:04.695062+00:00",
+      "timestamp": "2026-08-30T16:32:25.757561+00:00",
       "latitude": 19.245,
       "longitude": 71.985,
       "speed_knots": 5.8,
@@ -247,7 +247,7 @@
     },
     {
       "mmsi": 563032000,
-      "timestamp": "2026-08-30T04:25:04.695062+00:00",
+      "timestamp": "2026-08-30T16:52:25.757561+00:00",
       "latitude": 19.31,
       "longitude": 72.04,
       "speed_knots": 12.8,
@@ -259,7 +259,7 @@
     {
       "id": "INC-MUM-2024-01",
       "name": "Mumbai High Sector Alpha - Heavy Crude Discharge",
-      "detection_timestamp": "2026-08-30T04:25:04.695062+00:00",
+      "detection_timestamp": "2026-08-30T16:52:25.757561+00:00",
       "area_sq_km": 5.4,
       "perimeter_km": 14.8,
       "confidence_score": 0.988,
@@ -309,49 +309,49 @@
     {
       "id": "INC-MUM-2024-02",
       "name": "JNPT Channel Approach - Bilge Sludge Flush",
-      "detection_timestamp": "2026-08-30T04:25:04.695062+00:00",
+      "detection_timestamp": "2026-08-30T16:52:25.757561+00:00",
       "area_sq_km": 2.85,
       "perimeter_km": 8.6,
       "confidence_score": 0.965,
       "source_scene": "S1A_IW_GRDH_1SDV_JNPT_CHANNEL",
       "status": "ACTIVE",
       "center": [
-        72.712,
+        72.87,
         18.895
       ],
       "estimated_discharge_liters": 31000,
       "slick_type": "Heavy Fuel Oil (HFO-380 Bilge Sludge)",
       "polygon_coordinates": [
         [
-          72.695,
+          72.855,
           18.888
         ],
         [
-          72.705,
+          72.865,
           18.898
         ],
         [
-          72.718,
+          72.876,
           18.902
         ],
         [
-          72.728,
+          72.886,
           18.899
         ],
         [
-          72.73,
+          72.888,
           18.892
         ],
         [
-          72.72,
+          72.878,
           18.886
         ],
         [
-          72.704,
+          72.864,
           18.884
         ],
         [
-          72.695,
+          72.855,
           18.888
         ]
       ]
@@ -359,57 +359,57 @@
     {
       "id": "INC-MUM-2024-03",
       "name": "Prongs Reef Anchorage - Bunker Fuel Leak",
-      "detection_timestamp": "2026-08-30T04:25:04.695062+00:00",
+      "detection_timestamp": "2026-08-30T16:52:25.757561+00:00",
       "area_sq_km": 1.95,
       "perimeter_km": 6.2,
       "confidence_score": 0.942,
       "source_scene": "S1A_IW_GRDH_1SDV_PRONGS_REEF",
       "status": "ACTIVE",
       "center": [
-        72.635,
-        18.942
+        72.795,
+        18.905
       ],
       "estimated_discharge_liters": 18500,
       "slick_type": "Intermediate Fuel Oil (IFO-180)",
       "polygon_coordinates": [
         [
-          72.622,
-          18.935
+          72.782,
+          18.898
         ],
         [
-          72.63,
-          18.945
+          72.79,
+          18.908
         ],
         [
-          72.64,
-          18.948
+          72.8,
+          18.911
         ],
         [
-          72.648,
-          18.944
+          72.808,
+          18.907
         ],
         [
-          72.646,
-          18.938
+          72.806,
+          18.901
         ],
         [
-          72.638,
-          18.934
+          72.798,
+          18.897
         ],
         [
-          72.628,
-          18.932
+          72.788,
+          18.895
         ],
         [
-          72.622,
-          18.935
+          72.782,
+          18.898
         ]
       ]
     },
     {
       "id": "INC-MUM-2024-04",
       "name": "Neelam South Offshore - Condensate Sheen",
-      "detection_timestamp": "2026-08-30T04:25:04.695062+00:00",
+      "detection_timestamp": "2026-08-30T16:52:25.757561+00:00",
       "area_sq_km": 3.6,
       "perimeter_km": 10.4,
       "confidence_score": 0.958,

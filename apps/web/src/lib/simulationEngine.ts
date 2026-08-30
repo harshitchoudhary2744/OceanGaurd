@@ -221,10 +221,10 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
   "INC-MUM-2024-02": {
     id: "INC-MUM-2024-02",
     name: "JNPT Access Channel",
-    locationName: "JNPT Deep-Water Channel (18° 53.7' N, 72° 42.7' E)",
-    originCoords: [72.712, 18.895],
+    locationName: "JNPT Deep-Water Channel (18° 53.7' N, 72° 52.2' E)",
+    originCoords: [72.870, 18.895],
     dischargeOffsetMinutes: -30,
-    trackHeading: 68,
+    trackHeading: 35,
     baseAreaSqKm: 2.85,
     baseLengthKm: 3.4,
     baseWidthKm: 1.1,
@@ -235,7 +235,7 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     confidence: 0.965,
     sourceScene: "S1A_IW_GRDH_1SDV_JNPT_CHANNEL",
     threat: {
-      coast_distance_km: 8.5,
+      coast_distance_km: 6.5,
       growth_rate_pct_per_hour: 22.4,
       fishing_zone_risk: 'HIGH',
       fishing_zone_name: 'Uran & Karanja Artisanal Fisheries',
@@ -243,7 +243,7 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
       marine_habitat_name: 'Elephanta Sanctuary & Mangrove Estuaries',
       overall_severity_score: 86,
       overall_severity_level: 'HIGH',
-      predicted_arrival_hours: 2.4,
+      predicted_arrival_hours: 2.2,
       coastal_threat_risk: 'HIGH',
       projected_impact_zone: 'JNPT Port & Elephanta Islands'
     }
@@ -251,8 +251,8 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
   "INC-MUM-2024-03": {
     id: "INC-MUM-2024-03",
     name: "Prongs Reef Anchorage",
-    locationName: "Mumbai Outer Anchorage (18° 56.5' N, 72° 38.1' E)",
-    originCoords: [72.635, 18.942],
+    locationName: "Mumbai Outer Anchorage (18° 54.3' N, 72° 47.7' E)",
+    originCoords: [72.795, 18.905],
     dischargeOffsetMinutes: -25,
     trackHeading: 38,
     baseAreaSqKm: 1.95,
@@ -335,32 +335,32 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
       { tMinutes: 180,  lon: 72.380, lat: 19.210, heading: 52, speed: 14.8 },
     ],
   },
-  // 2. MSC KANOKO (Container Ship - High Speed Inbound JNPT)
+  // 2. MSC KANOKO (Container Ship - Inbound JNPT Maritime Channel)
   {
     mmsi: 255806000,
     name: "MSC KANOKO",
     isCulprit: true,
     linkedSpillId: "INC-MUM-2024-02",
     waypoints: [
-      { tMinutes: -360, lon: 72.580, lat: 18.780, heading: 68, speed: 17.2 },
-      { tMinutes: -180, lon: 72.650, lat: 18.840, heading: 68, speed: 17.2 },
-      { tMinutes: -30,  lon: 72.712, lat: 18.895, heading: 68, speed: 6.8 }, // Spill 2 Discharge Point
-      { tMinutes: 0,    lon: 72.760, lat: 18.930, heading: 68, speed: 15.6 },
-      { tMinutes: 180,  lon: 72.860, lat: 19.010, heading: 68, speed: 12.0 },
+      { tMinutes: -360, lon: 72.780, lat: 18.780, heading: 35, speed: 17.2 },
+      { tMinutes: -180, lon: 72.825, lat: 18.835, heading: 35, speed: 17.2 },
+      { tMinutes: -30,  lon: 72.870, lat: 18.895, heading: 35, speed: 6.8 }, // Spill 2 Discharge Point (Channel)
+      { tMinutes: 0,    lon: 72.905, lat: 18.935, heading: 40, speed: 15.6 },
+      { tMinutes: 180,  lon: 72.945, lat: 18.955, heading: 70, speed: 12.0 },
     ],
   },
-  // 3. MT SWARNA SINDHU (Product Tanker - Inbound Mumbai Refinery)
+  // 3. MT SWARNA SINDHU (Product Tanker - Inbound Mumbai Refinery via Outer Anchorage)
   {
     mmsi: 419000789,
     name: "MT SWARNA SINDHU",
     isCulprit: true,
     linkedSpillId: "INC-MUM-2024-03",
     waypoints: [
-      { tMinutes: -360, lon: 72.540, lat: 18.840, heading: 38, speed: 12.5 },
-      { tMinutes: -180, lon: 72.585, lat: 18.890, heading: 38, speed: 12.5 },
-      { tMinutes: -25,  lon: 72.635, lat: 18.942, heading: 38, speed: 4.5 }, // Spill 3 Discharge Point
-      { tMinutes: 0,    lon: 72.670, lat: 18.980, heading: 38, speed: 11.2 },
-      { tMinutes: 180,  lon: 72.740, lat: 19.050, heading: 38, speed: 10.0 },
+      { tMinutes: -360, lon: 72.720, lat: 18.820, heading: 38, speed: 12.5 },
+      { tMinutes: -180, lon: 72.760, lat: 18.865, heading: 38, speed: 12.5 },
+      { tMinutes: -25,  lon: 72.795, lat: 18.905, heading: 38, speed: 4.5 }, // Spill 3 Discharge Point (Anchorage)
+      { tMinutes: 0,    lon: 72.835, lat: 18.950, heading: 38, speed: 11.2 },
+      { tMinutes: 180,  lon: 72.890, lat: 18.995, heading: 42, speed: 10.0 },
     ],
   },
   // 4. CHEMBULK GIBRALTAR (Chemical Tanker - Passing Neelam Offshore)
@@ -714,10 +714,10 @@ export class AutonomousSimulationEngine {
         anomaly_score: 94.8,
         anomaly_breakdown: mscAnomaly,
         current_position: {
-          latitude: 18.930,
-          longitude: 72.760,
+          latitude: 18.935,
+          longitude: 72.905,
           speed_knots: 15.6,
-          heading_degrees: 68,
+          heading_degrees: 40,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -737,8 +737,8 @@ export class AutonomousSimulationEngine {
         anomaly_score: 91.2,
         anomaly_breakdown: swarnaAnomaly,
         current_position: {
-          latitude: 18.980,
-          longitude: 72.670,
+          latitude: 18.950,
+          longitude: 72.835,
           speed_knots: 11.2,
           heading_degrees: 38,
           rate_of_turn: 0.0,
@@ -863,14 +863,14 @@ export class AutonomousSimulationEngine {
         hindcast_distance_meters: 0.0,
         hindcast_distance_km: 0.0,
         speed_knots: 15.6,
-        heading_degrees: 68,
-        last_lat: 18.930,
-        last_lon: 72.760,
+        heading_degrees: 40,
+        last_lat: 18.935,
+        last_lon: 72.905,
         trajectory: [
-          [72.580, 18.780, new Date(now.getTime() - 360 * 60000).toISOString()],
-          [72.650, 18.840, new Date(now.getTime() - 180 * 60000).toISOString()],
-          [72.712, 18.895, new Date(now.getTime() - 30 * 60000).toISOString()],
-          [72.760, 18.930, now.toISOString()],
+          [72.780, 18.780, new Date(now.getTime() - 360 * 60000).toISOString()],
+          [72.825, 18.835, new Date(now.getTime() - 180 * 60000).toISOString()],
+          [72.870, 18.895, new Date(now.getTime() - 30 * 60000).toISOString()],
+          [72.905, 18.935, now.toISOString()],
         ],
       },
       {
@@ -893,13 +893,13 @@ export class AutonomousSimulationEngine {
         hindcast_distance_km: 0.0,
         speed_knots: 11.2,
         heading_degrees: 38,
-        last_lat: 18.980,
-        last_lon: 72.670,
+        last_lat: 18.950,
+        last_lon: 72.835,
         trajectory: [
-          [72.540, 18.840, new Date(now.getTime() - 360 * 60000).toISOString()],
-          [72.585, 18.890, new Date(now.getTime() - 180 * 60000).toISOString()],
-          [72.635, 18.942, new Date(now.getTime() - 25 * 60000).toISOString()],
-          [72.670, 18.980, now.toISOString()],
+          [72.720, 18.820, new Date(now.getTime() - 360 * 60000).toISOString()],
+          [72.760, 18.865, new Date(now.getTime() - 180 * 60000).toISOString()],
+          [72.795, 18.905, new Date(now.getTime() - 25 * 60000).toISOString()],
+          [72.835, 18.950, now.toISOString()],
         ],
       },
       {

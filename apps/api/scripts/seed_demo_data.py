@@ -36,10 +36,10 @@ def generate_mumbai_demo_data():
             "call_sign": "CQES",
             "destination": "JNPT PORT MUMBAI",
             "current_position": {
-                "latitude": 18.930,
-                "longitude": 72.760,
+                "latitude": 18.935,
+                "longitude": 72.905,
                 "speed_knots": 15.6,
-                "heading_degrees": 68.0,
+                "heading_degrees": 40.0,
                 "timestamp": base_time.isoformat()
             }
         },
@@ -54,8 +54,8 @@ def generate_mumbai_demo_data():
             "call_sign": "AWXZ",
             "destination": "MUMBAI REFINERY BERTH",
             "current_position": {
-                "latitude": 18.980,
-                "longitude": 72.670,
+                "latitude": 18.950,
+                "longitude": 72.835,
                 "speed_knots": 11.2,
                 "heading_degrees": 38.0,
                 "timestamp": base_time.isoformat()
@@ -141,10 +141,10 @@ def generate_mumbai_demo_data():
 
     # MSC KANOKO (Primary Culprit for INC-MUM-2024-02)
     msc_pts = [
-        {"lon": 72.580, "lat": 18.780, "t_offset_m": 360, "speed": 17.2, "heading": 68.0, "status": "Under way using engine"},
-        {"lon": 72.650, "lat": 18.840, "t_offset_m": 180, "speed": 17.2, "heading": 68.0, "status": "Under way using engine"},
-        {"lon": 72.712, "lat": 18.895, "t_offset_m": 30,  "speed": 6.8,  "heading": 68.0, "status": "Under way using engine"}, # Spill 2 Origin
-        {"lon": 72.760, "lat": 18.930, "t_offset_m": 0,   "speed": 15.6, "heading": 68.0, "status": "Under way using engine"}
+        {"lon": 72.780, "lat": 18.780, "t_offset_m": 360, "speed": 17.2, "heading": 35.0, "status": "Under way using engine"},
+        {"lon": 72.825, "lat": 18.835, "t_offset_m": 180, "speed": 17.2, "heading": 35.0, "status": "Under way using engine"},
+        {"lon": 72.870, "lat": 18.895, "t_offset_m": 30,  "speed": 6.8,  "heading": 35.0, "status": "Under way using engine"}, # Spill 2 Origin
+        {"lon": 72.905, "lat": 18.935, "t_offset_m": 0,   "speed": 15.6, "heading": 40.0, "status": "Under way using engine"}
     ]
     for p in msc_pts:
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])
@@ -160,10 +160,10 @@ def generate_mumbai_demo_data():
 
     # MT SWARNA SINDHU (Primary Culprit for INC-MUM-2024-03)
     swarna_pts = [
-        {"lon": 72.540, "lat": 18.840, "t_offset_m": 360, "speed": 12.5, "heading": 38.0, "status": "Under way using engine"},
-        {"lon": 72.585, "lat": 18.890, "t_offset_m": 180, "speed": 12.5, "heading": 38.0, "status": "Under way using engine"},
-        {"lon": 72.635, "lat": 18.942, "t_offset_m": 25,  "speed": 4.5,  "heading": 38.0, "status": "Under way using engine"}, # Spill 3 Origin
-        {"lon": 72.670, "lat": 18.980, "t_offset_m": 0,   "speed": 11.2, "heading": 38.0, "status": "Under way using engine"}
+        {"lon": 72.720, "lat": 18.820, "t_offset_m": 360, "speed": 12.5, "heading": 38.0, "status": "Under way using engine"},
+        {"lon": 72.760, "lat": 18.865, "t_offset_m": 180, "speed": 12.5, "heading": 38.0, "status": "Under way using engine"},
+        {"lon": 72.795, "lat": 18.905, "t_offset_m": 25,  "speed": 4.5,  "heading": 38.0, "status": "Under way using engine"}, # Spill 3 Origin
+        {"lon": 72.835, "lat": 18.950, "t_offset_m": 0,   "speed": 11.2, "heading": 38.0, "status": "Under way using engine"}
     ]
     for p in swarna_pts:
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])
@@ -230,18 +230,18 @@ def generate_mumbai_demo_data():
             "confidence_score": 0.965,
             "source_scene": "S1A_IW_GRDH_1SDV_JNPT_CHANNEL",
             "status": "ACTIVE",
-            "center": [72.7120, 18.8950],
+            "center": [72.8700, 18.8950],
             "estimated_discharge_liters": 31000,
             "slick_type": "Heavy Fuel Oil (HFO-380 Bilge Sludge)",
             "polygon_coordinates": [
-                [72.695, 18.888],
-                [72.705, 18.898],
-                [72.718, 18.902],
-                [72.728, 18.899],
-                [72.730, 18.892],
-                [72.720, 18.886],
-                [72.704, 18.884],
-                [72.695, 18.888]
+                [72.855, 18.888],
+                [72.865, 18.898],
+                [72.876, 18.902],
+                [72.886, 18.899],
+                [72.888, 18.892],
+                [72.878, 18.886],
+                [72.864, 18.884],
+                [72.855, 18.888]
             ]
         },
         {
@@ -253,18 +253,18 @@ def generate_mumbai_demo_data():
             "confidence_score": 0.942,
             "source_scene": "S1A_IW_GRDH_1SDV_PRONGS_REEF",
             "status": "ACTIVE",
-            "center": [72.6350, 18.9420],
+            "center": [72.7950, 18.9050],
             "estimated_discharge_liters": 18500,
             "slick_type": "Intermediate Fuel Oil (IFO-180)",
             "polygon_coordinates": [
-                [72.622, 18.935],
-                [72.630, 18.945],
-                [72.640, 18.948],
-                [72.648, 18.944],
-                [72.646, 18.938],
-                [72.638, 18.934],
-                [72.628, 18.932],
-                [72.622, 18.935]
+                [72.782, 18.898],
+                [72.790, 18.908],
+                [72.800, 18.911],
+                [72.808, 18.907],
+                [72.806, 18.901],
+                [72.798, 18.897],
+                [72.788, 18.895],
+                [72.782, 18.898]
             ]
         },
         {
