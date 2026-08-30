@@ -165,22 +165,36 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Mobile Action Controls & Hamburger */}
-        <div className="flex md:hidden items-center gap-2">
+        <div className="flex md:hidden items-center gap-1.5 sm:gap-2">
+          {/* Direct Incident Switcher on Mobile Header */}
+          <select
+            value={selectedSpillId}
+            onChange={(e) => onSelectSpillId(e.target.value)}
+            className="bg-slate-900 border border-cyan-500/40 text-cyan-300 font-bold text-[10.5px] font-mono px-2 py-1 rounded-lg outline-none max-w-[125px] truncate cursor-pointer"
+            aria-label="Select incident on mobile"
+          >
+            {Object.values(MUMBAI_INCIDENTS).map((inc) => (
+              <option key={inc.id} value={inc.id} className="bg-slate-900 text-slate-200">
+                {inc.name}
+              </option>
+            ))}
+          </select>
+
           <button
             onClick={handleExportPdf}
             disabled={isExporting}
             title="Download PDF Audit"
-            className="p-2 rounded-lg bg-cyan-500 text-slate-950 font-bold text-xs"
+            className="p-1.5 rounded-lg bg-cyan-500 text-slate-950 font-bold text-xs"
           >
             <FileText className="w-4 h-4" />
           </button>
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300"
+            className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300"
             aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
       </header>

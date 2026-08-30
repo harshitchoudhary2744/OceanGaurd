@@ -5,7 +5,7 @@ import { InspectorPanel } from './components/InspectorPanel';
 import { TimeScrubber } from './components/TimeScrubber';
 import { UploadSarModal } from './components/UploadSarModal';
 import { ForensicModal } from './components/ForensicModal';
-import { Map as MapIcon, ShieldAlert, Ship, Database } from 'lucide-react';
+import { Map as MapIcon, ShieldAlert, Ship, Database, AlertTriangle } from 'lucide-react';
 
 import {
   SpillFeatureCollection,
@@ -49,7 +49,7 @@ export function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Mobile Bottom Sheet / Active Tab
-  const [mobileActiveTab, setMobileActiveTab] = useState<'map' | 'threat' | 'suspects' | 'vectors'>('map');
+  const [mobileActiveTab, setMobileActiveTab] = useState<'map' | 'threat' | 'overview' | 'suspects' | 'intel'>('map');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Time Scrubber State (-360 to 0)
@@ -311,10 +311,14 @@ export function App() {
             centerCoordinates={mapCenter}
             timeOffsetMinutes={timeOffsetMinutes}
             metocean={metocean}
+            onOpenMobileDrawer={() => {
+              setMobileActiveTab('threat');
+              setIsMobileDrawerOpen(true);
+            }}
           />
 
           {/* Time-Scrubber Timeline (-360m to 0) */}
-          <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-auto">
+          <div className="absolute bottom-20 sm:bottom-4 left-4 right-4 z-20 pointer-events-auto">
             <TimeScrubber
               timeOffsetMinutes={timeOffsetMinutes}
               onChangeTimeOffset={setTimeOffsetMinutes}
@@ -343,14 +347,14 @@ export function App() {
       </div>
 
       {/* 3. Mobile Bottom Tab Bar */}
-      <div className="lg:hidden h-14 bg-[#111622] border-t border-slate-800 flex items-center justify-around z-30 px-2 font-mono text-[10px]">
+      <div className="lg:hidden h-16 bg-[#111622] border-t border-slate-800 flex items-center justify-around z-30 px-1.5 font-mono text-[10px] shadow-2xl shrink-0">
         <button
           onClick={() => {
             setMobileActiveTab('map');
             setIsMobileDrawerOpen(false);
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg ${
-            mobileActiveTab === 'map' && !isMobileDrawerOpen ? 'text-cyan-400 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
+            mobileActiveTab === 'map' && !isMobileDrawerOpen ? 'text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30' : 'text-slate-400'
           }`}
         >
           <MapIcon className="w-4 h-4" />
@@ -362,8 +366,21 @@ export function App() {
             setMobileActiveTab('threat');
             setIsMobileDrawerOpen(true);
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg ${
-            isMobileDrawerOpen && mobileActiveTab === 'threat' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
+            isMobileDrawerOpen && mobileActiveTab === 'threat' ? 'text-rose-400 font-bold bg-rose-950/40 border border-rose-500/30' : 'text-slate-400'
+          }`}
+        >
+          <AlertTriangle className="w-4 h-4 text-rose-400" />
+          <span>THREAT</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setMobileActiveTab('overview');
+            setIsMobileDrawerOpen(true);
+          }}
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
+            isMobileDrawerOpen && mobileActiveTab === 'overview' ? 'text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30' : 'text-slate-400'
           }`}
         >
           <ShieldAlert className="w-4 h-4" />
@@ -375,8 +392,8 @@ export function App() {
             setMobileActiveTab('suspects');
             setIsMobileDrawerOpen(true);
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg ${
-            isMobileDrawerOpen && mobileActiveTab === 'suspects' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
+            isMobileDrawerOpen && mobileActiveTab === 'suspects' ? 'text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30' : 'text-slate-400'
           }`}
         >
           <Ship className="w-4 h-4" />
@@ -385,11 +402,11 @@ export function App() {
 
         <button
           onClick={() => {
-            setMobileActiveTab('vectors');
+            setMobileActiveTab('intel');
             setIsMobileDrawerOpen(true);
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg ${
-            isMobileDrawerOpen && mobileActiveTab === 'vectors' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
+            isMobileDrawerOpen && mobileActiveTab === 'intel' ? 'text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30' : 'text-slate-400'
           }`}
         >
           <Database className="w-4 h-4" />
@@ -399,8 +416,8 @@ export function App() {
 
       {/* 4. Mobile Drawer Modal */}
       {isMobileDrawerOpen && (
-        <div className="lg:hidden fixed inset-0 top-16 bottom-14 z-40 bg-black/60 backdrop-blur-sm flex flex-col justify-end">
-          <div className="h-[80%] w-full bg-[#111622] rounded-t-2xl border-t border-slate-700 overflow-hidden flex flex-col">
+        <div className="lg:hidden fixed inset-0 top-16 bottom-16 z-40 bg-black/60 backdrop-blur-sm flex flex-col justify-end">
+          <div className="h-[88%] w-full bg-[#111622] rounded-t-2xl border-t border-slate-700 overflow-hidden flex flex-col shadow-2xl">
             <InspectorPanel
               spill={selectedSpillFeature?.properties}
               spillFeature={selectedSpillFeature}
@@ -415,6 +432,7 @@ export function App() {
               isMobileModal={true}
               metocean={metocean}
               timeOffsetMinutes={timeOffsetMinutes}
+              initialTab={mobileActiveTab === 'map' ? 'overview' : mobileActiveTab}
             />
           </div>
         </div>

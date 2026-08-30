@@ -1,33 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Radar,
   ShieldAlert,
   Database,
   FileDown,
-  Sparkles,
   X,
   Wind,
   Waves,
   Thermometer,
   Activity,
-  Radio,
   Ship,
-  Info,
-  CheckCircle2,
   AlertTriangle,
-  Clock,
   History,
-  Gauge,
-  ZapOff,
   Navigation,
   Target,
   Anchor,
   Fish,
-  TreePine
+  TreePine,
+  ChevronRight
 } from 'lucide-react';
 import { SuspectVessel, VectorMatch, SpillProperties, SpillGeoFeature, MetoceanData } from '../types';
 import { downloadPdfReportUrl } from '../lib/api';
 import { MUMBAI_INCIDENTS, calculateEnvironmentalThreat } from '../lib/simulationEngine';
+
+export type InspectorTabType = 'overview' | 'threat' | 'suspects' | 'hindcast' | 'metocean' | 'intel';
 
 interface InspectorPanelProps {
   spill?: SpillProperties;
@@ -41,9 +37,8 @@ interface InspectorPanelProps {
   metocean?: MetoceanData;
   timeOffsetMinutes?: number;
   scenario?: string;
+  initialTab?: InspectorTabType;
 }
-
-type TabType = 'overview' | 'threat' | 'suspects' | 'hindcast' | 'metocean' | 'intel';
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   spill,
@@ -56,9 +51,16 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   isMobileModal,
   metocean,
   timeOffsetMinutes = 0,
+  initialTab = 'overview',
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<InspectorTabType>(initialTab);
   const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   const incidentId = spill?.id || "INC-MUM-2024-01";
   const currentIncident = MUMBAI_INCIDENTS[incidentId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
@@ -93,14 +95,24 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-[#111622] flex flex-col overflow-y-auto select-none border-l border-slate-800">
+    <div className="w-full h-full bg-[#111622] flex flex-col overflow-y-auto select-none border-l border-slate-800 touch-pan-y">
+      {/* Mobile Drawer Pull Indicator */}
+      {isMobileModal && (
+        <div className="w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto my-2 shrink-0 lg:hidden" />
+      )}
+
       {/* 1. Panel Header */}
-      <div className="p-3.5 sm:p-4 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-[#111622]/95 backdrop-blur-md z-10">
+      <div className="p-3 sm:p-4 border-b border-slate-800 flex items-center justify-between sticky top-0 bg-[#111622]/95 backdrop-blur-md z-10">
         <div className="flex items-center gap-2">
-          <Radar className="w-4 h-4 text-cyan-400 animate-pulse" />
-          <h2 className="font-mono text-xs font-bold text-white uppercase tracking-wider">
-            Incident Inspector
-          </h2>
+          <Radar className="w-4 h-4 text-cyan-400 animate-pulse shrink-0" />
+          <div>
+            <h2 className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+              Incident Inspector
+            </h2>
+            <span className="text-[9.5px] font-mono text-slate-400 block sm:hidden">
+              {currentIncident.name}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 font-mono text-[10px] font-bold">
@@ -109,7 +121,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           {isMobileModal && onClose && (
             <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white"
               aria-label="Close inspector panel"
             >
               <X className="w-4 h-4" />
@@ -118,25 +130,25 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         </div>
       </div>
 
-      <div className="p-3.5 sm:p-4 flex flex-col gap-3 pb-20 lg:pb-6">
+      <div className="p-3 sm:p-4 flex flex-col gap-3 pb-24 lg:pb-6">
         {/* 2. Top Key Metrics Row */}
         <div className="grid grid-cols-3 gap-2">
-          <div className="p-2 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
-            <span className="text-[9px] font-mono text-slate-400 block mb-0.5">SLICK AREA</span>
+          <div className="p-2 sm:p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/90 text-center shadow-md">
+            <span className="text-[8.5px] sm:text-[9.5px] font-mono text-slate-400 block mb-0.5">SLICK AREA</span>
             <span className="font-mono font-bold text-rose-300 text-xs sm:text-sm">
-              {spill?.area_sq_km || currentIncident.baseAreaSqKm} <span className="text-[10px] text-slate-400 font-normal">km²</span>
+              {spill?.area_sq_km || currentIncident.baseAreaSqKm} <span className="text-[9px] text-slate-400 font-normal">km²</span>
             </span>
           </div>
-          <div className="p-2 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
-            <span className="text-[9px] font-mono text-slate-400 block mb-0.5">EST. VOLUME</span>
+          <div className="p-2 sm:p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/90 text-center shadow-md">
+            <span className="text-[8.5px] sm:text-[9.5px] font-mono text-slate-400 block mb-0.5">EST. VOLUME</span>
             <span className="font-mono font-bold text-white text-xs sm:text-sm">
-              ~{Math.round(currentIncident.volumeLiters / 1000)} <span className="text-[10px] text-slate-400 font-normal">kL</span>
+              ~{Math.round(currentIncident.volumeLiters / 1000)} <span className="text-[9px] text-slate-400 font-normal">kL</span>
             </span>
           </div>
-          <div className="p-2 bg-slate-900/80 rounded-xl border border-slate-800/80 text-center">
-            <span className="text-[9px] font-mono text-slate-400 block mb-0.5">SEVERITY INDEX</span>
+          <div className="p-2 sm:p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/90 text-center shadow-md">
+            <span className="text-[8.5px] sm:text-[9.5px] font-mono text-slate-400 block mb-0.5">SEVERITY INDEX</span>
             <span className="font-mono font-bold text-rose-400 text-xs sm:text-sm flex items-center justify-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
               {threat.overall_severity_score}/100
             </span>
           </div>
@@ -145,10 +157,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         {/* 3. SPILL SEVERITY & COASTAL THREAT DUAL CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {/* Card 1: SPILL SEVERITY */}
-          <div className="p-2.5 bg-slate-900/85 rounded-xl border border-slate-800/90 flex flex-col gap-1.5 font-mono text-xs shadow-md">
+          <div className="p-2.5 sm:p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-1.5 font-mono text-xs shadow-md">
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-1">
               <span className="text-[10px] text-rose-300 font-bold uppercase tracking-wider flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3 text-rose-400" />
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
                 SPILL SEVERITY
               </span>
               <span className="bg-rose-950/80 text-rose-300 text-[9px] px-1.5 py-0.2 rounded font-bold border border-rose-600/40">
@@ -195,10 +207,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           </div>
 
           {/* Card 2: COASTAL THREAT */}
-          <div className="p-2.5 bg-slate-900/85 rounded-xl border border-slate-800/90 flex flex-col gap-1.5 font-mono text-xs shadow-md">
+          <div className="p-2.5 sm:p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-1.5 font-mono text-xs shadow-md">
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-1">
               <span className="text-[10px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1">
-                <Anchor className="w-3 h-3 text-cyan-400" />
+                <Anchor className="w-3.5 h-3.5 text-cyan-400" />
                 COASTAL THREAT
               </span>
               <span className="bg-rose-950/80 text-rose-300 text-[9px] px-1.5 py-0.2 rounded font-bold border border-rose-600/40">
@@ -216,7 +228,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Impact Zone:</span>
-                <span className="text-slate-200 text-[9.5px] truncate max-w-[110px]" title={threat.projected_impact_zone}>
+                <span className="text-slate-200 text-[9.5px] truncate max-w-[120px]" title={threat.projected_impact_zone}>
                   {threat.projected_impact_zone}
                 </span>
               </div>
@@ -242,20 +254,20 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           <div className="p-3 bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-slate-900/90 rounded-xl border border-rose-500/40 shadow-lg flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono text-rose-300 font-bold flex items-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                 {activeVessel.mmsi === currentIncident.culpritMmsi ? 'PRIMARY CULPRIT MATCH' : 'CORRELATED ANOMALY FOCUS'}
               </span>
-              <span className="bg-rose-600 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+              <span className="bg-rose-600 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm shrink-0">
                 {activeVessel.anomaly_score || activeVessel.probability_score}% Anomaly
               </span>
             </div>
 
             <div className="flex items-center justify-between text-xs font-mono">
-              <span className="font-bold text-white text-sm flex items-center gap-1.5">
-                <Ship className="w-4 h-4 text-cyan-400" />
-                {activeVessel.name}
+              <span className="font-bold text-white text-sm flex items-center gap-1.5 truncate">
+                <Ship className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span className="truncate">{activeVessel.name}</span>
               </span>
-              <span className="text-slate-300 text-[11px] bg-slate-800/80 px-2 py-0.5 rounded">
+              <span className="text-slate-300 text-[10px] bg-slate-800/80 px-2 py-0.5 rounded shrink-0">
                 {activeVessel.vessel_type}
               </span>
             </div>
@@ -264,10 +276,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="p-2 bg-slate-950/90 rounded-lg border border-rose-500/40 flex flex-col gap-1 text-[10px] font-mono">
               <div className="flex items-center justify-between">
                 <span className="text-rose-300 font-bold flex items-center gap-1">
-                  <Target className="w-3 h-3 text-rose-400" />
+                  <Target className="w-3 h-3 text-rose-400 shrink-0" />
                   INCIDENT SECTOR:
                 </span>
-                <span className="text-white font-bold bg-rose-950 px-2 py-0.5 rounded border border-rose-600/60 shadow-sm">
+                <span className="text-white font-bold bg-rose-950 px-2 py-0.5 rounded border border-rose-600/60 shadow-sm text-[9.5px]">
                   {currentIncident.name}
                 </span>
               </div>
@@ -307,7 +319,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         )}
 
         {/* 5. Tab Navigation */}
-        <div className="flex items-center bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-[11px] font-mono overflow-x-auto">
+        <div className="flex items-center bg-slate-900/95 rounded-lg p-1 border border-slate-800 text-[11px] font-mono overflow-x-auto gap-1">
           <button
             onClick={() => setActiveTab('overview')}
             className={`flex-1 py-1.5 px-2 rounded-md text-center transition-all whitespace-nowrap ${
@@ -360,34 +372,34 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
         {/* 6. Tab Content Area */}
         {activeTab === 'overview' && (
-          <div className="flex flex-col gap-3 font-mono text-xs">
-            <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5 font-mono text-xs">
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
               <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
                 Incident Metadata
               </span>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div>
-                  <span className="text-slate-400 block text-[10px]">INCIDENT ID</span>
+                  <span className="text-slate-400 block text-[9.5px]">INCIDENT ID</span>
                   <span className="text-white font-semibold">{incidentId}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">RADAR SCENE</span>
+                  <span className="text-slate-400 block text-[9.5px]">RADAR SCENE</span>
                   <span className="text-white font-semibold truncate block" title={currentIncident.sourceScene}>
                     {currentIncident.sourceScene}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">SLICK TYPE</span>
+                  <span className="text-slate-400 block text-[9.5px]">SLICK TYPE</span>
                   <span className="text-rose-300 font-semibold">{currentIncident.slickType}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">AI CONFIDENCE</span>
+                  <span className="text-slate-400 block text-[9.5px]">AI CONFIDENCE</span>
                   <span className="text-emerald-400 font-semibold">{(currentIncident.confidence * 100).toFixed(1)}%</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2">
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
               <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
                 Breach & Spill Location
               </span>
@@ -401,34 +413,34 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         )}
 
         {activeTab === 'threat' && (
-          <div className="flex flex-col gap-3 font-mono text-xs">
-            <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5 font-mono text-xs">
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
               <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 Ecological Impact & Protected Habitats
               </span>
               <div className="flex flex-col gap-2 text-[11px]">
-                <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
+                <div className="p-2.5 bg-slate-950/80 rounded border border-slate-800">
                   <span className="text-slate-400 block text-[10px] flex items-center gap-1">
                     <Fish className="w-3 h-3 text-cyan-400" />
                     Commercial Fishery Sector:
                   </span>
-                  <strong className="text-white">{threat.fishing_zone_name}</strong>
+                  <strong className="text-white text-xs">{threat.fishing_zone_name}</strong>
                   <span className="text-rose-400 block font-bold text-[10px] mt-0.5">Status: {threat.fishing_zone_risk} RISK</span>
                 </div>
 
-                <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
+                <div className="p-2.5 bg-slate-950/80 rounded border border-slate-800">
                   <span className="text-slate-400 block text-[10px] flex items-center gap-1">
                     <TreePine className="w-3 h-3 text-emerald-400" />
                     Sensitive Marine Habitat:
                   </span>
-                  <strong className="text-white">{threat.marine_habitat_name}</strong>
+                  <strong className="text-white text-xs">{threat.marine_habitat_name}</strong>
                   <span className="text-rose-400 block font-bold text-[10px] mt-0.5">Status: {threat.marine_habitat_risk} RISK</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2">
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
               <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <Navigation className="w-3.5 h-3.5" />
                 Coastline Threat & Containment Priority
@@ -448,7 +460,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Spill Growth Velocity:</span>
-                  <strong className="text-cyan-300">+{threat.growth_rate_pct_per_hour}% area increase per hour</strong>
+                  <strong className="text-cyan-300">+{threat.growth_rate_pct_per_hour}% /h</strong>
                 </div>
               </div>
             </div>
@@ -461,7 +473,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               <span className="text-[10px] text-slate-400 uppercase font-bold">
                 Ranked Kinematic Suspects ({suspects.length})
               </span>
-              <span className="text-[9px] text-cyan-400">Click any card to switch focus & map</span>
+              <span className="text-[9px] text-cyan-400">Click to switch focus & map</span>
             </div>
             {suspects.map((vessel) => {
               const isSelected = vessel.mmsi === activeVessel?.mmsi;
@@ -517,8 +529,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         )}
 
         {activeTab === 'hindcast' && (
-          <div className="flex flex-col gap-3 font-mono text-xs">
-            <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5 font-mono text-xs">
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
               <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <History className="w-3.5 h-3.5" />
                 -6h Hindcast Reverse Origin
@@ -539,7 +551,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               </div>
             </div>
 
-            <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-2">
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
               <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <Navigation className="w-3.5 h-3.5" />
                 +6h Fay Drift Dispersal
@@ -561,36 +573,36 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         {activeTab === 'metocean' && (
           <div className="flex flex-col gap-2.5 font-mono text-xs">
             <div className="grid grid-cols-2 gap-2">
-              <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex items-center gap-2.5">
+              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center gap-2.5">
                 <Wind className="w-5 h-5 text-cyan-400 shrink-0" />
                 <div>
-                  <span className="text-[10px] text-slate-400 block">10M WIND</span>
+                  <span className="text-[9.5px] text-slate-400 block">10M WIND</span>
                   <span className="font-bold text-white">{metocean?.wind_speed_kts || 16.2} kts</span>
-                  <span className="text-[10px] text-slate-400 block">{metocean?.wind_cardinal || 'WSW'} ({metocean?.wind_direction_deg || 245}°)</span>
+                  <span className="text-[9.5px] text-slate-400 block">{metocean?.wind_cardinal || 'WSW'} ({metocean?.wind_direction_deg || 245}°)</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex items-center gap-2.5">
+              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center gap-2.5">
                 <Waves className="w-5 h-5 text-cyan-400 shrink-0" />
                 <div>
-                  <span className="text-[10px] text-slate-400 block">SURFACE CURRENT</span>
+                  <span className="text-[9.5px] text-slate-400 block">SURFACE CURRENT</span>
                   <span className="font-bold text-white">{metocean?.current_speed_kts || 1.4} kts</span>
-                  <span className="text-[10px] text-slate-400 block">{metocean?.current_cardinal || 'ENE'} ({metocean?.current_direction_deg || 65}°)</span>
+                  <span className="text-[9.5px] text-slate-400 block">{metocean?.current_cardinal || 'ENE'} ({metocean?.current_direction_deg || 65}°)</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex items-center gap-2.5">
+              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center gap-2.5">
                 <Thermometer className="w-5 h-5 text-rose-400 shrink-0" />
                 <div>
-                  <span className="text-[10px] text-slate-400 block">SEA SURFACE TEMP</span>
+                  <span className="text-[9.5px] text-slate-400 block">SEA SURFACE TEMP</span>
                   <span className="font-bold text-white">{metocean?.sea_surface_temp_c || 28.4}°C</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex items-center gap-2.5">
+              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center gap-2.5">
                 <Activity className="w-5 h-5 text-emerald-400 shrink-0" />
                 <div>
-                  <span className="text-[10px] text-slate-400 block">WAVE HEIGHT</span>
+                  <span className="text-[9.5px] text-slate-400 block">WAVE HEIGHT</span>
                   <span className="font-bold text-white">{metocean?.significant_wave_height_m || 1.8} m</span>
                 </div>
               </div>
@@ -604,7 +616,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               Historical Fingerprint Vector Matches ({vectorMatches.length})
             </span>
             {vectorMatches.map((m, idx) => (
-              <div key={idx} className="p-3 bg-slate-900/70 rounded-xl border border-slate-800 flex flex-col gap-1.5">
+              <div key={idx} className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-white text-xs">{m.title}</span>
                   <span className="text-cyan-400 font-bold text-xs">{m.similarity_score}%</span>

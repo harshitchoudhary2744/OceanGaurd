@@ -37,7 +37,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
     : `T-${tMinusHours.toString().padStart(2, '0')}:${tMinusMins.toString().padStart(2, '0')}`;
 
   return (
-    <div className="fixed bottom-14 sm:bottom-6 left-1/2 -translate-x-1/2 w-[94%] sm:w-[90%] max-w-xl h-12 sm:h-14 tactical-glass rounded-full flex items-center px-3 sm:px-5 gap-2 sm:gap-3 z-30 shadow-2xl border border-slate-700/50 select-none">
+    <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 w-[95%] sm:w-[90%] max-w-xl h-12 sm:h-14 tactical-glass rounded-full flex items-center px-3 sm:px-5 gap-2 sm:gap-3 z-30 shadow-2xl border border-slate-700/60 select-none">
       {/* Play/Pause */}
       <button
         onClick={onTogglePlay}

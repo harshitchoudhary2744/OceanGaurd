@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, History, ShieldAlert } from 'lucide-react';
+import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, History, ShieldAlert, ChevronUp, AlertTriangle, Ship } from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData, SpillGeoFeature } from '../types';
 import {
   calculateSynchronizedOilSpill,
@@ -28,15 +28,14 @@ function generateConeBetweenPoints(
   startHalfWidthKm: number = 0.35,
   endHalfWidthKm: number = 0.85
 ): number[][] {
-  const bearing = calculateBearing(startLon, startLat, endLon, endLat);
-  const perp1 = (bearing - 90 + 360) % 360;
-  const perp2 = (bearing + 90) % 360;
+  const heading = calculateBearing(startLon, startLat, endLon, endLat);
+  const perpHeading = heading + 90;
 
-  const leftStart = moveCoordinate(startLon, startLat, perp1, startHalfWidthKm);
-  const rightStart = moveCoordinate(startLon, startLat, perp2, startHalfWidthKm);
-  const rightEnd = moveCoordinate(endLon, endLat, perp2, endHalfWidthKm);
-  const tipEnd = moveCoordinate(endLon, endLat, bearing, endHalfWidthKm * 0.3);
-  const leftEnd = moveCoordinate(endLon, endLat, perp1, endHalfWidthKm);
+  const leftStart = moveCoordinate(startLon, startLat, perpHeading + 180, startHalfWidthKm);
+  const rightStart = moveCoordinate(startLon, startLat, perpHeading, startHalfWidthKm);
+  const rightEnd = moveCoordinate(endLon, endLat, perpHeading, endHalfWidthKm);
+  const leftEnd = moveCoordinate(endLon, endLat, perpHeading + 180, endHalfWidthKm);
+  const tipEnd = moveCoordinate(endLon, endLat, heading, 0.4);
 
   return [leftStart, rightStart, rightEnd, tipEnd, leftEnd, leftStart];
 }
@@ -54,6 +53,7 @@ interface TacticalMapProps {
   timeOffsetMinutes?: number;
   metocean?: MetoceanData;
   scenario?: string;
+  onOpenMobileDrawer?: () => void;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -68,6 +68,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   centerCoordinates,
   timeOffsetMinutes = 0,
   metocean,
+  onOpenMobileDrawer,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -743,9 +744,38 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {/* MapLibre WebGL Canvas */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
+      {/* Mobile Floating Tactical HUD Banner (Top of Map on Mobile) */}
+      <div
+        onClick={onOpenMobileDrawer}
+        className="lg:hidden absolute top-2.5 left-2.5 right-2.5 z-20 p-2.5 bg-[#111622]/95 border border-cyan-500/40 rounded-xl backdrop-blur-md font-mono shadow-2xl flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all ring-1 ring-cyan-500/20 select-none"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-white font-bold text-xs truncate">{currentIncident.name}</span>
+              <span className="text-[8.5px] bg-rose-950 text-rose-300 font-bold px-1.5 py-0.2 rounded border border-rose-600/40 shrink-0">
+                {currentIncident.threat.overall_severity_score}/100
+              </span>
+            </div>
+            <div className="text-[9.5px] text-slate-300 flex items-center gap-1.5 truncate mt-0.5">
+              <span>Area: <strong className="text-rose-300">{currentIncident.baseAreaSqKm} km²</strong></span>
+              <span>•</span>
+              <span>Coast: <strong className="text-white">{currentIncident.threat.coast_distance_km} km</strong></span>
+              <span>•</span>
+              <span>ETA: <strong className="text-amber-300">{currentIncident.threat.predicted_arrival_hours}h</strong></span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-[9.5px] text-cyan-300 font-bold bg-cyan-950/60 px-2 py-1 rounded-lg border border-cyan-500/40 shrink-0 ml-2">
+          <span>Inspector</span>
+          <ChevronUp className="w-3.5 h-3.5" />
+        </div>
+      </div>
+
       {/* Layer Toggles & Map Controls Overlay */}
-      <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 font-mono text-xs select-none">
-        <div className="bg-[#111622]/90 border border-slate-800 rounded-lg p-2 flex flex-col gap-1.5 backdrop-blur-md shadow-lg">
+      <div className="absolute top-16 sm:top-4 left-3 sm:left-4 flex flex-col gap-2 z-10 font-mono text-xs select-none">
+        <div className="bg-[#111622]/90 border border-slate-800 rounded-lg p-1.5 sm:p-2 flex flex-col gap-1 sm:gap-1.5 backdrop-blur-md shadow-lg">
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider px-1">
             Tactical Layers
           </span>
