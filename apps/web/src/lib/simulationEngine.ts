@@ -191,10 +191,10 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
   "INC-MUM-2024-01": {
     id: "INC-MUM-2024-01",
     name: "Mumbai High Sector Alpha",
-    locationName: "Mumbai High Offshore (19° 03.4' N, 72° 10.0' E)",
+    locationName: "Mumbai High Offshore (19° 02.9' N, 72° 08.7' E)",
     originCoords: [72.145, 19.048],
     dischargeOffsetMinutes: -42,
-    trackHeading: 52,
+    trackHeading: 325,
     baseAreaSqKm: 5.40,
     baseLengthKm: 4.8,
     baseWidthKm: 1.4,
@@ -224,7 +224,7 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     locationName: "JNPT Deep-Water Channel (18° 53.7' N, 72° 52.2' E)",
     originCoords: [72.870, 18.895],
     dischargeOffsetMinutes: -30,
-    trackHeading: 40,
+    trackHeading: 18,
     baseAreaSqKm: 2.85,
     baseLengthKm: 3.4,
     baseWidthKm: 1.1,
@@ -254,7 +254,7 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     locationName: "Mumbai Outer Anchorage (18° 54.3' N, 72° 47.7' E)",
     originCoords: [72.795, 18.905],
     dischargeOffsetMinutes: -25,
-    trackHeading: 38,
+    trackHeading: 72,
     baseAreaSqKm: 1.95,
     baseLengthKm: 2.8,
     baseWidthKm: 0.9,
@@ -284,7 +284,7 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     locationName: "Neelam Offshore Field (19° 14.7' N, 71° 59.1' E)",
     originCoords: [71.985, 19.245],
     dischargeOffsetMinutes: -20,
-    trackHeading: 45,
+    trackHeading: 155,
     baseAreaSqKm: 3.60,
     baseLengthKm: 3.8,
     baseWidthKm: 1.2,
@@ -321,82 +321,82 @@ export const MMSI_TO_INCIDENT: Record<number, string> = {
 
 // Deterministic Timed Waypoint Tracks for Mumbai Maritime Fleet
 export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: boolean; linkedSpillId?: string; waypoints: TimedWaypoint[] }[] = [
-  // 1. MT DESH SHANTI (VLCC Crude Tanker - Transits SW to NE through Mumbai High)
+  // 1. MT DESH SHANTI (VLCC Crude Tanker - Transits NNW 325° from Mumbai High towards Gujarat)
   {
     mmsi: 419000123,
     name: "MT DESH SHANTI",
     isCulprit: true,
     linkedSpillId: "INC-MUM-2024-01",
     waypoints: [
-      { tMinutes: -360, lon: 71.970, lat: 18.910, heading: 52, speed: 14.8 },
-      { tMinutes: -180, lon: 72.065, lat: 18.985, heading: 52, speed: 14.8 },
-      { tMinutes: -42,  lon: 72.145, lat: 19.048, heading: 52, speed: 5.2 }, // Spill 1 Discharge Point
-      { tMinutes: 0,    lon: 72.240, lat: 19.120, heading: 52, speed: 14.8 },
-      { tMinutes: 180,  lon: 72.380, lat: 19.230, heading: 52, speed: 14.8 },
+      { tMinutes: -360, lon: 72.260, lat: 18.880, heading: 325, speed: 14.8 },
+      { tMinutes: -180, lon: 72.202, lat: 18.964, heading: 325, speed: 14.8 },
+      { tMinutes: -42,  lon: 72.145, lat: 19.048, heading: 325, speed: 5.2 }, // Spill 1 Discharge Point
+      { tMinutes: 0,    lon: 72.100, lat: 19.112, heading: 325, speed: 14.8 },
+      { tMinutes: 180,  lon: 72.042, lat: 19.196, heading: 325, speed: 14.8 },
     ],
   },
-  // 2. MSC KANOKO (Container Ship - Inbound JNPT Maritime Channel)
+  // 2. MSC KANOKO (Container Ship - Inbound JNPT Harbor Channel NNE 018°)
   {
     mmsi: 255806000,
     name: "MSC KANOKO",
     isCulprit: true,
     linkedSpillId: "INC-MUM-2024-02",
     waypoints: [
-      { tMinutes: -360, lon: 72.770, lat: 18.775, heading: 40, speed: 16.5 },
-      { tMinutes: -180, lon: 72.820, lat: 18.835, heading: 40, speed: 16.5 },
-      { tMinutes: -30,  lon: 72.870, lat: 18.895, heading: 40, speed: 6.8 }, // Spill 2 Discharge Point (Channel)
-      { tMinutes: 0,    lon: 72.920, lat: 18.955, heading: 40, speed: 15.6 },
-      { tMinutes: 180,  lon: 72.970, lat: 19.015, heading: 40, speed: 12.0 },
+      { tMinutes: -360, lon: 72.818, lat: 18.735, heading: 18, speed: 16.5 },
+      { tMinutes: -180, lon: 72.844, lat: 18.815, heading: 18, speed: 16.5 },
+      { tMinutes: -30,  lon: 72.870, lat: 18.895, heading: 18, speed: 6.8 }, // Spill 2 Discharge Point (Channel)
+      { tMinutes: 0,    lon: 72.896, lat: 18.975, heading: 18, speed: 15.6 },
+      { tMinutes: 180,  lon: 72.922, lat: 19.055, heading: 18, speed: 12.0 },
     ],
   },
-  // 3. MT SWARNA SINDHU (Product Tanker - Inbound Mumbai Refinery via Outer Anchorage)
+  // 3. MT SWARNA SINDHU (Product Tanker - Inbound Mumbai Outer Anchorage ENE 072°)
   {
     mmsi: 419000789,
     name: "MT SWARNA SINDHU",
     isCulprit: true,
     linkedSpillId: "INC-MUM-2024-03",
     waypoints: [
-      { tMinutes: -360, lon: 72.705, lat: 18.795, heading: 38, speed: 12.0 },
-      { tMinutes: -180, lon: 72.750, lat: 18.850, heading: 38, speed: 12.0 },
-      { tMinutes: -25,  lon: 72.795, lat: 18.905, heading: 38, speed: 4.5 }, // Spill 3 Discharge Point (Anchorage)
-      { tMinutes: 0,    lon: 72.840, lat: 18.960, heading: 38, speed: 11.2 },
-      { tMinutes: 180,  lon: 72.885, lat: 19.015, heading: 38, speed: 10.0 },
+      { tMinutes: -360, lon: 72.643, lat: 18.855, heading: 72, speed: 12.0 },
+      { tMinutes: -180, lon: 72.719, lat: 18.880, heading: 72, speed: 12.0 },
+      { tMinutes: -25,  lon: 72.795, lat: 18.905, heading: 72, speed: 4.5 }, // Spill 3 Discharge Point (Anchorage)
+      { tMinutes: 0,    lon: 72.871, lat: 18.930, heading: 72, speed: 11.2 },
+      { tMinutes: 180,  lon: 72.947, lat: 18.955, heading: 72, speed: 10.0 },
     ],
   },
-  // 4. CHEMBULK GIBRALTAR (Chemical Tanker - Passing Neelam Offshore)
+  // 4. CHEMBULK GIBRALTAR (Chemical Tanker - Passing Neelam Offshore SSE 155°)
   {
     mmsi: 563032000,
     name: "CHEMBULK GIBRALTAR",
     isCulprit: true,
     linkedSpillId: "INC-MUM-2024-04",
     waypoints: [
-      { tMinutes: -360, lon: 71.855, lat: 19.115, heading: 45, speed: 13.4 },
-      { tMinutes: -180, lon: 71.920, lat: 19.180, heading: 45, speed: 13.4 },
-      { tMinutes: -20,  lon: 71.985, lat: 19.245, heading: 45, speed: 5.8 }, // Spill 4 Discharge Point
-      { tMinutes: 0,    lon: 72.050, lat: 19.310, heading: 45, speed: 12.8 },
-      { tMinutes: 180,  lon: 72.130, lat: 19.390, heading: 45, speed: 12.8 },
+      { tMinutes: -360, lon: 71.915, lat: 19.395, heading: 155, speed: 13.4 },
+      { tMinutes: -180, lon: 71.950, lat: 19.320, heading: 155, speed: 13.4 },
+      { tMinutes: -20,  lon: 71.985, lat: 19.245, heading: 155, speed: 5.8 }, // Spill 4 Discharge Point
+      { tMinutes: 0,    lon: 72.020, lat: 19.170, heading: 155, speed: 12.8 },
+      { tMinutes: 180,  lon: 72.055, lat: 19.095, heading: 155, speed: 12.8 },
     ],
   },
-  // 5. MT JAG LOK (Crude Oil Tanker - Transiting West)
+  // 5. MT JAG LOK (Crude Oil Tanker - Transiting WSW 245°)
   {
     mmsi: 419000456,
     name: "MT JAG LOK",
     waypoints: [
-      { tMinutes: -360, lon: 71.950, lat: 19.055, heading: 98, speed: 12.4 },
-      { tMinutes: -180, lon: 72.100, lat: 19.035, heading: 98, speed: 12.4 },
-      { tMinutes: 0,    lon: 72.275, lat: 19.015, heading: 98, speed: 12.4 },
-      { tMinutes: 180,  lon: 72.420, lat: 18.990, heading: 98, speed: 12.4 },
+      { tMinutes: -360, lon: 72.450, lat: 19.100, heading: 245, speed: 12.4 },
+      { tMinutes: -180, lon: 72.360, lat: 19.060, heading: 245, speed: 12.4 },
+      { tMinutes: 0,    lon: 72.270, lat: 19.020, heading: 245, speed: 12.4 },
+      { tMinutes: 180,  lon: 72.180, lat: 18.980, heading: 245, speed: 12.4 },
     ],
   },
-  // 6. ICGS SAMUDRA PRAHARI (Coast Guard Pollution Control Intercept Patrol)
+  // 6. ICGS SAMUDRA PRAHARI (Coast Guard Pollution Control Intercept Patrol NW 310°)
   {
     mmsi: 419000999,
     name: "ICGS SAMUDRA PRAHARI",
     waypoints: [
-      { tMinutes: -360, lon: 72.380, lat: 18.920, heading: 310, speed: 18.5 },
-      { tMinutes: -180, lon: 72.280, lat: 18.990, heading: 310, speed: 18.5 },
+      { tMinutes: -360, lon: 72.420, lat: 18.900, heading: 310, speed: 18.5 },
+      { tMinutes: -180, lon: 72.300, lat: 18.980, heading: 310, speed: 18.5 },
       { tMinutes: 0,    lon: 72.180, lat: 19.060, heading: 310, speed: 18.5 },
-      { tMinutes: 180,  lon: 72.100, lat: 19.120, heading: 310, speed: 18.5 },
+      { tMinutes: 180,  lon: 72.060, lat: 19.140, heading: 310, speed: 18.5 },
     ],
   },
 ];
@@ -685,16 +685,16 @@ export class AutonomousSimulationEngine {
         length_meters: 333,
         draught_meters: 16.8,
         call_sign: "VTDS",
-        destination: "MUMBAI OFFSHORE TERMINAL",
+        destination: "SIKKA REFINERY TERMINAL",
         nav_status: "Under way using engine",
         cargo_type: "Crude Oil (280,000 DWT)",
         anomaly_score: 98.4,
         anomaly_breakdown: deshShantiAnomaly,
         current_position: {
-          latitude: 19.120,
-          longitude: 72.240,
+          latitude: 19.112,
+          longitude: 72.100,
           speed_knots: 14.8,
-          heading_degrees: 52,
+          heading_degrees: 325,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -714,10 +714,10 @@ export class AutonomousSimulationEngine {
         anomaly_score: 94.8,
         anomaly_breakdown: mscAnomaly,
         current_position: {
-          latitude: 18.955,
-          longitude: 72.920,
+          latitude: 18.975,
+          longitude: 72.896,
           speed_knots: 15.6,
-          heading_degrees: 40,
+          heading_degrees: 18,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -737,10 +737,10 @@ export class AutonomousSimulationEngine {
         anomaly_score: 91.2,
         anomaly_breakdown: swarnaAnomaly,
         current_position: {
-          latitude: 18.960,
-          longitude: 72.840,
+          latitude: 18.930,
+          longitude: 72.871,
           speed_knots: 11.2,
-          heading_degrees: 38,
+          heading_degrees: 72,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -760,10 +760,10 @@ export class AutonomousSimulationEngine {
         anomaly_score: 89.6,
         anomaly_breakdown: chemAnomaly,
         current_position: {
-          latitude: 19.310,
-          longitude: 72.050,
+          latitude: 19.170,
+          longitude: 72.020,
           speed_knots: 12.8,
-          heading_degrees: 45,
+          heading_degrees: 155,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -782,10 +782,10 @@ export class AutonomousSimulationEngine {
         cargo_type: "Crude Oil",
         anomaly_score: 8.2,
         current_position: {
-          latitude: 19.015,
-          longitude: 72.275,
+          latitude: 19.020,
+          longitude: 72.270,
           speed_knots: 12.4,
-          heading_degrees: 98,
+          heading_degrees: 245,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -824,7 +824,7 @@ export class AutonomousSimulationEngine {
         length_meters: 333,
         draught_meters: 16.8,
         call_sign: "VTDS",
-        destination: "MUMBAI OFFSHORE TERMINAL",
+        destination: "SIKKA REFINERY TERMINAL",
         distance_meters: 0.0,
         distance_km: 0.0,
         probability_score: 98.4,
@@ -834,14 +834,14 @@ export class AutonomousSimulationEngine {
         hindcast_distance_meters: 0.0,
         hindcast_distance_km: 0.0,
         speed_knots: 14.8,
-        heading_degrees: 52,
-        last_lat: 19.120,
-        last_lon: 72.240,
+        heading_degrees: 325,
+        last_lat: 19.112,
+        last_lon: 72.100,
         trajectory: [
-          [71.970, 18.910, new Date(now.getTime() - 360 * 60000).toISOString()],
-          [72.065, 18.985, new Date(now.getTime() - 180 * 60000).toISOString()],
+          [72.260, 18.880, new Date(now.getTime() - 360 * 60000).toISOString()],
+          [72.202, 18.964, new Date(now.getTime() - 180 * 60000).toISOString()],
           [72.145, 19.048, new Date(now.getTime() - 42 * 60000).toISOString()],
-          [72.240, 19.120, now.toISOString()],
+          [72.100, 19.112, now.toISOString()],
         ],
       },
       {
@@ -863,14 +863,14 @@ export class AutonomousSimulationEngine {
         hindcast_distance_meters: 0.0,
         hindcast_distance_km: 0.0,
         speed_knots: 15.6,
-        heading_degrees: 40,
-        last_lat: 18.955,
-        last_lon: 72.920,
+        heading_degrees: 18,
+        last_lat: 18.975,
+        last_lon: 72.896,
         trajectory: [
-          [72.770, 18.775, new Date(now.getTime() - 360 * 60000).toISOString()],
-          [72.820, 18.835, new Date(now.getTime() - 180 * 60000).toISOString()],
+          [72.818, 18.735, new Date(now.getTime() - 360 * 60000).toISOString()],
+          [72.844, 18.815, new Date(now.getTime() - 180 * 60000).toISOString()],
           [72.870, 18.895, new Date(now.getTime() - 30 * 60000).toISOString()],
-          [72.920, 18.955, now.toISOString()],
+          [72.896, 18.975, now.toISOString()],
         ],
       },
       {
@@ -892,14 +892,14 @@ export class AutonomousSimulationEngine {
         hindcast_distance_meters: 0.0,
         hindcast_distance_km: 0.0,
         speed_knots: 11.2,
-        heading_degrees: 38,
-        last_lat: 18.960,
-        last_lon: 72.840,
+        heading_degrees: 72,
+        last_lat: 18.930,
+        last_lon: 72.871,
         trajectory: [
-          [72.705, 18.795, new Date(now.getTime() - 360 * 60000).toISOString()],
-          [72.750, 18.850, new Date(now.getTime() - 180 * 60000).toISOString()],
+          [72.643, 18.855, new Date(now.getTime() - 360 * 60000).toISOString()],
+          [72.719, 18.880, new Date(now.getTime() - 180 * 60000).toISOString()],
           [72.795, 18.905, new Date(now.getTime() - 25 * 60000).toISOString()],
-          [72.840, 18.960, now.toISOString()],
+          [72.871, 18.930, now.toISOString()],
         ],
       },
       {
@@ -921,14 +921,14 @@ export class AutonomousSimulationEngine {
         hindcast_distance_meters: 0.0,
         hindcast_distance_km: 0.0,
         speed_knots: 12.8,
-        heading_degrees: 45,
-        last_lat: 19.310,
-        last_lon: 72.050,
+        heading_degrees: 155,
+        last_lat: 19.170,
+        last_lon: 72.020,
         trajectory: [
-          [71.855, 19.115, new Date(now.getTime() - 360 * 60000).toISOString()],
-          [71.920, 19.180, new Date(now.getTime() - 180 * 60000).toISOString()],
+          [71.915, 19.395, new Date(now.getTime() - 360 * 60000).toISOString()],
+          [71.950, 19.320, new Date(now.getTime() - 180 * 60000).toISOString()],
           [71.985, 19.245, new Date(now.getTime() - 20 * 60000).toISOString()],
-          [72.050, 19.310, now.toISOString()],
+          [72.020, 19.170, now.toISOString()],
         ],
       },
       {

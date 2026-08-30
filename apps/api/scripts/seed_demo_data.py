@@ -15,13 +15,13 @@ def generate_mumbai_demo_data():
             "vessel_type": "Very Large Crude Carrier (VLCC)",
             "length_meters": 333.0,
             "draught_meters": 16.8,
-            "call_sign": "ATVS",
-            "destination": "MUMBAI OFFSHORE TERMINAL",
+            "call_sign": "VTDS",
+            "destination": "SIKKA REFINERY TERMINAL",
             "current_position": {
-                "latitude": 19.120,
-                "longitude": 72.240,
+                "latitude": 19.112,
+                "longitude": 72.100,
                 "speed_knots": 14.8,
-                "heading_degrees": 52.0,
+                "heading_degrees": 325.0,
                 "timestamp": base_time.isoformat()
             }
         },
@@ -36,10 +36,10 @@ def generate_mumbai_demo_data():
             "call_sign": "CQES",
             "destination": "JNPT PORT MUMBAI",
             "current_position": {
-                "latitude": 18.955,
-                "longitude": 72.920,
+                "latitude": 18.975,
+                "longitude": 72.896,
                 "speed_knots": 15.6,
-                "heading_degrees": 40.0,
+                "heading_degrees": 18.0,
                 "timestamp": base_time.isoformat()
             }
         },
@@ -54,10 +54,10 @@ def generate_mumbai_demo_data():
             "call_sign": "AWXZ",
             "destination": "MUMBAI REFINERY BERTH",
             "current_position": {
-                "latitude": 18.960,
-                "longitude": 72.840,
+                "latitude": 18.930,
+                "longitude": 72.871,
                 "speed_knots": 11.2,
-                "heading_degrees": 38.0,
+                "heading_degrees": 72.0,
                 "timestamp": base_time.isoformat()
             }
         },
@@ -72,10 +72,10 @@ def generate_mumbai_demo_data():
             "call_sign": "9V2941",
             "destination": "MUMBAI CHEMICAL TERMINAL",
             "current_position": {
-                "latitude": 19.310,
-                "longitude": 72.050,
+                "latitude": 19.170,
+                "longitude": 72.020,
                 "speed_knots": 12.8,
-                "heading_degrees": 45.0,
+                "heading_degrees": 155.0,
                 "timestamp": base_time.isoformat()
             }
         },
@@ -90,10 +90,10 @@ def generate_mumbai_demo_data():
             "call_sign": "AVJL",
             "destination": "SIKKA JAMNAGAR",
             "current_position": {
-                "latitude": 19.015,
-                "longitude": 72.275,
+                "latitude": 19.020,
+                "longitude": 72.270,
                 "speed_knots": 12.4,
-                "heading_degrees": 98.0,
+                "heading_degrees": 245.0,
                 "timestamp": base_time.isoformat()
             }
         },
@@ -120,12 +120,12 @@ def generate_mumbai_demo_data():
     # 2. AIS Telemetry across -6 hours
     telemetry = []
 
-    # MT DESH SHANTI (Primary Culprit for INC-MUM-2024-01)
+    # MT DESH SHANTI (Primary Culprit for INC-MUM-2024-01 - Course 325° NNW)
     desh_pts = [
-        {"lon": 71.970, "lat": 18.910, "t_offset_m": 360, "speed": 14.8, "heading": 52.0, "status": "Under way using engine"},
-        {"lon": 72.065, "lat": 18.985, "t_offset_m": 180, "speed": 14.8, "heading": 52.0, "status": "Under way using engine"},
-        {"lon": 72.145, "lat": 19.048, "t_offset_m": 42,  "speed": 5.2,  "heading": 52.0, "status": "Under way using engine"}, # Spill 1 Origin
-        {"lon": 72.240, "lat": 19.120, "t_offset_m": 0,   "speed": 14.8, "heading": 52.0, "status": "Under way using engine"}
+        {"lon": 72.260, "lat": 18.880, "t_offset_m": 360, "speed": 14.8, "heading": 325.0, "status": "Under way using engine"},
+        {"lon": 72.202, "lat": 18.964, "t_offset_m": 180, "speed": 14.8, "heading": 325.0, "status": "Under way using engine"},
+        {"lon": 72.145, "lat": 19.048, "t_offset_m": 42,  "speed": 5.2,  "heading": 325.0, "status": "Under way using engine"}, # Spill 1 Origin
+        {"lon": 72.100, "lat": 19.112, "t_offset_m": 0,   "speed": 14.8, "heading": 325.0, "status": "Under way using engine"}
     ]
     for p in desh_pts:
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])
@@ -139,12 +139,12 @@ def generate_mumbai_demo_data():
             "nav_status": p["status"]
         })
 
-    # MSC KANOKO (Primary Culprit for INC-MUM-2024-02)
+    # MSC KANOKO (Primary Culprit for INC-MUM-2024-02 - Course 018° NNE)
     msc_pts = [
-        {"lon": 72.770, "lat": 18.775, "t_offset_m": 360, "speed": 16.5, "heading": 40.0, "status": "Under way using engine"},
-        {"lon": 72.820, "lat": 18.835, "t_offset_m": 180, "speed": 16.5, "heading": 40.0, "status": "Under way using engine"},
-        {"lon": 72.870, "lat": 18.895, "t_offset_m": 30,  "speed": 6.8,  "heading": 40.0, "status": "Under way using engine"}, # Spill 2 Origin
-        {"lon": 72.920, "lat": 18.955, "t_offset_m": 0,   "speed": 15.6, "heading": 40.0, "status": "Under way using engine"}
+        {"lon": 72.818, "lat": 18.735, "t_offset_m": 360, "speed": 16.5, "heading": 18.0, "status": "Under way using engine"},
+        {"lon": 72.844, "lat": 18.815, "t_offset_m": 180, "speed": 16.5, "heading": 18.0, "status": "Under way using engine"},
+        {"lon": 72.870, "lat": 18.895, "t_offset_m": 30,  "speed": 6.8,  "heading": 18.0, "status": "Under way using engine"}, # Spill 2 Origin
+        {"lon": 72.896, "lat": 18.975, "t_offset_m": 0,   "speed": 15.6, "heading": 18.0, "status": "Under way using engine"}
     ]
     for p in msc_pts:
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])
@@ -158,12 +158,12 @@ def generate_mumbai_demo_data():
             "nav_status": p["status"]
         })
 
-    # MT SWARNA SINDHU (Primary Culprit for INC-MUM-2024-03)
+    # MT SWARNA SINDHU (Primary Culprit for INC-MUM-2024-03 - Course 072° ENE)
     swarna_pts = [
-        {"lon": 72.705, "lat": 18.795, "t_offset_m": 360, "speed": 12.0, "heading": 38.0, "status": "Under way using engine"},
-        {"lon": 72.750, "lat": 18.850, "t_offset_m": 180, "speed": 12.0, "heading": 38.0, "status": "Under way using engine"},
-        {"lon": 72.795, "lat": 18.905, "t_offset_m": 25,  "speed": 4.5,  "heading": 38.0, "status": "Under way using engine"}, # Spill 3 Origin
-        {"lon": 72.840, "lat": 18.960, "t_offset_m": 0,   "speed": 11.2, "heading": 38.0, "status": "Under way using engine"}
+        {"lon": 72.643, "lat": 18.855, "t_offset_m": 360, "speed": 12.0, "heading": 72.0, "status": "Under way using engine"},
+        {"lon": 72.719, "lat": 18.880, "t_offset_m": 180, "speed": 12.0, "heading": 72.0, "status": "Under way using engine"},
+        {"lon": 72.795, "lat": 18.905, "t_offset_m": 25,  "speed": 4.5,  "heading": 72.0, "status": "Under way using engine"}, # Spill 3 Origin
+        {"lon": 72.871, "lat": 18.930, "t_offset_m": 0,   "speed": 11.2, "heading": 72.0, "status": "Under way using engine"}
     ]
     for p in swarna_pts:
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])
@@ -177,12 +177,12 @@ def generate_mumbai_demo_data():
             "nav_status": p["status"]
         })
 
-    # CHEMBULK GIBRALTAR (Primary Culprit for INC-MUM-2024-04)
+    # CHEMBULK GIBRALTAR (Primary Culprit for INC-MUM-2024-04 - Course 155° SSE)
     chem_pts = [
-        {"lon": 71.855, "lat": 19.115, "t_offset_m": 360, "speed": 13.4, "heading": 45.0, "status": "Under way using engine"},
-        {"lon": 71.920, "lat": 19.180, "t_offset_m": 180, "speed": 13.4, "heading": 45.0, "status": "Under way using engine"},
-        {"lon": 71.985, "lat": 19.245, "t_offset_m": 20,  "speed": 5.8,  "heading": 45.0, "status": "Under way using engine"}, # Spill 4 Origin
-        {"lon": 72.050, "lat": 19.310, "t_offset_m": 0,   "speed": 12.8, "heading": 45.0, "status": "Under way using engine"}
+        {"lon": 71.915, "lat": 19.395, "t_offset_m": 360, "speed": 13.4, "heading": 155.0, "status": "Under way using engine"},
+        {"lon": 71.950, "lat": 19.320, "t_offset_m": 180, "speed": 13.4, "heading": 155.0, "status": "Under way using engine"},
+        {"lon": 71.985, "lat": 19.245, "t_offset_m": 20,  "speed": 5.8,  "heading": 155.0, "status": "Under way using engine"}, # Spill 4 Origin
+        {"lon": 72.020, "lat": 19.170, "t_offset_m": 0,   "speed": 12.8, "heading": 155.0, "status": "Under way using engine"}
     ]
     for p in chem_pts:
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])
