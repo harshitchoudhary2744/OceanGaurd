@@ -75,34 +75,17 @@ _FIXTURE_DATA = {
 def _refresh_fixture_timestamps(data: dict):
     now = datetime.utcnow()
     current_year = now.year
-    date_code = now.strftime("%Y%m%d")
-    time_code = now.strftime("%H%M%S")
 
-    for i, s in enumerate(data.get("spills", [])):
-        old_id = str(s.get("id", ""))
-        suffix = "01" if ("01" in old_id or i == 0) else "02"
-        if suffix == "01":
-            # Mumbai High: Offshore Radar Intercept
-            s["id"] = "INC-IND-2024-01"
-            s["detection_timestamp"] = "2024-08-14T05:29:40.000Z"
-            s["source_scene"] = "S1A_IW_GRDH_1SDV_20240814T052940_048912"
-        else:
-            # Ennore: Authentic Verified Historical Incident (28 Jan 2017 03:45 IST)
-            s["id"] = "INC-IND-2017-02"
-            s["detection_timestamp"] = "2017-01-27T22:15:00.000Z"
-            s["source_scene"] = "S1A_IW_GRDH_1SDV_20170128T124530_015024"
+    # Dynamically update detection timestamps to near-real-time for active Mumbai spills
+    spills = data.get("spills", [])
+    offsets_minutes = [42, 30, 25, 20]
+    for i, s in enumerate(spills):
+        offset = offsets_minutes[i % len(offsets_minutes)]
+        s["detection_timestamp"] = (now - timedelta(minutes=offset)).isoformat() + "Z"
 
+    # Refresh telemetry timestamps relative to now
     for t in data.get("telemetry", []):
-        if "spill_id" in t and t["spill_id"]:
-            suffix = "01" if "01" in str(t["spill_id"]) else "02"
-            t["spill_id"] = f"INC-IND-{current_year}-01" if suffix == "01" else "INC-IND-2017-02"
-        else:
-            t["timestamp"] = now.isoformat() + "Z"
-
-    for c in data.get("correlations", []):
-        if "spill_id" in c and c["spill_id"]:
-            suffix = "01" if "01" in str(c["spill_id"]) else "02"
-            c["spill_id"] = f"INC-IND-{current_year}-01" if suffix == "01" else "INC-IND-2017-02"
+        t["timestamp"] = (now - timedelta(minutes=15)).isoformat() + "Z"
 
 def load_fixtures():
     global _FIXTURE_DATA

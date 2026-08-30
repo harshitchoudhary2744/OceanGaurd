@@ -31,17 +31,16 @@ import {
   DEFAULT_METOCEAN
 } from './lib/mockData';
 
-import { globalSimulation, interpolateVesselPosition } from './lib/simulationEngine';
+import { globalSimulation, interpolateVesselPosition, MUMBAI_INCIDENTS } from './lib/simulationEngine';
 
 export function App() {
   const [spills, setSpills] = useState<SpillFeatureCollection>(INITIAL_SPILLS);
   const [vessels, setVessels] = useState<Vessel[]>(INITIAL_VESSELS);
   const [suspects, setSuspects] = useState<SuspectVessel[]>(INITIAL_SUSPECTS);
   const [vectorMatches, setVectorMatches] = useState<VectorMatch[]>(INITIAL_VECTOR_MATCHES);
-  const [metocean, setMetocean] = useState<MetoceanData>(DEFAULT_METOCEAN.bay_of_bengal);
-  const [selectedSpillId, setSelectedSpillId] = useState("INC-IND-2017-02");
-  const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(419000789);
-  const [activeScenario, setActiveScenario] = useState("bay_of_bengal");
+  const [metocean, setMetocean] = useState<MetoceanData>(DEFAULT_METOCEAN.mumbai || DEFAULT_METOCEAN.arabian_sea);
+  const [selectedSpillId, setSelectedSpillId] = useState<string>("INC-MUM-2024-01");
+  const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(419000123);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Mobile Bottom Sheet / Active Tab
@@ -57,7 +56,7 @@ export function App() {
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isForensicOpen, setIsForensicOpen] = useState<boolean>(false);
 
-  // 1. Continuous 24/7 Autonomous Simulation Hook (Deterministic & synchronized)
+  // 1. Continuous 24/7 Autonomous Simulation Hook
   useEffect(() => {
     const unsubscribe = globalSimulation.subscribe((simState) => {
       setVessels(simState.vessels);
@@ -67,7 +66,7 @@ export function App() {
     return () => unsubscribe();
   }, []);
 
-  // Data Loading from Backend (with silent offline fallback)
+  // Data Loading from Backend
   const loadData = useCallback(async () => {
     setIsRefreshing(true);
     try {
@@ -76,7 +75,7 @@ export function App() {
         fetchVessels(),
         fetchCorrelations(selectedSpillId),
         fetchVectorMatches(selectedSpillId),
-        fetchMetoceanData(activeScenario)
+        fetchMetoceanData('mumbai')
       ]);
 
       if (spillsData?.features?.length) setSpills(spillsData);
@@ -85,15 +84,14 @@ export function App() {
       if (vectorData?.length) setVectorMatches(vectorData);
       if (metoceanData) setMetocean(metoceanData);
     } catch (e) {
-      // Offline fallback already actively running via globalSimulation
+      // Offline fallback actively running via globalSimulation
     } finally {
       setTimeout(() => setIsRefreshing(false), 500);
     }
-  }, [selectedSpillId, activeScenario]);
+  }, [selectedSpillId]);
 
   useEffect(() => {
     loadData();
-    // Auto-sync polling every 5 minutes
     const autoRefreshInterval = setInterval(() => {
       loadData();
     }, 300000);
@@ -121,7 +119,7 @@ export function App() {
                       longitude: tick.longitude,
                       heading_degrees: tick.heading_degrees,
                       speed_knots: tick.speed_knots,
-                      timestamp_utc: tick.timestamp_utc,
+                      timestamp: tick.timestamp,
                     },
                   };
                 }
@@ -142,10 +140,10 @@ export function App() {
     };
   }, []);
 
-  // Handle Scenario Switcher
-  const handleScenarioChange = (scenario: string) => {
-    setActiveScenario(scenario);
-    globalSimulation.setScenario(scenario);
+  // Handle Multi-Incident Switcher
+  const handleSelectSpillId = (spillId: string) => {
+    setSelectedSpillId(spillId);
+    globalSimulation.setActiveSpill(spillId);
     const newState = globalSimulation.getState();
     setVessels(newState.vessels);
     setSuspects(newState.suspects);
@@ -153,12 +151,10 @@ export function App() {
     setMetocean(newState.metocean);
     setTimeOffsetMinutes(0);
     setIsPlaying(false);
-    if (scenario === 'arabian_sea') {
-      setSelectedSpillId("INC-IND-2024-01");
-      setSelectedVesselMmsi(419000123);
-    } else {
-      setSelectedSpillId("INC-IND-2017-02");
-      setSelectedVesselMmsi(419000789);
+
+    const config = MUMBAI_INCIDENTS[spillId];
+    if (config) {
+      setSelectedVesselMmsi(config.culpritMmsi);
     }
   };
 
@@ -174,7 +170,7 @@ export function App() {
         speed_knots: v.current_position.speed_knots,
       } : undefined;
 
-      const interp = interpolateVesselPosition(v.mmsi, timeOffsetMinutes, activeScenario, curPos);
+      const interp = interpolateVesselPosition(v.mmsi, timeOffsetMinutes, 'mumbai', curPos);
       return {
         mmsi: v.mmsi,
         lon: interp.lon,
@@ -183,7 +179,7 @@ export function App() {
         speed: interp.speed,
       };
     });
-  }, [timeOffsetMinutes, vessels, activeScenario]);
+  }, [timeOffsetMinutes, vessels]);
 
   // Selected Spill Feature
   const selectedSpillFeature = useMemo<SpillGeoFeature | null>(() => {
@@ -192,144 +188,120 @@ export function App() {
 
   // Active Map Center
   const mapCenter = useMemo<[number, number]>(() => {
-    if (activeScenario === 'bay_of_bengal') {
-      return selectedSpillFeature?.properties?.center || [80.750, 13.250];
-    }
-    return selectedSpillFeature?.properties?.center || [72.150, 19.050];
-  }, [selectedSpillFeature, activeScenario]);
+    const config = MUMBAI_INCIDENTS[selectedSpillId];
+    return config?.originCoords || selectedSpillFeature?.properties?.center || [72.200, 19.050];
+  }, [selectedSpillFeature, selectedSpillId]);
 
-  // Handle Detection from Upload
-  const handleDetectionComplete = (result: SARInferenceResponse) => {
-    if (result.geojson_feature) {
+  // Handle SAR Inference Result from Upload Modal
+  const handleInferenceResult = (res: SARInferenceResponse) => {
+    if (res?.spill) {
+      const newFeature: SpillGeoFeature = {
+        type: "Feature",
+        id: res.spill.id,
+        properties: {
+          id: res.spill.id,
+          detection_timestamp: res.spill.detection_timestamp,
+          area_sq_km: res.spill.area_sq_km,
+          perimeter_km: res.spill.perimeter_km,
+          confidence_score: res.spill.confidence_score,
+          source_scene: res.spill.source_scene,
+          status: 'ACTIVE',
+          center: res.spill.center,
+          estimated_discharge_liters: res.spill.estimated_discharge_liters,
+          slick_type: res.spill.slick_type,
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [res.spill.polygon_coordinates],
+        },
+      };
+
       setSpills((prev) => ({
-        ...prev,
-        features: [result.geojson_feature, ...prev.features],
+        type: "FeatureCollection",
+        features: [newFeature, ...prev.features.filter((f) => f.properties.id !== res.spill.id)],
       }));
-      setSelectedSpillId(result.geojson_feature.properties.id);
-    }
-    if (result.ranked_suspects?.length) {
-      setSuspects(result.ranked_suspects);
-      setSelectedVesselMmsi(result.ranked_suspects[0].mmsi);
+
+      setSelectedSpillId(res.spill.id);
+
+      if (res.ranked_suspects?.length) {
+        setSuspects(res.ranked_suspects);
+        setSelectedVesselMmsi(res.ranked_suspects[0].mmsi);
+      }
     }
   };
 
-  const primaryCulprit = suspects.find((s) => s.probability_score > 70) || suspects[0];
-
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0b0f19] text-slate-100 overflow-hidden select-none">
-      {/* 1. Clean Header */}
+    <div className="flex flex-col h-screen w-screen bg-[#070a12] text-slate-100 overflow-hidden font-sans select-none">
+      {/* 1. Header */}
       <Header
         selectedSpillId={selectedSpillId}
+        onSelectSpillId={handleSelectSpillId}
         spillFeature={selectedSpillFeature}
         suspects={suspects}
         onOpenUploadModal={() => setIsUploadOpen(true)}
         onOpenForensicModal={() => setIsForensicOpen(true)}
-        activeScenario={activeScenario}
-        onScenarioChange={handleScenarioChange}
         onRefresh={loadData}
         isRefreshing={isRefreshing}
         metocean={metocean}
       />
 
-      {/* 2. Main Tactical Stage */}
-      <main className="flex-1 flex overflow-hidden relative">
-        {/* Map Container */}
-        <div className="flex-1 h-full relative">
+      {/* 2. Main Tactical Viewport */}
+      <div className="flex-1 flex flex-row overflow-hidden relative">
+        {/* Left: Dark Bathymetry Map Canvas */}
+        <div className="flex-1 h-full relative flex flex-col">
           <TacticalMap
             spills={spills}
             vessels={vessels}
             suspects={suspects}
             selectedSpillId={selectedSpillId}
-            onSelectSpill={(id) => {
-              setSelectedSpillId(id);
-              if (window.innerWidth < 1024) setIsMobileDrawerOpen(true);
-            }}
-            onSelectVessel={(mmsi) => {
-              setSelectedVesselMmsi(mmsi);
-              if (window.innerWidth < 1024) setIsMobileDrawerOpen(true);
-            }}
+            onSelectSpill={handleSelectSpillId}
+            onSelectVessel={(mmsi) => setSelectedVesselMmsi(mmsi)}
             scrubbedVessels={scrubbedVessels}
             centerCoordinates={mapCenter}
             timeOffsetMinutes={timeOffsetMinutes}
             metocean={metocean}
-            scenario={activeScenario}
           />
 
-          {/* Mobile Quick Suspect Pill */}
-          <div className="lg:hidden absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-            <button
-              onClick={() => setIsMobileDrawerOpen(true)}
-              className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-md border border-rose-500/40 text-xs font-mono shadow-lg text-white"
-            >
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-              <span className="font-bold text-rose-300">
-                {primaryCulprit ? `${primaryCulprit.probability_score}%: ${primaryCulprit.name}` : 'Threat Details'}
-              </span>
-            </button>
+          {/* Time-Scrubber Timeline (-360m to 0) */}
+          <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-auto">
+            <TimeScrubber
+              timeOffsetMinutes={timeOffsetMinutes}
+              onChangeTimeOffset={setTimeOffsetMinutes}
+              isPlaying={isPlaying}
+              onTogglePlay={() => setIsPlaying(!isPlaying)}
+              playbackSpeed={playbackSpeed}
+              onChangeSpeed={(spd: number) => setPlaybackSpeed(spd)}
+            />
           </div>
-
-          {/* Floating Time Scrubber */}
-          <TimeScrubber
-            timeOffsetMinutes={timeOffsetMinutes}
-            onChangeTimeOffset={setTimeOffsetMinutes}
-            isPlaying={isPlaying}
-            onTogglePlay={() => setIsPlaying(!isPlaying)}
-            playbackSpeed={playbackSpeed}
-            onChangeSpeed={setPlaybackSpeed}
-            scenario={activeScenario}
-          />
         </div>
 
-        {/* Desktop Inspector Sidebar (hidden on screens < lg) */}
-        <div className="hidden lg:block w-[360px] xl:w-[400px] h-full shrink-0">
+        {/* Right: Forensic Incident Inspector Panel (Desktop) */}
+        <div className="hidden lg:block w-[420px] xl:w-[460px] h-full z-20 shadow-2xl">
           <InspectorPanel
             spill={selectedSpillFeature?.properties}
             spillFeature={selectedSpillFeature}
             suspects={suspects}
             vectorMatches={vectorMatches}
-            onSelectVessel={setSelectedVesselMmsi}
             selectedVesselMmsi={selectedVesselMmsi ?? undefined}
+            onSelectVessel={(mmsi) => setSelectedVesselMmsi(mmsi)}
             metocean={metocean}
-            scenario={activeScenario}
           />
         </div>
+      </div>
 
-        {/* Mobile Expandable Drawer / Modal */}
-        {isMobileDrawerOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end">
-            <div className="bg-[#111622] border-t border-slate-800 rounded-t-2xl max-h-[82vh] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
-              {/* Drag handle bar */}
-              <div className="w-12 h-1.5 bg-slate-700/60 rounded-full mx-auto my-2" />
-              <InspectorPanel
-                spill={selectedSpillFeature?.properties}
-                spillFeature={selectedSpillFeature}
-                suspects={suspects}
-                vectorMatches={vectorMatches}
-                onSelectVessel={setSelectedVesselMmsi}
-                selectedVesselMmsi={selectedVesselMmsi ?? undefined}
-                onClose={() => setIsMobileDrawerOpen(false)}
-                isMobileModal={true}
-                metocean={metocean}
-                scenario={activeScenario}
-              />
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* 3. Mobile Bottom Navigation Bar (< lg) */}
-      <nav className="lg:hidden h-14 bg-slate-950 border-t border-slate-800 flex items-center justify-around z-30 shrink-0 px-2">
+      {/* 3. Mobile Bottom Tab Bar */}
+      <div className="lg:hidden h-14 bg-[#111622] border-t border-slate-800 flex items-center justify-around z-30 px-2 font-mono text-[10px]">
         <button
           onClick={() => {
             setMobileActiveTab('map');
             setIsMobileDrawerOpen(false);
           }}
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
-            !isMobileDrawerOpen && mobileActiveTab === 'map' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg ${
+            mobileActiveTab === 'map' && !isMobileDrawerOpen ? 'text-cyan-400 font-bold' : 'text-slate-400'
           }`}
         >
           <MapIcon className="w-4 h-4" />
-          <span>Map</span>
+          <span>MAP</span>
         </button>
 
         <button
@@ -337,12 +309,12 @@ export function App() {
             setMobileActiveTab('threat');
             setIsMobileDrawerOpen(true);
           }}
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
-            isMobileDrawerOpen && mobileActiveTab === 'threat' ? 'text-rose-300 font-bold' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg ${
+            isMobileDrawerOpen && mobileActiveTab === 'threat' ? 'text-cyan-400 font-bold' : 'text-slate-400'
           }`}
         >
           <ShieldAlert className="w-4 h-4" />
-          <span>Threat</span>
+          <span>INSPECTOR</span>
         </button>
 
         <button
@@ -350,12 +322,12 @@ export function App() {
             setMobileActiveTab('suspects');
             setIsMobileDrawerOpen(true);
           }}
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg ${
             isMobileDrawerOpen && mobileActiveTab === 'suspects' ? 'text-cyan-400 font-bold' : 'text-slate-400'
           }`}
         >
           <Ship className="w-4 h-4" />
-          <span>Suspects ({suspects.length})</span>
+          <span>VESSELS</span>
         </button>
 
         <button
@@ -363,23 +335,44 @@ export function App() {
             setMobileActiveTab('vectors');
             setIsMobileDrawerOpen(true);
           }}
-          className={`flex flex-col items-center gap-0.5 text-[10px] font-mono py-1 px-3 rounded-lg transition-colors ${
+          className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg ${
             isMobileDrawerOpen && mobileActiveTab === 'vectors' ? 'text-cyan-400 font-bold' : 'text-slate-400'
           }`}
         >
           <Database className="w-4 h-4" />
-          <span>Intel</span>
+          <span>VECTORS</span>
         </button>
-      </nav>
+      </div>
 
-      {/* 4. SAR Ingest Modal */}
+      {/* 4. Mobile Drawer Modal */}
+      {isMobileDrawerOpen && (
+        <div className="lg:hidden fixed inset-0 top-16 bottom-14 z-40 bg-black/60 backdrop-blur-sm flex flex-col justify-end">
+          <div className="h-[80%] w-full bg-[#111622] rounded-t-2xl border-t border-slate-700 overflow-hidden flex flex-col">
+            <InspectorPanel
+              spill={selectedSpillFeature?.properties}
+              spillFeature={selectedSpillFeature}
+              suspects={suspects}
+              vectorMatches={vectorMatches}
+              selectedVesselMmsi={selectedVesselMmsi ?? undefined}
+              onSelectVessel={(mmsi) => {
+                setSelectedVesselMmsi(mmsi);
+                setIsMobileDrawerOpen(false);
+              }}
+              onClose={() => setIsMobileDrawerOpen(false)}
+              isMobileModal={true}
+              metocean={metocean}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 5. Modals */}
       <UploadSarModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}
-        onDetectionComplete={handleDetectionComplete}
+        onDetectionComplete={handleInferenceResult}
       />
 
-      {/* 5. Forensic SAR Side-by-Side Modal */}
       <ForensicModal
         isOpen={isForensicOpen}
         onClose={() => setIsForensicOpen(false)}

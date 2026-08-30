@@ -1,6 +1,7 @@
 """
 Live Copernicus Sentinel-1 SAR Satellite Feed Service (SIH26143)
-Fetches real-time Sentinel-1 C-Band SAR orbital passes from Copernicus Data Space Ecosystem (CDSE) STAC API.
+Fetches real-time Sentinel-1 C-Band SAR orbital passes from Copernicus Data Space Ecosystem (CDSE) STAC API
+Focused on the Mumbai Maritime Zone (Arabian Sea / Mumbai High / JNPT Approaches).
 """
 import os
 import logging
@@ -12,11 +13,11 @@ logger = logging.getLogger("oceanguard.satellite")
 
 COPERNICUS_STAC_URL = "https://stac.dataspace.copernicus.eu/v1/search"
 
-# Maritime Bounding Boxes for Indian Waters
+# Maritime Bounding Boxes for Mumbai Maritime Corridor
 EEZ_BOUNDS = {
-    "mumbai_high": [71.50, 18.50, 73.00, 19.80],      # Arabian Sea
-    "chennai_ennore": [80.10, 12.80, 81.20, 13.80],   # Bay of Bengal
-    "gulf_of_kutch": [68.80, 22.00, 70.50, 23.20],    # Gujarat
+    "mumbai_high": [71.20, 18.40, 73.10, 19.60],       # Greater Mumbai Maritime Zone
+    "mumbai_port": [72.60, 18.80, 72.95, 19.10],       # JNPT & Mumbai Harbour
+    "neelam_offshore": [71.80, 19.10, 72.30, 19.50],   # Mumbai High Oil Fields
 }
 
 class LiveSatelliteService:
@@ -25,7 +26,7 @@ class LiveSatelliteService:
 
     async def get_latest_sentinel1_pass(self, sector: str = "mumbai_high") -> Dict[str, Any]:
         """
-        Queries Copernicus STAC API for the most recent Sentinel-1 SAR acquisition over the target sector.
+        Queries Copernicus STAC API for the most recent Sentinel-1 SAR acquisition over Mumbai waters.
         Falls back to real-time orbital calculated pass if live network STAC query is unavailable.
         """
         now = datetime.now(timezone.utc)
@@ -55,11 +56,12 @@ class LiveSatelliteService:
                         props = item.get("properties", {})
                         scene_id = item.get("id", f"S1A_IW_GRDH_1SDV_{now.strftime('%Y%m%d')}")
                         acq_time = props.get("datetime", now.isoformat())
-                        logger.info(f"Retrieved real-time Copernicus Sentinel-1 scene: {scene_id}")
+                        logger.info(f"Retrieved real-time Copernicus Sentinel-1 scene for Mumbai: {scene_id}")
                         return {
                             "source": "Copernicus Data Space Ecosystem (CDSE Live STAC)",
                             "satellite": "Sentinel-1A SAR C-Band",
                             "scene_id": scene_id,
+                            "sector": "Mumbai Maritime Zone (Arabian Sea)",
                             "acquisition_time_utc": acq_time,
                             "instrument_mode": "IW (Interferometric Wide Swath)",
                             "polarization": "VV + VH",
@@ -70,18 +72,18 @@ class LiveSatelliteService:
                             "detection_status": "PROCESSED_ACTIVE_SLICK"
                         }
         except Exception as e:
-            logger.warning(f"Live Copernicus STAC API query bypassed/timed out ({e}). Generating computed real-time orbital pass.")
+            logger.warning(f"Live Copernicus STAC API query bypassed/timed out ({e}). Generating computed real-time orbital pass for Mumbai.")
 
         # Real-time orbital calculated pass for today
         date_code = now.strftime("%Y%m%d")
         time_code = now.strftime("%H%M%S")
-        suffix = "048912" if sector == "mumbai_high" else "051288"
-        scene_code = f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_{suffix}"
+        scene_code = f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912"
 
         return {
             "source": "ESA Copernicus Sentinel-1 Near-Real-Time Stream",
             "satellite": "Sentinel-1A SAR C-Band",
             "scene_id": scene_code,
+            "sector": "Mumbai Maritime Zone (Arabian Sea)",
             "acquisition_time_utc": (now - timedelta(minutes=42)).strftime("%Y-%m-%d %H:%M:%S UTC"),
             "instrument_mode": "IW (Interferometric Wide Swath)",
             "polarization": "VV + VH (Co-Polarized Dark Spot Contrast)",

@@ -18,7 +18,6 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   onTogglePlay,
   playbackSpeed,
   onChangeSpeed,
-  scenario = 'arabian_sea',
 }) => {
   useEffect(() => {
     if (!isPlaying) return;
@@ -33,19 +32,18 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
     return () => clearInterval(interval);
   }, [isPlaying, playbackSpeed, onChangeTimeOffset]);
 
-  const isEnnore = scenario === 'bay_of_bengal';
-  const baseDate = isEnnore ? new Date('2017-01-28T04:45:00+05:30') : new Date();
+  const baseDate = new Date();
   const currentDate = new Date(baseDate.getTime() + timeOffsetMinutes * 60 * 1000);
   const formattedTime = currentDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
-  const dateStr = isEnnore ? '28 Jan 2017' : currentDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
+  const dateStr = currentDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
   const absMins = Math.abs(timeOffsetMinutes);
   const tMinusHours = Math.floor(absMins / 60);
   const tMinusMins = absMins % 60;
   const tMinusString = timeOffsetMinutes === 0
-    ? (isEnnore ? 'T+0 (Post-Collision)' : 'LIVE (T-0)')
+    ? 'LIVE (T-0)'
     : `T-${tMinusHours.toString().padStart(2, '0')}:${tMinusMins.toString().padStart(2, '0')}`;
 
-  const interceptMinutes = scenario === 'arabian_sea' ? -42 : -60;
+  const interceptMinutes = -42;
   const interceptPercent = ((interceptMinutes - -360) / 360) * 100;
 
   return (
@@ -85,14 +83,14 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
           <div
             className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-rose-500 border border-white pointer-events-none shadow-rose-500 shadow-sm"
             style={{ left: `${interceptPercent}%` }}
-            title={`Incident Spill Discharge Point (T${interceptMinutes}m)`}
+            title={`Incident Breach Discharge Point (T${interceptMinutes}m)`}
           />
         </div>
 
         <div className="flex justify-between font-mono text-[8px] sm:text-[9px] text-slate-400 overflow-hidden">
           <span>T-06:00</span>
           <span className="hidden xs:inline text-rose-300 font-semibold cursor-pointer hover:text-white transition-colors" onClick={() => onChangeTimeOffset(interceptMinutes)}>
-            🎯 Intercept: {scenario === 'bay_of_bengal' ? '03:45 IST' : '05:29 IST'} (T{interceptMinutes}m)
+            🎯 Intercept: T{interceptMinutes}m
           </span>
           <span className="text-cyan-300 font-bold">{tMinusString}</span>
           <span>LIVE</span>

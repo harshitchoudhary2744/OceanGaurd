@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Satellite, Upload, FileText, RefreshCw, Eye, Menu, X, Compass, Radio } from 'lucide-react';
+import { Satellite, Upload, FileText, RefreshCw, Eye, Menu, X, ShieldAlert, Radio, ChevronDown } from 'lucide-react';
 import { downloadPdfReportUrl } from '../lib/api';
-
 import { SuspectVessel, SpillGeoFeature, MetoceanData } from '../types';
+import { MUMBAI_INCIDENTS } from '../lib/simulationEngine';
 
 interface HeaderProps {
   selectedSpillId: string;
+  onSelectSpillId: (spillId: string) => void;
   spillFeature?: SpillGeoFeature | null;
   suspects?: SuspectVessel[];
   onOpenUploadModal: () => void;
   onOpenForensicModal: () => void;
-  activeScenario: string;
-  onScenarioChange: (scenario: string) => void;
   onRefresh: () => void;
   isRefreshing?: boolean;
   metocean?: MetoceanData;
@@ -19,12 +18,11 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   selectedSpillId,
+  onSelectSpillId,
   spillFeature,
   suspects,
   onOpenUploadModal,
   onOpenForensicModal,
-  activeScenario,
-  onScenarioChange,
   onRefresh,
   isRefreshing,
   metocean
@@ -60,10 +58,12 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
+
   return (
     <>
       <header className="h-16 tactical-glass border-b border-slate-800 px-3 sm:px-6 flex items-center justify-between z-40 shrink-0 select-none">
-        {/* Brand & Ticker */}
+        {/* Brand & Live Environmental Ticker */}
         <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-sm shrink-0">
@@ -75,7 +75,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <span className="hidden xs:inline-block px-2 py-0.5 rounded bg-slate-800/80 text-cyan-300 border border-cyan-500/30 font-mono text-[11px] sm:text-xs font-semibold">
-            INDIA EEZ
+            MUMBAI MARITIME ZONE
           </span>
 
           {/* Live Environmental Ticker */}
@@ -90,36 +90,33 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Controls - Desktop */}
         <div className="hidden md:flex items-center gap-2.5 sm:gap-3">
-          {/* Maritime Sector Switcher */}
-          <div className="flex items-center bg-slate-900/90 rounded-lg p-1 border border-slate-800 text-xs font-mono">
-            <button
-              onClick={() => onScenarioChange('arabian_sea')}
-              className={`px-2.5 py-1 rounded transition-all ${
-                activeScenario === 'arabian_sea'
-                  ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Mumbai Sector
-            </button>
-            <button
-              onClick={() => onScenarioChange('bay_of_bengal')}
-              className={`px-2.5 py-1 rounded transition-all ${
-                activeScenario === 'bay_of_bengal'
-                  ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Chennai Sector
-            </button>
+          {/* Real-time Multi-Incident Selector */}
+          <div className="relative flex items-center">
+            <label htmlFor="incident-select" className="sr-only">Select Incident</label>
+            <div className="flex items-center gap-2 bg-slate-900/90 rounded-lg px-2.5 py-1.5 border border-cyan-500/30 text-xs font-mono">
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+              <span className="text-slate-400 text-[11px] font-bold">INCIDENT:</span>
+              <select
+                id="incident-select"
+                value={selectedSpillId}
+                onChange={(e) => onSelectSpillId(e.target.value)}
+                className="bg-transparent text-cyan-300 font-bold outline-none cursor-pointer pr-1 focus:text-white"
+              >
+                {Object.values(MUMBAI_INCIDENTS).map((inc) => (
+                  <option key={inc.id} value={inc.id} className="bg-slate-900 text-slate-200">
+                    {inc.name} ({inc.baseAreaSqKm} km²)
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Active Intercept Badge */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-950/60 border border-rose-500/40 text-[11px] font-mono shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
-            <span className="text-rose-300 font-bold">INTERCEPT:</span>
+          {/* Live Sentinel-1 Stream Status */}
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-[11px] font-mono shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <span className="text-emerald-300 font-bold">S-1 STREAM:</span>
             <span className="text-white font-semibold">
-              {activeScenario === 'bay_of_bengal' ? '28 JAN 2017 • 03:45:00 IST (22:15 UTC)' : '14 AUG 2024 • 05:29:40 IST (T-42m)'}
+              REAL-TIME (T{currentIncident.dischargeOffsetMinutes}m)
             </span>
           </div>
 
@@ -169,7 +166,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Mobile Action Controls & Hamburger */}
         <div className="flex md:hidden items-center gap-2">
-          {/* Quick PDF button on mobile */}
           <button
             onClick={handleExportPdf}
             disabled={isExporting}
@@ -179,87 +175,65 @@ export const Header: React.FC<HeaderProps> = ({
             <FileText className="w-4 h-4" />
           </button>
 
-          {/* Refresh button */}
-          <button
-            onClick={onRefresh}
-            title="Refresh Data"
-            className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 text-slate-400"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-cyan-400' : ''}`} />
-          </button>
-
-          {/* Mobile Menu Toggle Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 text-white"
+            className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300"
             aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5 text-rose-400" /> : <Menu className="w-5 h-5 text-cyan-400" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </header>
 
-      {/* Mobile Drawer / Action Dropdown */}
+      {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed top-16 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800 p-4 flex flex-col gap-3 shadow-2xl animate-in slide-in-from-top duration-200">
-          {/* Sector Selector */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Compass className="w-3.5 h-3.5 text-cyan-400" /> Target Maritime Sector:
-            </span>
-            <div className="grid grid-cols-2 gap-2 font-mono text-xs">
-              <button
-                onClick={() => {
-                  onScenarioChange('arabian_sea');
-                  setMobileMenuOpen(false);
-                }}
-                className={`p-2.5 rounded-lg border text-center font-bold ${
-                  activeScenario === 'arabian_sea'
-                    ? 'bg-cyan-500 text-slate-950 border-cyan-500'
-                    : 'bg-slate-900 text-slate-300 border-slate-800'
-                }`}
-              >
-                Mumbai High
-              </button>
-              <button
-                onClick={() => {
-                  onScenarioChange('bay_of_bengal');
-                  setMobileMenuOpen(false);
-                }}
-                className={`p-2.5 rounded-lg border text-center font-bold ${
-                  activeScenario === 'bay_of_bengal'
-                    ? 'bg-cyan-500 text-slate-950 border-cyan-500'
-                    : 'bg-slate-900 text-slate-300 border-slate-800'
-                }`}
-              >
-                Chennai Sector
-              </button>
-            </div>
-          </div>
-
-          {/* Action buttons */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 font-mono text-xs">
-            <button
-              onClick={() => {
-                onOpenUploadModal();
+        <div className="md:hidden bg-slate-950/95 border-b border-slate-800 p-4 flex flex-col gap-3 font-mono text-xs z-30 animate-in slide-in-from-top-2">
+          {/* Incident Selector on mobile */}
+          <div className="flex flex-col gap-1">
+            <span className="text-slate-400 font-bold">ACTIVE INCIDENT:</span>
+            <select
+              value={selectedSpillId}
+              onChange={(e) => {
+                onSelectSpillId(e.target.value);
                 setMobileMenuOpen(false);
               }}
-              className="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-slate-900 border border-cyan-500/40 text-cyan-400 font-bold"
+              className="bg-slate-900 border border-cyan-500/40 p-2 rounded text-cyan-300 font-bold"
             >
-              <Upload className="w-4 h-4" />
-              <span>Upload SAR</span>
-            </button>
+              {Object.values(MUMBAI_INCIDENTS).map((inc) => (
+                <option key={inc.id} value={inc.id}>
+                  {inc.name} ({inc.baseAreaSqKm} km²)
+                </option>
+              ))}
+            </select>
+          </div>
 
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
             <button
               onClick={() => {
                 onOpenForensicModal();
                 setMobileMenuOpen(false);
               }}
-              className="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-white font-bold"
+              className="flex items-center justify-center gap-1.5 p-2 rounded bg-slate-900 border border-slate-800 text-slate-200"
             >
               <Eye className="w-4 h-4 text-cyan-400" />
               <span>SAR Analysis</span>
             </button>
+
+            <button
+              onClick={() => {
+                onOpenUploadModal();
+                setMobileMenuOpen(false);
+              }}
+              className="flex items-center justify-center gap-1.5 p-2 rounded bg-slate-900 border border-cyan-500/40 text-cyan-400 font-bold"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Upload SAR</span>
+            </button>
+          </div>
+
+          <div className="text-[11px] text-slate-400 pt-1 flex justify-between items-center">
+            <span>MUMBAI EEZ: 16.2 kts WSW</span>
+            <span className="text-cyan-400 font-bold">{istTime}</span>
           </div>
         </div>
       )}
