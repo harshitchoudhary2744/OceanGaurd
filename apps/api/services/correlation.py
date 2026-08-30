@@ -555,6 +555,7 @@ class VesselCorrelationEngine:
                 hindcast_track=hindcast_track
             )
 
+            latest_point = points[-1] if points else closest_point
             ranked_suspects.append({
                 "mmsi": mmsi,
                 "name": vessel["name"],
@@ -569,10 +570,10 @@ class VesselCorrelationEngine:
                 "anomaly_score": anomaly["composite_score"],
                 "anomaly_breakdown": anomaly,
                 "evidence_tags": anomaly["evidence_tags"],
-                "speed_knots": closest_point.get("speed_knots", 14.2),
-                "heading_degrees": closest_point.get("heading_degrees", 128.0),
-                "last_lat": closest_point["latitude"],
-                "last_lon": closest_point["longitude"],
+                "speed_knots": latest_point.get("speed_knots", 14.2),
+                "heading_degrees": latest_point.get("heading_degrees", 128.0),
+                "last_lat": latest_point["latitude"],
+                "last_lon": latest_point["longitude"],
                 "trajectory": [[p["longitude"], p["latitude"], p.get("timestamp", "")] for p in points]
             })
 

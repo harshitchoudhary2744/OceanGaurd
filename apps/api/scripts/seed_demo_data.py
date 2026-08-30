@@ -73,7 +73,7 @@ def generate_mumbai_demo_data():
             "destination": "MUMBAI CHEMICAL TERMINAL",
             "current_position": {
                 "latitude": 19.310,
-                "longitude": 72.040,
+                "longitude": 72.050,
                 "speed_knots": 12.8,
                 "heading_degrees": 45.0,
                 "timestamp": base_time.isoformat()
@@ -182,7 +182,7 @@ def generate_mumbai_demo_data():
         {"lon": 71.860, "lat": 19.120, "t_offset_m": 360, "speed": 13.4, "heading": 45.0, "status": "Under way using engine"},
         {"lon": 71.920, "lat": 19.180, "t_offset_m": 180, "speed": 13.4, "heading": 45.0, "status": "Under way using engine"},
         {"lon": 71.985, "lat": 19.245, "t_offset_m": 20,  "speed": 5.8,  "heading": 45.0, "status": "Under way using engine"}, # Spill 4 Origin
-        {"lon": 72.040, "lat": 19.310, "t_offset_m": 0,   "speed": 12.8, "heading": 45.0, "status": "Under way using engine"}
+        {"lon": 72.050, "lat": 19.310, "t_offset_m": 0,   "speed": 12.8, "heading": 45.0, "status": "Under way using engine"}
     ]
     for p in chem_pts:
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])

@@ -373,8 +373,8 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
       { tMinutes: -360, lon: 71.860, lat: 19.120, heading: 45, speed: 13.4 },
       { tMinutes: -180, lon: 71.920, lat: 19.180, heading: 45, speed: 13.4 },
       { tMinutes: -20,  lon: 71.985, lat: 19.245, heading: 45, speed: 5.8 }, // Spill 4 Discharge Point
-      { tMinutes: 0,    lon: 72.040, lat: 19.310, heading: 45, speed: 12.8 },
-      { tMinutes: 180,  lon: 72.120, lat: 19.390, heading: 45, speed: 12.8 },
+      { tMinutes: 0,    lon: 72.050, lat: 19.310, heading: 45, speed: 12.8 },
+      { tMinutes: 180,  lon: 72.130, lat: 19.390, heading: 45, speed: 12.8 },
     ],
   },
   // 5. MT JAG LOK (Crude Oil Tanker - Transiting West)
@@ -761,7 +761,7 @@ export class AutonomousSimulationEngine {
         anomaly_breakdown: chemAnomaly,
         current_position: {
           latitude: 19.310,
-          longitude: 72.040,
+          longitude: 72.050,
           speed_knots: 12.8,
           heading_degrees: 45,
           rate_of_turn: 0.0,
@@ -923,12 +923,12 @@ export class AutonomousSimulationEngine {
         speed_knots: 12.8,
         heading_degrees: 45,
         last_lat: 19.310,
-        last_lon: 72.040,
+        last_lon: 72.050,
         trajectory: [
           [71.860, 19.120, new Date(now.getTime() - 360 * 60000).toISOString()],
           [71.920, 19.180, new Date(now.getTime() - 180 * 60000).toISOString()],
           [71.985, 19.245, new Date(now.getTime() - 20 * 60000).toISOString()],
-          [72.040, 19.310, now.toISOString()],
+          [72.050, 19.310, now.toISOString()],
         ],
       },
       {

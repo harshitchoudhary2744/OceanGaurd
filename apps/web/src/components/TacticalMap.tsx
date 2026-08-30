@@ -6,6 +6,7 @@ import {
   calculateSynchronizedOilSpill,
   moveCoordinate,
   generateForecastCone,
+  interpolateVesselPosition,
   MUMBAI_INCIDENTS,
   MUMBAI_VESSEL_WAYPOINTS
 } from '../lib/simulationEngine';
@@ -567,10 +568,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === activeSuspect?.mmsi);
       let lineCoords: number[][] = [];
 
-      if (activeSuspect?.trajectory && activeSuspect.trajectory.length > 1) {
-        lineCoords = activeSuspect.trajectory.map((t) => [t[0], t[1]]);
-      } else if (activeWaypointTrack) {
+      if (activeWaypointTrack && activeWaypointTrack.waypoints.length > 1) {
         lineCoords = activeWaypointTrack.waypoints.map((w) => [w.lon, w.lat]);
+      } else if (activeSuspect?.trajectory && activeSuspect.trajectory.length > 1) {
+        lineCoords = activeSuspect.trajectory.map((t) => [t[0], t[1]]);
       }
 
       if (lineCoords.length > 1) {
@@ -598,8 +599,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const map = mapRef.current;
 
     // Center on active vessel position or incident origin
-    const targetLon = activeSuspect?.last_lon ?? baseOrigin[0];
-    const targetLat = activeSuspect?.last_lat ?? baseOrigin[1];
+    const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === activeSuspect?.mmsi);
+    const lastWp = activeWaypointTrack?.waypoints[activeWaypointTrack.waypoints.length - 1];
+    const targetLon = lastWp?.lon ?? activeSuspect?.last_lon ?? baseOrigin[0];
+    const targetLat = lastWp?.lat ?? activeSuspect?.last_lat ?? baseOrigin[1];
 
     map.flyTo({
       center: [targetLon, targetLat],
@@ -614,13 +617,21 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
 
-    const displayVessels = scrubbedVessels || vessels.map((v) => ({
-      mmsi: v.mmsi,
-      lon: v.current_position?.longitude ?? 72.150,
-      lat: v.current_position?.latitude ?? 19.050,
-      heading: v.current_position?.heading_degrees ?? 0,
-      speed: v.current_position?.speed_knots ?? 0,
-    }));
+    const displayVessels = scrubbedVessels || vessels.map((v) => {
+      const interp = interpolateVesselPosition(v.mmsi, 0, 'mumbai', v.current_position ? {
+        longitude: v.current_position.longitude,
+        latitude: v.current_position.latitude,
+        heading_degrees: v.current_position.heading_degrees,
+        speed_knots: v.current_position.speed_knots,
+      } : undefined);
+      return {
+        mmsi: v.mmsi,
+        lon: interp.lon,
+        lat: interp.lat,
+        heading: interp.heading,
+        speed: interp.speed,
+      };
+    });
 
     displayVessels.forEach((v) => {
       const isSelected = activeSuspect?.mmsi === v.mmsi;

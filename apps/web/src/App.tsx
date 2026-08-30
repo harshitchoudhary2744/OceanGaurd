@@ -210,8 +210,6 @@ export function App() {
 
   // Interpolated Vessel Positions based on Time Scrubber (-360 to 0)
   const scrubbedVessels = useMemo(() => {
-    if (timeOffsetMinutes === 0) return undefined;
-
     return vessels.map((v) => {
       const curPos = v.current_position ? {
         longitude: v.current_position.longitude,
