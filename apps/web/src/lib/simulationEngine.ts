@@ -167,6 +167,17 @@ export interface TimedWaypoint {
   speed: number;
 }
 
+export interface TimelineKeyEvent {
+  tMinutes: number; // e.g. -360, -180, -42, -15, 0
+  label: string; // short badge, e.g. "Transit", "Deviation", "Breach", "SAR Pass", "Live"
+  title: string; // full headline, e.g. "Illicit Crude Discharge & AIS Blackout"
+  type: 'transit' | 'anomaly_onset' | 'breach' | 'sar_detection' | 'live';
+  icon: string; // e.g. "⚓", "⚠️", "🚨", "🛰️", "🎯"
+  speed: number;
+  coordinates: [number, number];
+  details: string; // tactical summary
+}
+
 // Mumbai Maritime Zone Active Incident Definitions
 export interface MumbaiIncidentConfig {
   id: string;
@@ -185,6 +196,7 @@ export interface MumbaiIncidentConfig {
   confidence: number;
   sourceScene: string;
   threat: EnvironmentalThreat;
+  events: TimelineKeyEvent[];
 }
 
 export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
@@ -216,7 +228,59 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
       predicted_arrival_hours: 11.5,
       coastal_threat_risk: 'HIGH',
       projected_impact_zone: 'South Mumbai & Alibaug Shoreline'
-    }
+    },
+    events: [
+      {
+        tMinutes: -360,
+        label: "Transit",
+        title: "Entry into Mumbai High TSS Sector",
+        type: "transit",
+        icon: "⚓",
+        speed: 14.8,
+        coordinates: [72.260, 18.880],
+        details: "Normal navigation at 14.8 kts along deep-water offshore route.",
+      },
+      {
+        tMinutes: -180,
+        label: "Deviation",
+        title: "Approach to Offshore SPM Cluster",
+        type: "anomaly_onset",
+        icon: "⚠️",
+        speed: 14.8,
+        coordinates: [72.202, 18.964],
+        details: "Course alignment adjusted towards loading fairway.",
+      },
+      {
+        tMinutes: -42,
+        label: "BREACH",
+        title: "Illicit Crude Discharge & AIS Blackout",
+        type: "breach",
+        icon: "🚨",
+        speed: 5.2,
+        coordinates: [72.145, 19.048],
+        details: "Sudden speed drop (-9.6 kts) & AIS transmitter blackout during ~58,000 L crude discharge.",
+      },
+      {
+        tMinutes: -15,
+        label: "SAR Pass",
+        title: "Sentinel-1 SAR Satellite Acquisition",
+        type: "sar_detection",
+        icon: "🛰️",
+        speed: 14.8,
+        coordinates: [72.115, 19.090],
+        details: "SAR backscatter depression detected 4.33 km² oil slick with 98.4% correlation.",
+      },
+      {
+        tMinutes: 0,
+        label: "Live Alert",
+        title: "Current Track & Intercept Assessment",
+        type: "live",
+        icon: "🎯",
+        speed: 14.8,
+        coordinates: [72.100, 19.112],
+        details: "Live tracking active. 41 km from coast with 11.5h projected landfall arrival.",
+      },
+    ],
   },
   "INC-MUM-2024-02": {
     id: "INC-MUM-2024-02",
@@ -246,7 +310,59 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
       predicted_arrival_hours: 2.2,
       coastal_threat_risk: 'HIGH',
       projected_impact_zone: 'JNPT Port & Elephanta Islands'
-    }
+    },
+    events: [
+      {
+        tMinutes: -360,
+        label: "Transit",
+        title: "Inbound Transit from South Arabian Sea",
+        type: "transit",
+        icon: "⚓",
+        speed: 16.5,
+        coordinates: [72.818, 18.735],
+        details: "Container carrier inbound at cruising speed 16.5 kts.",
+      },
+      {
+        tMinutes: -180,
+        label: "Fairway",
+        title: "Entering Dredged Harbor Approach",
+        type: "anomaly_onset",
+        icon: "⚠️",
+        speed: 16.5,
+        coordinates: [72.844, 18.815],
+        details: "Pilot rendezvous preparation in approach channel.",
+      },
+      {
+        tMinutes: -30,
+        label: "BREACH",
+        title: "Nighttime Bilge Washings Discharge",
+        type: "breach",
+        icon: "🚨",
+        speed: 6.8,
+        coordinates: [72.870, 18.895],
+        details: "Speed reduction (-9.7 kts) coinciding with illicit release of ~31,000 L HFO bilge washings.",
+      },
+      {
+        tMinutes: -12,
+        label: "SAR Pass",
+        title: "Sentinel-1 SAR Synthetic Aperture Match",
+        type: "sar_detection",
+        icon: "🛰️",
+        speed: 15.6,
+        coordinates: [72.885, 18.940],
+        details: "SAR radar image confirmed 2.34 km² linear dark slick in channel.",
+      },
+      {
+        tMinutes: 0,
+        label: "Live Alert",
+        title: "Current Channel Position (Nhava Sheva)",
+        type: "live",
+        icon: "🎯",
+        speed: 15.6,
+        coordinates: [72.896, 18.975],
+        details: "Target heading 018° at 15.6 kts towards JNPT berths. Threat arrival in 2.2h.",
+      },
+    ],
   },
   "INC-MUM-2024-03": {
     id: "INC-MUM-2024-03",
@@ -276,7 +392,59 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
       predicted_arrival_hours: 1.2,
       coastal_threat_risk: 'HIGH',
       projected_impact_zone: 'Colaba Point & Marine Drive Foreshore'
-    }
+    },
+    events: [
+      {
+        tMinutes: -360,
+        label: "Transit",
+        title: "Western Coastal Approach",
+        type: "transit",
+        icon: "⚓",
+        speed: 12.0,
+        coordinates: [72.643, 18.855],
+        details: "Product tanker approaching Mumbai harbor outer limits at 12.0 kts.",
+      },
+      {
+        tMinutes: -180,
+        label: "Maneuver",
+        title: "Outer Anchorage Alignment",
+        type: "anomaly_onset",
+        icon: "⚠️",
+        speed: 12.0,
+        coordinates: [72.719, 18.880],
+        details: "Slowing down for anchorage berth allocation.",
+      },
+      {
+        tMinutes: -25,
+        label: "BREACH",
+        title: "Unreported Bunkering Transfer Leak",
+        type: "breach",
+        icon: "🚨",
+        speed: 4.5,
+        coordinates: [72.795, 18.905],
+        details: "Loitering anomaly at anchorage. ~19,000 L IFO-180 fuel oil discharge during transfer.",
+      },
+      {
+        tMinutes: -10,
+        label: "SAR Pass",
+        title: "Sentinel-1 SAR Detection at Reef Zone",
+        type: "sar_detection",
+        icon: "🛰️",
+        speed: 11.2,
+        coordinates: [72.830, 18.918],
+        details: "SAR radar identified 1.59 km² slick drifting 69.3° towards Colaba Point.",
+      },
+      {
+        tMinutes: 0,
+        label: "Live Alert",
+        title: "Current Inbound Position (Refinery Channel)",
+        type: "live",
+        icon: "🎯",
+        speed: 11.2,
+        coordinates: [72.871, 18.930],
+        details: "Target transiting at 11.2 kts. Projected coral impact within 1.2 hours.",
+      },
+    ],
   },
   "INC-MUM-2024-04": {
     id: "INC-MUM-2024-04",
@@ -306,7 +474,59 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
       predicted_arrival_hours: 10.4,
       coastal_threat_risk: 'MEDIUM',
       projected_impact_zone: 'Vasai & Manori Coastal Corridor'
-    }
+    },
+    events: [
+      {
+        tMinutes: -360,
+        label: "Transit",
+        title: "Southbound Tanker TSS Transit",
+        type: "transit",
+        icon: "⚓",
+        speed: 13.4,
+        coordinates: [71.915, 19.395],
+        details: "Chemical tanker cruising at 13.4 kts along offshore international corridor.",
+      },
+      {
+        tMinutes: -180,
+        label: "Platform",
+        title: "Neelam Platform Cluster Approach",
+        type: "anomaly_onset",
+        icon: "⚠️",
+        speed: 13.4,
+        coordinates: [71.950, 19.320],
+        details: "Transiting within 2.5 nm of Neelam offshore drilling complex.",
+      },
+      {
+        tMinutes: -20,
+        label: "BREACH",
+        title: "Chemical Tank Washings Illicit Discharge",
+        type: "breach",
+        icon: "🚨",
+        speed: 5.8,
+        coordinates: [71.985, 19.245],
+        details: "Speed drop to 5.8 kts. Illicit discharge of ~42,000 L chemical condensate & tank washings.",
+      },
+      {
+        tMinutes: -8,
+        label: "SAR Pass",
+        title: "SAR Multi-Polarimetric Anomaly Confirmed",
+        type: "sar_detection",
+        icon: "🛰️",
+        speed: 12.8,
+        coordinates: [72.000, 19.210],
+        details: "Sentinel-1 SAR validated 2.27 km² high-contrast surface slick with 89.6% match.",
+      },
+      {
+        tMinutes: 0,
+        label: "Live Alert",
+        title: "Current Southbound Position",
+        type: "live",
+        icon: "🎯",
+        speed: 12.8,
+        coordinates: [72.020, 19.170],
+        details: "Target continuing SSE 155° at 12.8 kts. Projected 10.4h coastal arrival.",
+      },
+    ],
   }
 };
 

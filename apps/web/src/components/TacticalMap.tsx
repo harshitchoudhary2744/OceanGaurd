@@ -100,10 +100,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     );
   }, [suspects, selectedVesselMmsi, currentIncident]);
 
-  // Synchronized Hydrodynamic Oil Spill Polygons for ALL Mumbai incidents
+  // Synchronized Hydrodynamic Oil Spill Polygons: ONLY the selected anomaly's spill replays
   const currentSpills = useMemo<SpillFeatureCollection>(() => {
     const features: SpillGeoFeature[] = Object.values(MUMBAI_INCIDENTS).map((config) => {
-      const live = calculateSynchronizedOilSpill(timeOffsetMinutes, config.id, metocean);
+      // If this is the active spill, evaluate dynamic growth at timeOffsetMinutes.
+      // Other spills remain static at t=0 so the replay focuses exclusively on the active anomaly!
+      const offsetToUse = config.id === selectedSpillId ? timeOffsetMinutes : 0;
+      const live = calculateSynchronizedOilSpill(offsetToUse, config.id, metocean);
 
       return {
         type: "Feature",

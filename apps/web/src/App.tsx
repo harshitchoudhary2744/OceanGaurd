@@ -212,8 +212,10 @@ export function App() {
     return () => clearInterval(interval);
   }, [isPlaying, playbackSpeed]);
 
-  // Interpolated Vessel Positions based on Time Scrubber (-360 to 0)
+  // Interpolated Vessel Positions: ONLY the selected anomaly's culprit vessel replays along its trajectory
   const scrubbedVessels = useMemo(() => {
+    const activeCulpritMmsi = MUMBAI_INCIDENTS[selectedSpillId]?.culpritMmsi || selectedVesselMmsi;
+
     return vessels.map((v) => {
       const curPos = v.current_position ? {
         longitude: v.current_position.longitude,
@@ -222,7 +224,9 @@ export function App() {
         speed_knots: v.current_position.speed_knots,
       } : undefined;
 
-      const interp = interpolateVesselPosition(v.mmsi, timeOffsetMinutes, 'mumbai', curPos);
+      // Replay only the active anomaly suspect; background traffic stays static at live (t=0)
+      const offsetForThisVessel = (v.mmsi === activeCulpritMmsi) ? timeOffsetMinutes : 0;
+      const interp = interpolateVesselPosition(v.mmsi, offsetForThisVessel, 'mumbai', curPos);
       return {
         mmsi: v.mmsi,
         lon: interp.lon,
@@ -231,7 +235,7 @@ export function App() {
         speed: interp.speed,
       };
     });
-  }, [timeOffsetMinutes, vessels]);
+  }, [timeOffsetMinutes, vessels, selectedSpillId, selectedVesselMmsi]);
 
   // Selected Spill Feature
   const selectedSpillFeature = useMemo<SpillGeoFeature | null>(() => {
