@@ -5,7 +5,7 @@ import { InspectorPanel } from './components/InspectorPanel';
 import { TimeScrubber } from './components/TimeScrubber';
 import { UploadSarModal } from './components/UploadSarModal';
 import { ForensicModal } from './components/ForensicModal';
-import { Map as MapIcon, ShieldAlert, Ship, Database, AlertTriangle } from 'lucide-react';
+import { Map as MapIcon, ShieldAlert, Ship, Database, AlertTriangle, Sparkles } from 'lucide-react';
 
 import {
   SpillFeatureCollection,
@@ -49,7 +49,7 @@ export function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Mobile Bottom Sheet / Active Tab
-  const [mobileActiveTab, setMobileActiveTab] = useState<'map' | 'threat' | 'overview' | 'suspects' | 'intel'>('map');
+  const [mobileActiveTab, setMobileActiveTab] = useState<'map' | 'overview' | 'sar_physics' | 'culprit' | 'metocean' | 'threats'>('map');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Time Scrubber State (-360 to 0)
@@ -322,7 +322,7 @@ export function App() {
             timeOffsetMinutes={timeOffsetMinutes}
             metocean={metocean}
             onOpenMobileDrawer={() => {
-              setMobileActiveTab('threat');
+              setMobileActiveTab('threats');
               setIsMobileDrawerOpen(true);
             }}
           />
@@ -363,7 +363,7 @@ export function App() {
             setMobileActiveTab('map');
             setIsMobileDrawerOpen(false);
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors cursor-pointer ${
             mobileActiveTab === 'map' && !isMobileDrawerOpen ? 'text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30' : 'text-slate-400'
           }`}
         >
@@ -373,54 +373,54 @@ export function App() {
 
         <button
           onClick={() => {
-            setMobileActiveTab('threat');
-            setIsMobileDrawerOpen(true);
-          }}
-          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
-            isMobileDrawerOpen && mobileActiveTab === 'threat' ? 'text-rose-400 font-bold bg-rose-950/40 border border-rose-500/30' : 'text-slate-400'
-          }`}
-        >
-          <AlertTriangle className="w-4 h-4 text-rose-400" />
-          <span>THREAT</span>
-        </button>
-
-        <button
-          onClick={() => {
             setMobileActiveTab('overview');
             setIsMobileDrawerOpen(true);
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors cursor-pointer ${
             isMobileDrawerOpen && mobileActiveTab === 'overview' ? 'text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30' : 'text-slate-400'
           }`}
         >
           <ShieldAlert className="w-4 h-4" />
-          <span>INSPECTOR</span>
+          <span>OVERVIEW</span>
         </button>
 
         <button
           onClick={() => {
-            setMobileActiveTab('suspects');
+            setMobileActiveTab('sar_physics');
             setIsMobileDrawerOpen(true);
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
-            isMobileDrawerOpen && mobileActiveTab === 'suspects' ? 'text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors cursor-pointer ${
+            isMobileDrawerOpen && mobileActiveTab === 'sar_physics' ? 'text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30' : 'text-slate-400'
           }`}
         >
-          <Ship className="w-4 h-4" />
-          <span>VESSELS</span>
+          <Sparkles className="w-4 h-4 text-cyan-400" />
+          <span>SAR AI</span>
         </button>
 
         <button
           onClick={() => {
-            setMobileActiveTab('intel');
+            setMobileActiveTab('culprit');
             setIsMobileDrawerOpen(true);
           }}
-          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors ${
-            isMobileDrawerOpen && mobileActiveTab === 'intel' ? 'text-cyan-400 font-bold bg-cyan-950/40 border border-cyan-500/30' : 'text-slate-400'
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors cursor-pointer ${
+            isMobileDrawerOpen && mobileActiveTab === 'culprit' ? 'text-rose-400 font-bold bg-rose-950/40 border border-rose-500/30' : 'text-slate-400'
           }`}
         >
-          <Database className="w-4 h-4" />
-          <span>VECTORS</span>
+          <Ship className="w-4 h-4 text-rose-400" />
+          <span>CULPRIT</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setMobileActiveTab('threats');
+            setIsMobileDrawerOpen(true);
+          }}
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-lg transition-colors cursor-pointer ${
+            isMobileDrawerOpen && mobileActiveTab === 'threats' ? 'text-amber-400 font-bold bg-amber-950/40 border border-amber-500/30' : 'text-slate-400'
+          }`}
+        >
+          <AlertTriangle className="w-4 h-4 text-amber-400" />
+          <span>THREATS</span>
         </button>
       </div>
 

@@ -351,24 +351,41 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       style: {
         version: 8,
         sources: {
-          'carto-dark': {
+          'dark-ocean-base': {
             type: 'raster',
             tiles: [
-              'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-              'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-              'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+              'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
             ],
             tileSize: 256,
-            attribution: '© CartoDB, OpenStreetMap',
+            attribution: 'Esri, DeLorme, GEBCO, NOAA NGDC',
+            maxzoom: 16,
+          },
+          'dark-ocean-labels': {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            maxzoom: 16,
           },
         },
         layers: [
           {
-            id: 'carto-dark-layer',
+            id: 'dark-ocean-base-layer',
             type: 'raster',
-            source: 'carto-dark',
+            source: 'dark-ocean-base',
             minzoom: 0,
             maxzoom: 20,
+          },
+          {
+            id: 'dark-ocean-labels-layer',
+            type: 'raster',
+            source: 'dark-ocean-labels',
+            minzoom: 0,
+            maxzoom: 20,
+            paint: {
+              'raster-opacity': 0.7,
+            },
           },
         ],
       },

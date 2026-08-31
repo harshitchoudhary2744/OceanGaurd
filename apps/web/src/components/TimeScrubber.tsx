@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Play,
   Pause,
@@ -17,7 +17,8 @@ import {
   ChevronUp,
   ShieldAlert,
   Gauge,
-  ZapOff
+  ZapOff,
+  X
 } from 'lucide-react';
 import { MUMBAI_INCIDENTS, TimelineKeyEvent } from '../lib/simulationEngine';
 
@@ -45,6 +46,17 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   const currentIncident = MUMBAI_INCIDENTS[activeSpillId] || MUMBAI_INCIDENTS['INC-MUM-2024-01'];
   const events = currentIncident.events || [];
 
+  // Close drawer on ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showTimelineDrawer) {
+        setShowTimelineDrawer(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showTimelineDrawer]);
+
   // Base live timestamp reference
   const now = useMemo(() => new Date(), []);
   
@@ -52,7 +64,6 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   const activeDate = useMemo(() => new Date(now.getTime() + timeOffsetMinutes * 60 * 1000), [now, timeOffsetMinutes]);
   const activeTimeStr = activeDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
   const activeUtcStr = activeDate.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour12: false }) + ' UTC';
-  const activeDateStr = activeDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
   
   const absMins = Math.abs(timeOffsetMinutes);
   const tMinusHours = Math.floor(absMins / 60);
@@ -125,8 +136,19 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
     }
   };
 
+  // Dynamically extract top milestone points from active incident events
+  const trackMilestones = useMemo(() => {
+    return events.map((evt) => ({
+      tMinutes: evt.tMinutes,
+      utc: evt.timestamp_utc || (evt.tMinutes === 0 ? '11:00 UTC' : `T${evt.tMinutes}m`),
+      label: evt.type === 'breach' ? 'BREACH' : evt.type === 'live' ? 'LIVE' : evt.label,
+      isBreach: evt.type === 'breach',
+      isLive: evt.type === 'live',
+    }));
+  }, [events]);
+
   return (
-    <div className="w-full max-w-[760px] mx-auto pointer-events-auto tactical-glass rounded-2xl flex flex-col p-2 sm:p-3 gap-1.5 shadow-2xl border border-slate-700/70 select-none backdrop-blur-md relative">
+    <div className="w-full max-w-4xl mx-auto pointer-events-auto tactical-glass rounded-2xl flex flex-col p-2.5 sm:p-3.5 gap-2 shadow-2xl border border-slate-700/80 select-none backdrop-blur-md relative">
       
       {/* Top Status & Anomaly Event HUD Banner */}
       <div className="flex items-center justify-between px-1.5 sm:px-2 gap-2 text-xs font-mono border-b border-slate-800/80 pb-1.5">
@@ -153,7 +175,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
           {/* Action Timeline Flow Button */}
           <button
             onClick={() => setShowTimelineDrawer(!showTimelineDrawer)}
-            className={`px-2 py-1 rounded-lg text-[10px] sm:text-xs font-mono font-bold flex items-center gap-1.5 transition-all border ${
+            className={`px-2.5 py-1 rounded-lg text-[10.5px] sm:text-xs font-mono font-bold flex items-center gap-1.5 transition-all border cursor-pointer ${
               showTimelineDrawer
                 ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md ring-2 ring-cyan-500/30'
                 : 'bg-slate-900/90 text-cyan-300 hover:text-white border-cyan-500/40 hover:bg-slate-800'
@@ -163,17 +185,17 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
           >
             <Clock className="w-3.5 h-3.5" />
             <span>Timeline</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-cyan-300 text-[9px] border border-cyan-500/30">
+            <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-cyan-300 text-[9px] border border-cyan-500/30 font-mono">
               {events.length}
             </span>
-            {showTimelineDrawer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {showTimelineDrawer ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
 
           <div className="text-right">
-            <div className="text-[10px] sm:text-xs font-bold text-cyan-300 tracking-wider">
+            <div className="text-[11px] sm:text-xs font-bold text-cyan-300 tracking-wider">
               {activeTimeStr}
             </div>
-            <div className="text-[8px] sm:text-[9px] text-slate-400 font-medium">
+            <div className="text-[8.5px] sm:text-[9.5px] text-slate-400 font-medium">
               <span className="text-slate-300 font-mono">{activeUtcStr}</span> • <span className="text-rose-400 font-bold">{tMinusString}</span>
             </div>
           </div>
@@ -186,7 +208,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={onTogglePlay}
-            className="w-8 h-8 rounded-xl bg-cyan-400 text-slate-950 hover:bg-cyan-300 flex items-center justify-center transition-all shadow-md active:scale-95 shrink-0"
+            className="w-8 h-8 rounded-xl bg-cyan-400 text-slate-950 hover:bg-cyan-300 flex items-center justify-center transition-all shadow-md active:scale-95 shrink-0 cursor-pointer"
             aria-label={isPlaying ? 'Pause timeline playback' : 'Play timeline playback'}
             title={isPlaying ? 'Pause' : 'Play Replay'}
           >
@@ -195,7 +217,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
 
           <button
             onClick={() => onChangeTimeOffset(-360)}
-            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors shrink-0"
+            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors shrink-0 cursor-pointer"
             title="Reset to -6h start of track"
             aria-label="Reset timeline to start"
           >
@@ -204,7 +226,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
 
           <button
             onClick={handlePrevEvent}
-            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-cyan-300 transition-colors shrink-0"
+            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-cyan-300 transition-colors shrink-0 cursor-pointer"
             title="Jump to Previous Anomaly Event"
             aria-label="Previous Anomaly Event"
           >
@@ -213,7 +235,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
 
           <button
             onClick={handleNextEvent}
-            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-cyan-300 transition-colors shrink-0"
+            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-cyan-300 transition-colors shrink-0 cursor-pointer"
             title="Jump to Next Anomaly Event"
             aria-label="Next Anomaly Event"
           >
@@ -223,23 +245,24 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
 
         {/* Timeline Slider with Dedicated Visible Timestamps Directly Along the Bar */}
         <div className="flex-1 flex flex-col gap-1.5 min-w-0 relative">
-          {/* Top Timestamps Row Directly on the Bar Track */}
-          <div className="flex justify-between items-center text-[9.5px] font-mono text-slate-400 font-bold px-1 select-none">
-            <span className="text-slate-400 bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800 shadow-sm">
-              05:00 UTC (-6h)
-            </span>
-            <span className="text-slate-400 hidden sm:inline bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800 shadow-sm">
-              07:00 UTC (-4h)
-            </span>
-            <span className="text-slate-400 bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800 shadow-sm">
-              09:00 UTC (-2h)
-            </span>
-            <span className="text-rose-300 bg-rose-950/90 px-2 py-0.5 rounded border border-rose-500/50 shadow-sm animate-pulse">
-              10:18 UTC (BREACH)
-            </span>
-            <span className="text-cyan-300 bg-cyan-950/90 px-2 py-0.5 rounded border border-cyan-500/50 shadow-sm">
-              11:00 UTC (LIVE)
-            </span>
+          {/* Top Timestamps Row Directly on the Bar Track - DYNAMICALLY ALIGNED WITH INCIDENT */}
+          <div className="flex justify-between items-center text-[9.5px] font-mono text-slate-400 font-bold px-1 select-none overflow-x-auto no-scrollbar gap-1">
+            {trackMilestones.map((m) => (
+              <button
+                key={m.tMinutes}
+                onClick={() => onChangeTimeOffset(m.tMinutes)}
+                className={`px-1.5 py-0.5 rounded border shadow-sm transition-all whitespace-nowrap cursor-pointer ${
+                  m.isBreach
+                    ? 'text-rose-300 bg-rose-950/90 border-rose-500/60 font-bold animate-pulse'
+                    : m.isLive
+                    ? 'text-cyan-300 bg-cyan-950/90 border-cyan-500/60 font-bold'
+                    : 'text-slate-400 bg-slate-900/90 border-slate-800 hover:text-white'
+                }`}
+                title={`Jump to ${m.utc} (${m.label})`}
+              >
+                {m.utc} <span className="text-[8.5px] opacity-80">({m.label})</span>
+              </button>
+            ))}
           </div>
 
           <div className="relative flex items-center h-7">
@@ -304,7 +327,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
                 <button
                   key={evt.tMinutes}
                   onClick={() => onChangeTimeOffset(evt.tMinutes)}
-                  className={`px-2 py-0.5 rounded-md transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  className={`px-2 py-0.5 rounded-md transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                     isCurrent
                       ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400 shadow-md scale-105 ring-1 ring-cyan-400/40'
                       : 'hover:bg-slate-800/80 hover:text-slate-200 text-slate-400 bg-slate-900/60 border border-slate-800'
@@ -328,7 +351,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
             <button
               key={s}
               onClick={() => onChangeSpeed(s)}
-              className={`px-2 py-1 rounded transition-all ${
+              className={`px-2 py-1 rounded transition-all cursor-pointer ${
                 playbackSpeed === s
                   ? 'bg-cyan-400 text-slate-950 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-white'
@@ -345,17 +368,25 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
       {/* ============================================================== */}
       {showTimelineDrawer && (
         <div className="mt-2 pt-2 border-t border-slate-800/90 flex flex-col gap-2 font-mono animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center justify-between px-1">
+          {/* Drawer Header with Prominent Close Button */}
+          <div className="flex items-center justify-between px-1 bg-slate-950/60 p-1.5 rounded-lg border border-slate-800">
             <span className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
               <ListOrdered className="w-3.5 h-3.5 text-cyan-400" />
               <span>ACTION TIMELINE FLOW • EXACT CHRONOLOGY</span>
             </span>
-            <span className="text-[9.5px] text-slate-400">
-              Click any stage to scrub simulation immediately
-            </span>
+            <button
+              onClick={() => setShowTimelineDrawer(false)}
+              className="px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-[10px] font-bold flex items-center gap-1 border border-slate-700 transition-all cursor-pointer shadow-sm active:scale-95"
+              title="Close Timeline Drawer (Esc)"
+              aria-label="Close Timeline Drawer"
+            >
+              <X className="w-3.5 h-3.5 text-rose-400" />
+              <span>Close Timeline</span>
+            </button>
           </div>
 
-          <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 flex flex-col gap-1 shadow-inner">
+          {/* Scrollable Event Node Chain */}
+          <div className="bg-slate-950/95 border border-slate-800 rounded-xl p-3 flex flex-col gap-1.5 shadow-inner max-h-[360px] overflow-y-auto pr-1">
             {events.map((evt, idx) => {
               const isCurrent = Math.abs(timeOffsetMinutes - evt.tMinutes) <= 6;
               const isBreach = evt.type === 'breach';
@@ -439,6 +470,17 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
                 </React.Fragment>
               );
             })}
+
+            {/* Bottom Close Button in Drawer */}
+            <div className="flex justify-center pt-2 pb-1 border-t border-slate-800/80 mt-1">
+              <button
+                onClick={() => setShowTimelineDrawer(false)}
+                className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-mono text-[11px] font-bold border border-slate-700 transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5 text-rose-400" />
+                <span>Close Timeline Drawer</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -467,5 +509,6 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
     </div>
   );
 };
+
 
 
