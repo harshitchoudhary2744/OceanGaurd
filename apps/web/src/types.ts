@@ -96,9 +96,19 @@ export interface MaritimeSpatialAsset {
   advisory_status: 'EVACUATE_BOOMS' | 'HIGH_ALERT' | 'STANDBY_TRAWLERS' | 'MONITORING';
 }
 
+export interface MapFocusTarget {
+  coordinates: [number, number]; // [lon, lat]
+  title?: string;
+  category?: MaritimeAssetCategory | string;
+  zoom?: number;
+  description?: string;
+  timestamp?: number;
+}
+
 export interface DashboardAlert {
   id: string;
   incident_id?: string;
+  incident_offset_minutes?: number;
   timestamp_ist: string;
   severity: 'CRITICAL' | 'WARNING' | 'INFO';
   category: MaritimeAssetCategory | 'vessel_violation' | 'sar_detection';

@@ -24,7 +24,7 @@ interface AlertNotificationCenterProps {
   onClose: () => void;
   onAcknowledgeAlert: (alertId: string) => void;
   onAcknowledgeAll: () => void;
-  onAlertAction: (actionType: string, actionValue: any) => void;
+  onAlertAction: (actionType: string, actionValue: any, alert: DashboardAlert) => void;
 }
 
 export const AlertNotificationCenter: React.FC<AlertNotificationCenterProps> = ({
@@ -240,18 +240,29 @@ export const AlertNotificationCenter: React.FC<AlertNotificationCenterProps> = (
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 gap-2">
                     <div className="flex items-center gap-2">
-                      {alert.action_type && alert.action_label && (
+                      {alert.action_type && alert.action_label ? (
                         <button
                           onClick={() => {
-                            onAlertAction(alert.action_type!, alert.action_value);
+                            onAlertAction(alert.action_type!, alert.action_value ?? alert.coordinates, alert);
                             onAcknowledgeAlert(alert.id);
                           }}
                           className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all"
                         >
-                          <Navigation className="w-3 h-3" />
+                          <Navigation className="w-3 h-3 text-cyan-400" />
                           {alert.action_label}
                         </button>
-                      )}
+                      ) : alert.coordinates ? (
+                        <button
+                          onClick={() => {
+                            onAlertAction('focus_map', alert.coordinates, alert);
+                            onAcknowledgeAlert(alert.id);
+                          }}
+                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all"
+                        >
+                          <Navigation className="w-3 h-3 text-cyan-400" />
+                          Locate on Map
+                        </button>
+                      ) : null}
                     </div>
 
                     {!alert.acknowledged ? (
@@ -289,7 +300,7 @@ export const AlertNotificationCenter: React.FC<AlertNotificationCenterProps> = (
 interface FloatingAlertBannerProps {
   alert: DashboardAlert | null;
   onDismiss: () => void;
-  onAction: (actionType: string, actionValue: any) => void;
+  onAction: (actionType: string, actionValue: any, alert: DashboardAlert) => void;
   onOpenDrawer: () => void;
 }
 
@@ -331,7 +342,7 @@ export const FloatingAlertBanner: React.FC<FloatingAlertBannerProps> = ({
         <div className="flex items-center gap-1.5 shrink-0">
           {alert.action_type && alert.action_label && (
             <button
-              onClick={() => onAction(alert.action_type!, alert.action_value)}
+              onClick={() => onAction(alert.action_type!, alert.action_value ?? alert.coordinates, alert)}
               className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-900 hover:bg-slate-100 shadow-md transition-all flex items-center gap-1"
             >
               <Navigation className="w-3 h-3 text-red-600" />

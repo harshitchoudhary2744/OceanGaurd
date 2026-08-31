@@ -23,7 +23,7 @@ import {
   Home,
   Droplet
 } from 'lucide-react';
-import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData, SpillGeoFeature, MaritimeSpatialAsset } from '../types';
+import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData, SpillGeoFeature, MaritimeSpatialAsset, MapFocusTarget } from '../types';
 import {
   calculateSynchronizedOilSpill,
   moveCoordinate,
@@ -178,6 +178,7 @@ interface TacticalMapProps {
   metocean?: MetoceanData;
   scenario?: string;
   onOpenMobileDrawer?: () => void;
+  focusTarget?: MapFocusTarget | null;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -193,10 +194,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   timeOffsetMinutes = 0,
   metocean,
   onOpenMobileDrawer,
+  focusTarget,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
+  const locatorMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const locatorPopupRef = useRef<maplibregl.Popup | null>(null);
   const onSelectVesselRef = useRef(onSelectVessel);
   onSelectVesselRef.current = onSelectVessel;
   const onSelectSpillRef = useRef(onSelectSpill);
@@ -910,9 +914,95 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     operationalMode
   ]);
 
-  // Smooth camera fly-to when selected incident or vessel changes
+  // Dynamic Target Locator Beacon & Camera Fly-To Hook
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current) return;
+    if (!mapLoaded || !mapRef.current || !focusTarget || !focusTarget.coordinates) return;
+    const map = mapRef.current;
+    const [targetLon, targetLat] = focusTarget.coordinates;
+
+    // 1. Automatically turn on the category layer so the located asset is visible
+    if (focusTarget.category === 'fishing_zone') setShowFishingZones(true);
+    if (focusTarget.category === 'fishing_harbour') setShowFishingHarbours(true);
+    if (focusTarget.category === 'aquaculture') setShowAquaculture(true);
+    if (focusTarget.category === 'coastal_community') setShowCoastalCommunities(true);
+    if (focusTarget.category === 'oil_spill' || focusTarget.category === 'sar_detection') setShowOilSpills(true);
+
+    // 2. Smoothly fly camera to exact target coordinates
+    map.flyTo({
+      center: [targetLon, targetLat],
+      zoom: focusTarget.zoom || 11.8,
+      duration: 1400,
+      essential: true,
+    });
+
+    // 3. Remove existing locator beacon and popup
+    if (locatorMarkerRef.current) {
+      locatorMarkerRef.current.remove();
+      locatorMarkerRef.current = null;
+    }
+    if (locatorPopupRef.current) {
+      locatorPopupRef.current.remove();
+      locatorPopupRef.current = null;
+    }
+
+    // 4. Create Tactical Radar Locator Beacon Element
+    const el = document.createElement('div');
+    el.className = 'locator-beacon-container pointer-events-none select-none';
+    el.style.width = '64px';
+    el.style.height = '64px';
+    el.style.position = 'relative';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+
+    el.innerHTML = `
+      <div style="position: absolute; inset: 0; border-radius: 9999px; border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.15); animation: ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+      <div style="position: absolute; inset: 12px; border-radius: 9999px; border: 2px dashed #06b6d4; animation: spin 4s linear infinite;"></div>
+      <div style="position: absolute; width: 14px; height: 14px; border-radius: 9999px; background: #06b6d4; border: 2px solid #ffffff; box-shadow: 0 0 15px #06b6d4;"></div>
+      <div style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: rgba(7, 11, 20, 0.95); border: 1px solid #38bdf8; color: #38bdf8; font-family: ui-monospace, monospace; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.8); letter-spacing: 0.5px;">
+        🎯 LOCATED TARGET
+      </div>
+    `;
+
+    const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+      .setLngLat([targetLon, targetLat])
+      .addTo(map);
+
+    locatorMarkerRef.current = marker;
+
+    // 5. Open rich context popup
+    const popupHtml = `
+      <div style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; padding: 8px 10px; color: #f1f5f9; background: #070b14; border: 1px solid #06b6d4; border-radius: 10px; font-size: 11px; box-shadow: 0 10px 25px rgba(0,0,0,0.8);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: #38bdf8; font-weight: 800; font-size: 11px;">🎯 TARGET LOCATED</span>
+          <span style="color: #94a3b8; font-size: 9px;">${targetLat.toFixed(4)}°N, ${targetLon.toFixed(4)}°E</span>
+        </div>
+        <div style="font-weight: 700; font-size: 12px; color: #ffffff; margin-bottom: 4px;">${focusTarget.title || 'Selected Maritime Asset'}</div>
+        <div style="color: #cbd5e1; font-size: 10px; line-height: 1.4;">${focusTarget.description || 'Target coordinates locked and tracked in OceanGuard Tactical Map.'}</div>
+      </div>
+    `;
+
+    const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: [0, -32], maxWidth: '300px' })
+      .setLngLat([targetLon, targetLat])
+      .setHTML(popupHtml)
+      .addTo(map);
+
+    locatorPopupRef.current = popup;
+
+    // Auto-remove beacon after 20 seconds
+    const timer = setTimeout(() => {
+      if (locatorMarkerRef.current === marker) {
+        marker.remove();
+        locatorMarkerRef.current = null;
+      }
+    }, 20000);
+
+    return () => clearTimeout(timer);
+  }, [focusTarget, mapLoaded]);
+
+  // Smooth camera fly-to when selected incident or vessel changes (if no manual focusTarget)
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current || focusTarget) return;
     const map = mapRef.current;
 
     const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === activeSuspect?.mmsi);
@@ -926,7 +1016,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       duration: 1200,
       essential: true,
     });
-  }, [selectedSpillId, selectedVesselMmsi, mapLoaded, baseOrigin, activeSuspect]);
+  }, [selectedSpillId, selectedVesselMmsi, mapLoaded, baseOrigin, activeSuspect, focusTarget]);
 
   // Render & Update Vessel Markers with Active Focus Highlight
   useEffect(() => {

@@ -18,7 +18,8 @@ import {
   ChevronRight,
   MapPin,
   Clock,
-  Layers
+  Layers,
+  Navigation
 } from 'lucide-react';
 import { SuspectVessel, VectorMatch, SpillProperties, SpillGeoFeature, MetoceanData } from '../types';
 import { downloadPdfReportUrl } from '../lib/api';
@@ -39,6 +40,7 @@ interface InspectorPanelProps {
   timeOffsetMinutes?: number;
   scenario?: string;
   initialTab?: InspectorTabType;
+  onFocusLocation?: (coords: [number, number], title: string, category?: string) => void;
 }
 
 export const InspectorPanel: React.FC<InspectorPanelProps> = ({
@@ -53,6 +55,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   metocean,
   timeOffsetMinutes = 0,
   initialTab = 'overview',
+  onFocusLocation,
 }) => {
   const [activeTab, setActiveTab] = useState<InspectorTabType>(initialTab);
   const [isExporting, setIsExporting] = useState(false);
@@ -210,6 +213,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             threat={threat}
             currentIncident={currentIncident}
             spill={spill}
+            onFocusLocation={onFocusLocation}
           />
         )}
       </div>
@@ -657,9 +661,10 @@ interface ThreatsTabProps {
   threat: any;
   currentIncident: any;
   spill?: SpillProperties;
+  onFocusLocation?: (coords: [number, number], title: string, category?: string) => void;
 }
 
-const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident }) => {
+const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocusLocation }) => {
   return (
     <div className="flex flex-col gap-3 font-mono text-xs">
       {/* Overall Threat & Landfall Rating */}
@@ -699,14 +704,23 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident }) => {
         </div>
 
         <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+          <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
               <span>{threat.fishing_zone_name || 'Mumbai Pelagic Trawling Fairway'}</span>
               <span className="text-emerald-400 font-mono">420 Trawlers</span>
             </div>
-            <p className="text-[9.5px] text-slate-400 mt-1">
+            <p className="text-[9.5px] text-slate-400">
               Urgent broadcast alert issued. Standby advisory active for high-value pomfret and seerfish harvesting grounds.
             </p>
+            {onFocusLocation && (
+              <button
+                onClick={() => onFocusLocation([72.18, 19.05], threat.fishing_zone_name || 'Mumbai Pelagic Fairway', 'fishing_zone')}
+                className="mt-1 self-start px-2 py-1 rounded bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
+              >
+                <Navigation className="w-3 h-3 text-emerald-400" />
+                Locate Fishing Fairway on Map
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -724,14 +738,23 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident }) => {
         </div>
 
         <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+          <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
               <span>{threat.fishing_harbour_name || 'Sassoon Docks Fishery Terminal (41.5 km)'}</span>
               <span className="text-blue-400 font-mono">1,250 Vessels</span>
             </div>
-            <p className="text-[9.5px] text-slate-400 mt-1">
+            <p className="text-[9.5px] text-slate-400">
               Pre-position containment booms across harbor entrance. Evacuation alert ready for offshore landing berths.
             </p>
+            {onFocusLocation && (
+              <button
+                onClick={() => onFocusLocation([72.8256, 18.9158], threat.fishing_harbour_name || 'Sassoon Docks Fishery Terminal', 'fishing_harbour')}
+                className="mt-1 self-start px-2 py-1 rounded bg-blue-950/60 hover:bg-blue-900/80 text-blue-300 border border-blue-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
+              >
+                <Navigation className="w-3 h-3 text-blue-400" />
+                Locate Harbour on Map
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -749,14 +772,23 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident }) => {
         </div>
 
         <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+          <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
               <span>{threat.aquaculture_name || 'Raigad Estuarine Mariculture Cages (35.0 km)'}</span>
               <span className="text-purple-400 font-mono">₹78.0 Cr Value</span>
             </div>
-            <p className="text-[9.5px] text-slate-400 mt-1">
+            <p className="text-[9.5px] text-slate-400">
               Emergency advisory issued to close intertidal water intake gates and deploy secondary skirt oil deflectors.
             </p>
+            {onFocusLocation && (
+              <button
+                onClick={() => onFocusLocation([72.88, 18.72], threat.aquaculture_name || 'Raigad Estuarine Mariculture Cages', 'aquaculture')}
+                className="mt-1 self-start px-2 py-1 rounded bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
+              >
+                <Navigation className="w-3 h-3 text-purple-400" />
+                Locate Aquaculture Cages on Map
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -774,14 +806,23 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident }) => {
         </div>
 
         <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+          <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
               <span>{threat.coastal_community_name || 'Worli & Mahim Koliwada Settlements'}</span>
               <span className="text-orange-400 font-mono">30,700 Pop.</span>
             </div>
-            <p className="text-[9.5px] text-slate-400 mt-1">
+            <p className="text-[9.5px] text-slate-400">
               Shoreline response contingency activated. Village community coordinators on alert for potential beach tarball deposits.
             </p>
+            {onFocusLocation && (
+              <button
+                onClick={() => onFocusLocation([72.8160, 19.0220], threat.coastal_community_name || 'Worli Koliwada Village', 'coastal_community')}
+                className="mt-1 self-start px-2 py-1 rounded bg-orange-950/60 hover:bg-orange-900/80 text-orange-300 border border-orange-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
+              >
+                <Navigation className="w-3 h-3 text-orange-400" />
+                Locate Koliwada on Map
+              </button>
+            )}
           </div>
         </div>
       </div>

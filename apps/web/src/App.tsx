@@ -16,7 +16,8 @@ import {
   VectorMatch,
   SARInferenceResponse,
   MetoceanData,
-  DashboardAlert
+  DashboardAlert,
+  MapFocusTarget
 } from './types';
 import {
   fetchSpills,
@@ -55,10 +56,11 @@ export function App() {
   const [mobileActiveTab, setMobileActiveTab] = useState<'map' | 'overview' | 'sar_physics' | 'culprit' | 'metocean' | 'threats'>('map');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
-  // Automatic Alert Notification Center State
+  // Automatic Alert Notification Center & Map Locator Target State
   const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
   const [isAlertCenterOpen, setIsAlertCenterOpen] = useState<boolean>(false);
   const [activeBannerAlert, setActiveBannerAlert] = useState<DashboardAlert | null>(null);
+  const [focusTarget, setFocusTarget] = useState<MapFocusTarget | null>(null);
 
   // Time Scrubber State (-360 to 0)
   const [timeOffsetMinutes, setTimeOffsetMinutes] = useState<number>(0);
@@ -91,17 +93,92 @@ export function App() {
     setActiveBannerAlert(null);
   };
 
-  const handleAlertAction = (actionType: string, actionValue: any) => {
-    if (actionType === 'jump_scrubber' && typeof actionValue === 'number') {
-      setTimeOffsetMinutes(actionValue);
+  const handleAlertAction = (actionType: string, actionValue: any, alert?: DashboardAlert) => {
+    // 1. Locate on Map (Direct Coordinates Locking)
+    if (actionType === 'focus_map' || Array.isArray(actionValue) || (alert && alert.coordinates)) {
+      const coords: [number, number] = Array.isArray(actionValue) && actionValue.length === 2
+        ? (actionValue as [number, number])
+        : (alert?.coordinates || [72.200, 19.050]);
+
+      setFocusTarget({
+        coordinates: coords,
+        title: alert?.title || 'Tactical Target Located',
+        category: alert?.category,
+        description: alert?.message || `Navigated to ${coords[1].toFixed(4)}°N, ${coords[0].toFixed(4)}°E`,
+        zoom: 11.8,
+        timestamp: Date.now(),
+      });
+
+      if (alert?.incident_id && alert.incident_id !== selectedSpillId) {
+        handleSelectSpillId(alert.incident_id);
+      }
+
+      setMobileActiveTab('map');
+      setIsMobileDrawerOpen(false);
       setIsAlertCenterOpen(false);
-    } else if (actionType === 'view_threat') {
+    } 
+    // 2. Jump Timeline Scrubber to Breach Discharging Offset
+    else if (actionType === 'jump_scrubber') {
+      const offset = typeof actionValue === 'number' ? actionValue : (alert?.incident_offset_minutes ?? -42);
+      setTimeOffsetMinutes(offset);
+
+      if (alert?.coordinates) {
+        setFocusTarget({
+          coordinates: alert.coordinates,
+          title: alert.title || 'Breach Discharge Location',
+          category: alert.category,
+          description: alert.message,
+          zoom: 11.5,
+          timestamp: Date.now(),
+        });
+      }
+
+      setMobileActiveTab('map');
+      setIsMobileDrawerOpen(false);
+      setIsAlertCenterOpen(false);
+    } 
+    // 3. View Environmental Threat Tab
+    else if (actionType === 'view_threat') {
+      if (alert?.coordinates) {
+        setFocusTarget({
+          coordinates: alert.coordinates,
+          title: alert.title,
+          category: alert.category,
+          description: alert.message,
+          zoom: 11.2,
+          timestamp: Date.now(),
+        });
+      }
       setMobileActiveTab('threats');
       setIsMobileDrawerOpen(true);
       setIsAlertCenterOpen(false);
-    } else {
+    } 
+    // 4. View Culprit / Suspect Vessel
+    else if (actionType === 'view_suspect') {
+      if (typeof actionValue === 'number') {
+        handleSelectVessel(actionValue);
+      }
+      setMobileActiveTab('culprit');
+      setIsMobileDrawerOpen(true);
+      setIsAlertCenterOpen(false);
+    } 
+    // 5. Default Fallback
+    else {
       setIsAlertCenterOpen(false);
     }
+  };
+
+  const handleFocusLocation = (coords: [number, number], title: string, category?: string) => {
+    setFocusTarget({
+      coordinates: coords,
+      title: title,
+      category: category,
+      description: `Target coordinates locked: ${coords[1].toFixed(4)}°N, ${coords[0].toFixed(4)}°E`,
+      zoom: 11.8,
+      timestamp: Date.now(),
+    });
+    setMobileActiveTab('map');
+    setIsMobileDrawerOpen(false);
   };
 
   const unreadAlertCount = useMemo(() => alerts.filter((a) => !a.acknowledged).length, [alerts]);
@@ -377,6 +454,7 @@ export function App() {
             centerCoordinates={mapCenter}
             timeOffsetMinutes={timeOffsetMinutes}
             metocean={metocean}
+            focusTarget={focusTarget}
             onOpenMobileDrawer={() => {
               setMobileActiveTab('threats');
               setIsMobileDrawerOpen(true);
@@ -408,6 +486,7 @@ export function App() {
             onSelectVessel={handleSelectVessel}
             metocean={metocean}
             timeOffsetMinutes={timeOffsetMinutes}
+            onFocusLocation={handleFocusLocation}
           />
         </div>
       </div>
@@ -499,6 +578,7 @@ export function App() {
               metocean={metocean}
               timeOffsetMinutes={timeOffsetMinutes}
               initialTab={mobileActiveTab === 'map' ? 'overview' : mobileActiveTab}
+              onFocusLocation={handleFocusLocation}
             />
           </div>
         </div>
