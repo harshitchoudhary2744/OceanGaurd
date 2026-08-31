@@ -79,11 +79,49 @@ export interface AnomalyBreakdown {
   evidence_tags: string[];
 }
 
+export type MaritimeAssetCategory = 'fishing_zone' | 'fishing_harbour' | 'aquaculture' | 'coastal_community' | 'oil_spill';
+
+export interface MaritimeSpatialAsset {
+  id: string;
+  name: string;
+  category: MaritimeAssetCategory;
+  subcategory: string;
+  coordinates: [number, number] | number[][][]; // Point [lon, lat] or Polygon [[[lon, lat]...]]
+  risk_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  distance_to_spill_km?: number;
+  description: string;
+  fleet_count?: number;
+  population?: number;
+  economic_annual_cr?: number;
+  advisory_status: 'EVACUATE_BOOMS' | 'HIGH_ALERT' | 'STANDBY_TRAWLERS' | 'MONITORING';
+}
+
+export interface DashboardAlert {
+  id: string;
+  incident_id?: string;
+  timestamp_ist: string;
+  severity: 'CRITICAL' | 'WARNING' | 'INFO';
+  category: MaritimeAssetCategory | 'vessel_violation' | 'sar_detection';
+  title: string;
+  message: string;
+  coordinates?: [number, number]; // [lon, lat]
+  action_type?: 'focus_map' | 'jump_scrubber' | 'view_suspect' | 'view_threat';
+  action_value?: any;
+  action_label?: string;
+  acknowledged?: boolean;
+}
+
 export interface EnvironmentalThreat {
   coast_distance_km: number;
   growth_rate_pct_per_hour: number;
   fishing_zone_risk: 'HIGH' | 'MEDIUM' | 'LOW';
   fishing_zone_name: string;
+  fishing_harbour_risk?: 'HIGH' | 'MEDIUM' | 'LOW';
+  fishing_harbour_name?: string;
+  aquaculture_risk?: 'HIGH' | 'MEDIUM' | 'LOW';
+  aquaculture_name?: string;
+  coastal_community_risk?: 'HIGH' | 'MEDIUM' | 'LOW';
+  coastal_community_name?: string;
   marine_habitat_risk: 'HIGH' | 'MEDIUM' | 'LOW';
   marine_habitat_name: string;
   overall_severity_score: number; // 0 - 100
@@ -91,6 +129,7 @@ export interface EnvironmentalThreat {
   predicted_arrival_hours: number;
   coastal_threat_risk: 'HIGH' | 'MEDIUM' | 'LOW';
   projected_impact_zone: string;
+  active_advisories?: string[];
 }
 
 export interface HindcastPoint {

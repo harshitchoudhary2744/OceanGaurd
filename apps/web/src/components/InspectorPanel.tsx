@@ -651,7 +651,7 @@ const MetoceanTab: React.FC<MetoceanTabProps> = ({ metocean, threat }) => {
 };
 
 // ============================================================================
-// TAB 5: ENVIRONMENTAL THREATS & ECOSYSTEM IMPACT
+// TAB 5: ENVIRONMENTAL THREATS & COASTAL ASSET IMPACT
 // ============================================================================
 interface ThreatsTabProps {
   threat: any;
@@ -659,18 +659,18 @@ interface ThreatsTabProps {
   spill?: SpillProperties;
 }
 
-const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat }) => {
+const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident }) => {
   return (
     <div className="flex flex-col gap-3 font-mono text-xs">
-      {/* Overall Threat Rating */}
+      {/* Overall Threat & Landfall Rating */}
       <div className="p-3 bg-slate-900/95 rounded-xl border border-rose-500/40 flex flex-col gap-2 shadow-md">
         <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
           <span className="text-[11px] text-rose-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
             <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-            Ecological Threat Assessment
+            Coastal Multi-Hazard Threat Assessment
           </span>
           <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 font-bold border border-rose-600/40 text-[9.5px]">
-            {threat.overall_severity_level} (Score: {threat.overall_severity_score}/100)
+            {threat.overall_severity_level} ({threat.overall_severity_score}/100)
           </span>
         </div>
 
@@ -680,60 +680,129 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat }) => {
             <strong className="text-white text-xs">{threat.coast_distance_km} km</strong>
           </div>
           <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
-            <span className="text-slate-400 block">Landfall ETA</span>
-            <strong className="text-amber-300 text-xs">{threat.eta_hours_to_landfall} Hours</strong>
+            <span className="text-slate-400 block">Landfall Arrival ETA</span>
+            <strong className="text-amber-300 text-xs">{threat.predicted_arrival_hours || 11.5} Hours</strong>
           </div>
         </div>
       </div>
 
-      {/* Marine Protected Areas (MPAs) */}
-      <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-2">
-        <span className="text-[10.5px] text-emerald-300 font-bold uppercase border-b border-slate-800 pb-1 flex items-center gap-1.5">
-          <TreePine className="w-3.5 h-3.5 text-emerald-400" />
-          Protected Marine Habitats at Risk
-        </span>
+      {/* 🟢 1. Fishing Zones Impact */}
+      <div className="p-3 bg-slate-900/90 rounded-xl border border-emerald-500/30 flex flex-col gap-2">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+          <span className="text-[10.5px] text-emerald-300 font-bold uppercase flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 shadow-sm" />
+            🟢 Fishing Zones Vulnerability
+          </span>
+          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+            {threat.fishing_zone_risk || 'HIGH'}
+          </span>
+        </div>
 
         <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800 flex flex-col gap-0.5">
-            <div className="flex justify-between items-center">
-              <span className="text-white font-bold">Thane Creek Flamingo Reserve</span>
-              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-950 text-amber-300 border border-amber-500/40">
-                MODERATE RISK
-              </span>
+          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+            <div className="flex justify-between items-center text-white font-bold">
+              <span>{threat.fishing_zone_name || 'Mumbai Pelagic Trawling Fairway'}</span>
+              <span className="text-emerald-400 font-mono">420 Trawlers</span>
             </div>
-            <span className="text-[9.5px] text-slate-400">Distance: 54 km • Sensitive mangrove intertidal feeding grounds</span>
-          </div>
-
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800 flex flex-col gap-0.5">
-            <div className="flex justify-between items-center">
-              <span className="text-white font-bold">Prongs Reef Coral Biotope</span>
-              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-950 text-rose-300 border border-rose-500/40">
-                HIGH RISK
-              </span>
-            </div>
-            <span className="text-[9.5px] text-slate-400">Distance: 28 km • Subtidal coral communities & fish nursery</span>
+            <p className="text-[9.5px] text-slate-400 mt-1">
+              Urgent broadcast alert issued. Standby advisory active for high-value pomfret and seerfish harvesting grounds.
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Commercial Fisheries Sector */}
-      <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-2">
-        <span className="text-[10.5px] text-cyan-300 font-bold uppercase border-b border-slate-800 pb-1 flex items-center gap-1.5">
-          <Fish className="w-3.5 h-3.5 text-cyan-400" />
-          Commercial Fisheries Vulnerability
-        </span>
+      {/* 🔵 2. Fishing Harbours & Ports Impact */}
+      <div className="p-3 bg-slate-900/90 rounded-xl border border-blue-500/30 flex flex-col gap-2">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+          <span className="text-[10.5px] text-blue-300 font-bold uppercase flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" />
+            🔵 Fishing Harbours at Risk
+          </span>
+          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-950 text-blue-300 border border-blue-500/40">
+            {threat.fishing_harbour_risk || 'HIGH'}
+          </span>
+        </div>
 
         <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Mumbai High Pelagic Zone:</span>
-            <strong className="text-rose-300">Trawling Halted (High Impact)</strong>
-          </div>
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">JNPT Inshore Fishery:</span>
-            <strong className="text-amber-300">Advisory Warning Issued</strong>
+          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+            <div className="flex justify-between items-center text-white font-bold">
+              <span>{threat.fishing_harbour_name || 'Sassoon Docks Fishery Terminal (41.5 km)'}</span>
+              <span className="text-blue-400 font-mono">1,250 Vessels</span>
+            </div>
+            <p className="text-[9.5px] text-slate-400 mt-1">
+              Pre-position containment booms across harbor entrance. Evacuation alert ready for offshore landing berths.
+            </p>
           </div>
         </div>
       </div>
+
+      {/* 🟣 3. Aquaculture & Mariculture Impact */}
+      <div className="p-3 bg-slate-900/90 rounded-xl border border-purple-500/30 flex flex-col gap-2">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+          <span className="text-[10.5px] text-purple-300 font-bold uppercase flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-sm bg-purple-500 shadow-sm" />
+            🟣 Aquaculture Farms Exposure
+          </span>
+          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-950 text-purple-300 border border-purple-500/40">
+            {threat.aquaculture_risk || 'HIGH'}
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-1.5 text-[10.5px]">
+          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+            <div className="flex justify-between items-center text-white font-bold">
+              <span>{threat.aquaculture_name || 'Raigad Estuarine Mariculture Cages (35.0 km)'}</span>
+              <span className="text-purple-400 font-mono">₹78.0 Cr Value</span>
+            </div>
+            <p className="text-[9.5px] text-slate-400 mt-1">
+              Emergency advisory issued to close intertidal water intake gates and deploy secondary skirt oil deflectors.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 🟠 4. Coastal Communities & Koliwadas Impact */}
+      <div className="p-3 bg-slate-900/90 rounded-xl border border-orange-500/30 flex flex-col gap-2">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+          <span className="text-[10.5px] text-orange-300 font-bold uppercase flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" />
+            🟠 Coastal Communities & Koliwadas
+          </span>
+          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-orange-950 text-orange-300 border border-orange-500/40">
+            {threat.coastal_community_risk || 'HIGH'}
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-1.5 text-[10.5px]">
+          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+            <div className="flex justify-between items-center text-white font-bold">
+              <span>{threat.coastal_community_name || 'Worli & Mahim Koliwada Settlements'}</span>
+              <span className="text-orange-400 font-mono">30,700 Pop.</span>
+            </div>
+            <p className="text-[9.5px] text-slate-400 mt-1">
+              Shoreline response contingency activated. Village community coordinators on alert for potential beach tarball deposits.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Active Protection Advisories */}
+      {threat.active_advisories && threat.active_advisories.length > 0 && (
+        <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-2">
+          <span className="text-[10.5px] text-cyan-300 font-bold uppercase border-b border-slate-800 pb-1">
+            Active Coastal Protection Directives
+          </span>
+          <ul className="space-y-1 text-[10px] text-slate-300">
+            {threat.active_advisories.map((adv: string, idx: number) => (
+              <li key={idx} className="flex items-start gap-1.5">
+                <span className="text-cyan-400 font-bold">•</span>
+                <span>{adv}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
+

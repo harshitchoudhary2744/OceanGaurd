@@ -5,7 +5,8 @@ import { InspectorPanel } from './components/InspectorPanel';
 import { TimeScrubber } from './components/TimeScrubber';
 import { UploadSarModal } from './components/UploadSarModal';
 import { ForensicModal } from './components/ForensicModal';
-import { Map as MapIcon, ShieldAlert, Ship, Database, AlertTriangle, Sparkles } from 'lucide-react';
+import { AlertNotificationCenter, FloatingAlertBanner } from './components/AlertNotificationCenter';
+import { Map as MapIcon, ShieldAlert, Ship, Database, AlertTriangle, Sparkles, Bell } from 'lucide-react';
 
 import {
   SpillFeatureCollection,
@@ -14,7 +15,8 @@ import {
   SuspectVessel,
   VectorMatch,
   SARInferenceResponse,
-  MetoceanData
+  MetoceanData,
+  DashboardAlert
 } from './types';
 import {
   fetchSpills,
@@ -35,7 +37,8 @@ import {
   globalSimulation,
   interpolateVesselPosition,
   MUMBAI_INCIDENTS,
-  MMSI_TO_INCIDENT
+  MMSI_TO_INCIDENT,
+  generateDashboardAlerts
 } from './lib/simulationEngine';
 
 export function App() {
@@ -52,6 +55,11 @@ export function App() {
   const [mobileActiveTab, setMobileActiveTab] = useState<'map' | 'overview' | 'sar_physics' | 'culprit' | 'metocean' | 'threats'>('map');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
+  // Automatic Alert Notification Center State
+  const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
+  const [isAlertCenterOpen, setIsAlertCenterOpen] = useState<boolean>(false);
+  const [activeBannerAlert, setActiveBannerAlert] = useState<DashboardAlert | null>(null);
+
   // Time Scrubber State (-360 to 0)
   const [timeOffsetMinutes, setTimeOffsetMinutes] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -60,6 +68,43 @@ export function App() {
   // Modals
   const [isUploadOpen, setIsUploadOpen] = useState<boolean>(false);
   const [isForensicOpen, setIsForensicOpen] = useState<boolean>(false);
+
+  // Dynamic Alert Generation Loop
+  useEffect(() => {
+    const generated = generateDashboardAlerts(selectedSpillId, timeOffsetMinutes, metocean);
+    setAlerts(generated);
+    const topCritical = generated.find((a) => a.severity === 'CRITICAL' && !a.acknowledged);
+    if (topCritical) {
+      setActiveBannerAlert(topCritical);
+    }
+  }, [selectedSpillId, timeOffsetMinutes, metocean]);
+
+  const handleAcknowledgeAlert = (id: string) => {
+    setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, acknowledged: true } : a)));
+    if (activeBannerAlert?.id === id) {
+      setActiveBannerAlert(null);
+    }
+  };
+
+  const handleClearAllAlerts = () => {
+    setAlerts((prev) => prev.map((a) => ({ ...a, acknowledged: true })));
+    setActiveBannerAlert(null);
+  };
+
+  const handleAlertAction = (actionType: string, actionValue: any) => {
+    if (actionType === 'jump_scrubber' && typeof actionValue === 'number') {
+      setTimeOffsetMinutes(actionValue);
+      setIsAlertCenterOpen(false);
+    } else if (actionType === 'view_threat') {
+      setMobileActiveTab('threats');
+      setIsMobileDrawerOpen(true);
+      setIsAlertCenterOpen(false);
+    } else {
+      setIsAlertCenterOpen(false);
+    }
+  };
+
+  const unreadAlertCount = useMemo(() => alerts.filter((a) => !a.acknowledged).length, [alerts]);
 
   // 1. Continuous 24/7 Autonomous Simulation Hook
   useEffect(() => {
@@ -304,12 +349,22 @@ export function App() {
         onRefresh={loadData}
         isRefreshing={isRefreshing}
         metocean={metocean}
+        unreadAlertCount={unreadAlertCount}
+        onOpenAlerts={() => setIsAlertCenterOpen(true)}
       />
 
       {/* 2. Main Tactical Viewport */}
       <div className="flex-1 flex flex-row overflow-hidden relative">
         {/* Left: Dark Bathymetry Map Canvas */}
         <div className="flex-1 h-full relative flex flex-col">
+          {/* Floating Critical Alert HUD Banner */}
+          <FloatingAlertBanner
+            alert={activeBannerAlert}
+            onDismiss={() => setActiveBannerAlert(null)}
+            onAction={handleAlertAction}
+            onOpenDrawer={() => setIsAlertCenterOpen(true)}
+          />
+
           <TacticalMap
             spills={spills}
             vessels={vessels}
@@ -449,7 +504,16 @@ export function App() {
         </div>
       )}
 
-      {/* 5. Modals */}
+      {/* 5. Modals & Drawers */}
+      <AlertNotificationCenter
+        isOpen={isAlertCenterOpen}
+        onClose={() => setIsAlertCenterOpen(false)}
+        alerts={alerts}
+        onAcknowledgeAlert={handleAcknowledgeAlert}
+        onAcknowledgeAll={handleClearAllAlerts}
+        onAlertAction={handleAlertAction}
+      />
+
       <UploadSarModal
         isOpen={isUploadOpen}
         onClose={() => setIsUploadOpen(false)}

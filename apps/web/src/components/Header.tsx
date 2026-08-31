@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Satellite, Upload, FileText, RefreshCw, Eye, Menu, X, ShieldAlert, Radio, ChevronDown } from 'lucide-react';
+import { Satellite, Upload, FileText, RefreshCw, Eye, Menu, X, ShieldAlert, Radio, ChevronDown, Bell } from 'lucide-react';
 import { downloadPdfReportUrl } from '../lib/api';
 import { SuspectVessel, SpillGeoFeature, MetoceanData } from '../types';
 import { MUMBAI_INCIDENTS } from '../lib/simulationEngine';
@@ -14,6 +14,8 @@ interface HeaderProps {
   onRefresh: () => void;
   isRefreshing?: boolean;
   metocean?: MetoceanData;
+  unreadAlertCount?: number;
+  onOpenAlerts?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,7 +27,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenForensicModal,
   onRefresh,
   isRefreshing,
-  metocean
+  metocean,
+  unreadAlertCount = 0,
+  onOpenAlerts
 }) => {
   const [istTime, setIstTime] = useState<string>('');
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -120,6 +124,24 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
 
+          {/* Emergency Alert Broadcast Bell */}
+          <button
+            onClick={onOpenAlerts}
+            title="Emergency Broadcast Alerts"
+            className={`relative p-2 rounded-lg border transition-all ${
+              unreadAlertCount > 0
+                ? 'bg-red-950/60 border-red-500/50 text-red-400 hover:bg-red-900/60 shadow-lg shadow-red-950/40'
+                : 'bg-slate-900/80 hover:bg-slate-800 border-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            <Bell className={`w-4 h-4 ${unreadAlertCount > 0 ? 'animate-bounce' : ''}`} />
+            {unreadAlertCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9.5px] font-extrabold text-white animate-pulse">
+                {unreadAlertCount}
+              </span>
+            )}
+          </button>
+
           {/* Refresh */}
           <button
             onClick={onRefresh}
@@ -166,6 +188,20 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Mobile Action Controls & Hamburger */}
         <div className="flex md:hidden items-center gap-1.5 sm:gap-2">
+          {/* Mobile Alert Bell */}
+          <button
+            onClick={onOpenAlerts}
+            title="Emergency Alerts"
+            className="relative p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-red-400"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadAlertCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8.5px] font-bold text-white">
+                {unreadAlertCount}
+              </span>
+            )}
+          </button>
+
           {/* Direct Incident Switcher on Mobile Header */}
           <select
             value={selectedSpillId}

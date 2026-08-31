@@ -10,7 +10,9 @@ import {
   MetoceanData,
   LinkedSpillInfo,
   SpillGeoFeature,
-  EnvironmentalThreat
+  EnvironmentalThreat,
+  MaritimeSpatialAsset,
+  DashboardAlert
 } from '../types';
 
 export interface TelemetryPacket {
@@ -271,14 +273,26 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
       coast_distance_km: 42.0,
       growth_rate_pct_per_hour: 18.5,
       fishing_zone_risk: 'HIGH',
-      fishing_zone_name: 'North Konkan Marine Fishery Zone',
+      fishing_zone_name: 'Mumbai Pelagic Commercial Trawling Fairway (8.5 km)',
+      fishing_harbour_risk: 'HIGH',
+      fishing_harbour_name: 'Sassoon Docks Mumbai (41.5 km)',
+      aquaculture_risk: 'HIGH',
+      aquaculture_name: 'Raigad Mariculture Cages (35.0 km)',
+      coastal_community_risk: 'HIGH',
+      coastal_community_name: 'Worli Koliwada Settlement (39.5 km)',
       marine_habitat_risk: 'HIGH',
       marine_habitat_name: 'Pelagic Dolphin & Sea Turtle Corridor',
       overall_severity_score: 92,
       overall_severity_level: 'CRITICAL',
       predicted_arrival_hours: 11.5,
       coastal_threat_risk: 'HIGH',
-      projected_impact_zone: 'South Mumbai & Alibaug Shoreline'
+      projected_impact_zone: 'South Mumbai & Alibaug Shoreline',
+      active_advisories: [
+        'Deploy containment booms across Sassoon Docks & Bhaucha Dhakka entrances',
+        'Issue urgent broadcast to 420 trawlers in Mumbai Pelagic Fairway',
+        'Pre-position shoreline response teams at Worli & Mahim Koliwadas',
+        'Seal tidal intake gates for Raigad brackish mariculture clusters'
+      ]
     },
     events: [
       {
@@ -1538,9 +1552,363 @@ export function registerCustomSpillIncident(spill: {
     ],
   };
 
-  MUMBAI_INCIDENTS[id] = config;
   return config;
 }
 
+export const MARITIME_SPATIAL_ASSETS: MaritimeSpatialAsset[] = [
+  // 🟢 Fishing Zones
+  {
+    id: "FISH-01",
+    name: "Mumbai Pelagic Commercial Trawling Fairway",
+    category: "fishing_zone",
+    subcategory: "Mechanized Trawler Grid",
+    coordinates: [
+      [
+        [72.00, 18.85],
+        [72.35, 18.85],
+        [72.35, 19.25],
+        [72.00, 19.25],
+        [72.00, 18.85],
+      ]
+    ],
+    risk_level: "CRITICAL",
+    distance_to_spill_km: 8.5,
+    description: "High-density pelagic commercial trawl fairway for pomfret, seerfish, and mackerel.",
+    fleet_count: 420,
+    economic_annual_cr: 185.0,
+    advisory_status: "STANDBY_TRAWLERS",
+  },
+  {
+    id: "FISH-02",
+    name: "JNPT Inshore Artisanal Gillnet Fairway",
+    category: "fishing_zone",
+    subcategory: "Artisanal Gillnet & Bag Net Waters",
+    coordinates: [
+      [
+        [72.75, 18.80],
+        [72.92, 18.80],
+        [72.92, 18.98],
+        [72.75, 18.98],
+        [72.75, 18.80],
+      ]
+    ],
+    risk_level: "HIGH",
+    distance_to_spill_km: 24.0,
+    description: "Traditional fishing zone operating bag-nets (Dol) and surface gillnets.",
+    fleet_count: 650,
+    economic_annual_cr: 92.5,
+    advisory_status: "HIGH_ALERT",
+  },
+  {
+    id: "FISH-03",
+    name: "Alibaug-Murud Coastal Trawling Grounds",
+    category: "fishing_zone",
+    subcategory: "Demersal Fish & Crustacean Zone",
+    coordinates: [
+      [
+        [72.70, 18.30],
+        [72.95, 18.30],
+        [72.95, 18.65],
+        [72.70, 18.65],
+        [72.70, 18.30],
+      ]
+    ],
+    risk_level: "MEDIUM",
+    distance_to_spill_km: 36.0,
+    description: "Coastal bottom trawling grounds supporting prawn and Bombay duck harvests.",
+    fleet_count: 310,
+    economic_annual_cr: 64.0,
+    advisory_status: "MONITORING",
+  },
+
+  // 🔵 Fishing Harbours
+  {
+    id: "HARB-01",
+    name: "Sassoon Docks Fishery Terminal (Mumbai)",
+    category: "fishing_harbour",
+    subcategory: "Major Deep-Sea Landing Port",
+    coordinates: [72.8256, 18.9158],
+    risk_level: "HIGH",
+    distance_to_spill_km: 41.5,
+    description: "Primary maritime hub with over 1,200 motorized trawlers and international export cold chains.",
+    fleet_count: 1250,
+    economic_annual_cr: 540.0,
+    advisory_status: "EVACUATE_BOOMS",
+  },
+  {
+    id: "HARB-02",
+    name: "Bhaucha Dhakka / Ferry Wharf Fish Terminal",
+    category: "fishing_harbour",
+    subcategory: "Wholesale Fish Auction Port",
+    coordinates: [72.8522, 18.9534],
+    risk_level: "HIGH",
+    distance_to_spill_km: 44.0,
+    description: "Largest wholesale pelagic auction hub on the Mumbai Harbour waterfront.",
+    fleet_count: 850,
+    economic_annual_cr: 320.0,
+    advisory_status: "HIGH_ALERT",
+  },
+  {
+    id: "HARB-03",
+    name: "Versova Fishery Harbour & Jetty",
+    category: "fishing_harbour",
+    subcategory: "Inshore Artisanal Anchorage",
+    coordinates: [72.8125, 19.1360],
+    risk_level: "MEDIUM",
+    distance_to_spill_km: 38.2,
+    description: "Major Koli artisanal harbor with beach landing crafts and processing sheds.",
+    fleet_count: 520,
+    economic_annual_cr: 145.0,
+    advisory_status: "MONITORING",
+  },
+  {
+    id: "HARB-04",
+    name: "Karanja Creek Fishing Port & Shipyard",
+    category: "fishing_harbour",
+    subcategory: "Trawler Base & Service Port",
+    coordinates: [72.9320, 18.8650],
+    risk_level: "HIGH",
+    distance_to_spill_km: 46.5,
+    description: "Deep creek anchorage sheltered harbor for Raigad district fishing fleets.",
+    fleet_count: 380,
+    economic_annual_cr: 110.0,
+    advisory_status: "HIGH_ALERT",
+  },
+
+  // 🟣 Aquaculture
+  {
+    id: "AQUA-01",
+    name: "Palghar Coastal Brackish Shrimp Farms",
+    category: "aquaculture",
+    subcategory: "Litopenaeus Vannamei Prawn Farms",
+    coordinates: [
+      [
+        [72.68, 19.62],
+        [72.78, 19.62],
+        [72.78, 19.78],
+        [72.68, 19.78],
+        [72.68, 19.62],
+      ]
+    ],
+    risk_level: "MEDIUM",
+    distance_to_spill_km: 72.0,
+    description: "High-yield commercial brackish water shrimp aquaculture ponds with tidal intake.",
+    economic_annual_cr: 220.0,
+    advisory_status: "MONITORING",
+  },
+  {
+    id: "AQUA-02",
+    name: "Raigad Estuarine Mariculture Cages",
+    category: "aquaculture",
+    subcategory: "Sea Bass & Cobia Floating Cages",
+    coordinates: [
+      [
+        [72.86, 18.70],
+        [72.96, 18.70],
+        [72.96, 18.82],
+        [72.86, 18.82],
+        [72.86, 18.70],
+      ]
+    ],
+    risk_level: "HIGH",
+    distance_to_spill_km: 35.0,
+    description: "Coastal open-water cage mariculture cluster vulnerable to waterborne hydrocarbons.",
+    economic_annual_cr: 78.0,
+    advisory_status: "EVACUATE_BOOMS",
+  },
+  {
+    id: "AQUA-03",
+    name: "Alibaug Bivalve & Green Mussel Beds",
+    category: "aquaculture",
+    subcategory: "Intertidal Shellfish Farming",
+    coordinates: [
+      [
+        [72.82, 18.58],
+        [72.90, 18.58],
+        [72.90, 18.68],
+        [72.82, 18.68],
+        [72.82, 18.58],
+      ]
+    ],
+    risk_level: "HIGH",
+    distance_to_spill_km: 43.0,
+    description: "Community-operated raft and rope mussel aquaculture across intertidal creeks.",
+    economic_annual_cr: 34.0,
+    advisory_status: "STANDBY_TRAWLERS",
+  },
+
+  // 🟠 Coastal Communities
+  {
+    id: "COMM-01",
+    name: "Worli Koliwada Heritage Fisher Settlement",
+    category: "coastal_community",
+    subcategory: "Indigenous Koli Fishing Village",
+    coordinates: [72.8160, 19.0220],
+    risk_level: "HIGH",
+    distance_to_spill_km: 39.5,
+    description: "Historic Mumbai coastal community with 18,500 residents reliant on nearshore fisheries.",
+    population: 18500,
+    advisory_status: "HIGH_ALERT",
+  },
+  {
+    id: "COMM-02",
+    name: "Mahim Koliwada Fisher Hamlet",
+    category: "coastal_community",
+    subcategory: "Estuarine Coastal Village",
+    coordinates: [72.8390, 19.0380],
+    risk_level: "HIGH",
+    distance_to_spill_km: 41.0,
+    description: "Tidal creek fishing hamlet adjacent to Mahim Bay and Mithi River estuary.",
+    population: 12200,
+    advisory_status: "HIGH_ALERT",
+  },
+  {
+    id: "COMM-03",
+    name: "Versova Koli Community",
+    category: "coastal_community",
+    subcategory: "Littoral Fisher Settlement",
+    coordinates: [72.8110, 19.1310],
+    risk_level: "MEDIUM",
+    distance_to_spill_km: 38.5,
+    description: "Major suburban artisanal fishing village with active fish drying and curing yards.",
+    population: 24000,
+    advisory_status: "MONITORING",
+  },
+  {
+    id: "COMM-04",
+    name: "Alibaug Fishermen Hamlet & Beach",
+    category: "coastal_community",
+    subcategory: "Konkan Coastal Fisher Village",
+    coordinates: [72.8680, 18.6530],
+    risk_level: "HIGH",
+    distance_to_spill_km: 45.0,
+    description: "Littoral fishing community with shore-based gillnetting and beach seining.",
+    population: 8400,
+    advisory_status: "HIGH_ALERT",
+  },
+  {
+    id: "COMM-05",
+    name: "Murud Janjira Coastal Settlement",
+    category: "coastal_community",
+    subcategory: "Heritage Fishing Village",
+    coordinates: [72.9560, 18.3280],
+    risk_level: "LOW",
+    distance_to_spill_km: 68.0,
+    description: "Sheltered coastal cove community dependent on nearshore mackerel fisheries.",
+    population: 6800,
+    advisory_status: "MONITORING",
+  },
+];
+
+export function generateDashboardAlerts(
+  incidentId: string = "INC-MUM-2024-01",
+  timeOffsetMinutes: number = 0,
+  metocean?: MetoceanData
+): DashboardAlert[] {
+  const incident = MUMBAI_INCIDENTS[incidentId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
+  const alerts: DashboardAlert[] = [];
+
+  // 1. Critical SAR Detection Alert
+  alerts.push({
+    id: `ALT-SAR-${incident.id}`,
+    incident_id: incident.id,
+    timestamp_ist: incident.satellite_pass_ist || "16:14:00 IST",
+    severity: "CRITICAL",
+    category: "oil_spill",
+    title: `🔴 Critical SAR Oil Slick Detected (${incident.baseAreaSqKm.toFixed(2)} km²)`,
+    message: `Sentinel-1 C-Band radar identified ${incident.slickType} slick in ${incident.name} with 8.4 dB Marangoni damping contrast.`,
+    coordinates: incident.originCoords,
+    action_type: "focus_map",
+    action_value: incident.originCoords,
+    action_label: "Locate on Map",
+    acknowledged: false,
+  });
+
+  // 2. AIS Culprit Deceleration & Blackout Alert
+  if (timeOffsetMinutes >= (incident.dischargeOffsetMinutes - 15)) {
+    alerts.push({
+      id: `ALT-CULPRIT-${incident.id}`,
+      incident_id: incident.id,
+      timestamp_ist: incident.discharge_time_ist || "15:47:00 IST",
+      severity: "CRITICAL",
+      category: "vessel_violation",
+      title: `🚨 Suspect Vessel Breach: ${incident.culpritName}`,
+      message: `Abrupt deceleration to 5.2 kts (-9.6 kts drop) with 42-minute AIS transponder blackout directly over discharge origin.`,
+      coordinates: incident.originCoords,
+      action_type: "jump_scrubber",
+      action_value: incident.dischargeOffsetMinutes,
+      action_label: "Jump to Breach",
+      acknowledged: false,
+    });
+  }
+
+  // 3. Fishing Zone Impact Alert
+  alerts.push({
+    id: `ALT-FISH-${incident.id}`,
+    incident_id: incident.id,
+    timestamp_ist: "16:20:00 IST",
+    severity: "CRITICAL",
+    category: "fishing_zone",
+    title: `🟢 Commercial Fishing Fairway Intercept Risk`,
+    message: `Active slick boundary is 8.5 km from Mumbai Pelagic Trawling Fairway. Urgent broadcast recommended to 420 active vessels.`,
+    coordinates: [72.18, 19.05],
+    action_type: "view_threat",
+    action_value: "threats",
+    action_label: "View Fisheries Advisory",
+    acknowledged: false,
+  });
+
+  // 4. Fishing Harbour & Port Advisory Alert
+  alerts.push({
+    id: `ALT-HARB-${incident.id}`,
+    incident_id: incident.id,
+    timestamp_ist: "16:25:00 IST",
+    severity: "WARNING",
+    category: "fishing_harbour",
+    title: `🔵 Fishing Harbour Threat: Sassoon Docks & Bhaucha Dhakka`,
+    message: `Hydrodynamic drift vector heading 69.3° ENE towards South Mumbai harbour mouths. Landfall ETA: 11.5 hours.`,
+    coordinates: [72.8256, 18.9158],
+    action_type: "focus_map",
+    action_value: [72.8256, 18.9158],
+    action_label: "Focus Sassoon Docks",
+    acknowledged: false,
+  });
+
+  // 5. Coastal Communities Advisory Alert
+  alerts.push({
+    id: `ALT-COMM-${incident.id}`,
+    incident_id: incident.id,
+    timestamp_ist: "16:30:00 IST",
+    severity: "WARNING",
+    category: "coastal_community",
+    title: `🟠 Littoral Community Warning: Worli & Mahim Koliwada`,
+    message: `Shoreline contingency alert activated for 30,700 coastal fishing village residents along South Mumbai shoreline.`,
+    coordinates: [72.8160, 19.0220],
+    action_type: "focus_map",
+    action_value: [72.8160, 19.0220],
+    action_label: "Focus Worli Koliwada",
+    acknowledged: false,
+  });
+
+  // 6. Aquaculture Protection Alert
+  alerts.push({
+    id: `ALT-AQUA-${incident.id}`,
+    incident_id: incident.id,
+    timestamp_ist: "16:30:00 IST",
+    severity: "INFO",
+    category: "aquaculture",
+    title: `🟣 Aquaculture Precaution: Raigad Mariculture Cages`,
+    message: `Precautionary notice issued to seal tidal intake gates and deploy secondary skirt booms at floating fish cage sites.`,
+    coordinates: [72.88, 18.72],
+    action_type: "focus_map",
+    action_value: [72.88, 18.72],
+    action_label: "Focus Mariculture Sites",
+    acknowledged: false,
+  });
+
+  return alerts;
+}
+
 export const globalSimulation = new AutonomousSimulationEngine();
+
 

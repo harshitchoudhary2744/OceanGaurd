@@ -18,16 +18,20 @@ import {
   Ship,
   Sparkles,
   Fish,
-  Satellite
+  Satellite,
+  Anchor,
+  Home,
+  Droplet
 } from 'lucide-react';
-import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData, SpillGeoFeature } from '../types';
+import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData, SpillGeoFeature, MaritimeSpatialAsset } from '../types';
 import {
   calculateSynchronizedOilSpill,
   moveCoordinate,
   generateForecastCone,
   interpolateVesselPosition,
   MUMBAI_INCIDENTS,
-  MUMBAI_VESSEL_WAYPOINTS
+  MUMBAI_VESSEL_WAYPOINTS,
+  MARITIME_SPATIAL_ASSETS
 } from '../lib/simulationEngine';
 
 // Precise Great-Circle Bearing (degrees clockwise from North)
@@ -62,6 +66,104 @@ function generateConeBetweenPoints(
 
 export type MapOperationalMode = 'surveillance' | 'hindcast' | 'forecast' | 'ecology' | 'sar';
 
+// 🟢 1. Fishing Zones GeoJSON
+const FISHING_ZONES_GEOJSON = {
+  type: 'FeatureCollection' as const,
+  features: MARITIME_SPATIAL_ASSETS.filter((a) => a.category === 'fishing_zone').map((a) => ({
+    type: 'Feature' as const,
+    properties: {
+      id: a.id,
+      name: a.name,
+      category: a.category,
+      category_label: '🟢 Fishing Zone',
+      subcategory: a.subcategory,
+      risk_level: a.risk_level,
+      description: a.description,
+      fleet_count: a.fleet_count || 0,
+      economic_annual_cr: a.economic_annual_cr || 0,
+      advisory_status: a.advisory_status,
+      distance_km: a.distance_to_spill_km || 0,
+    },
+    geometry: {
+      type: 'Polygon' as const,
+      coordinates: a.coordinates as number[][][],
+    },
+  })),
+};
+
+// 🔵 2. Fishing Harbours GeoJSON
+const FISHING_HARBOURS_GEOJSON = {
+  type: 'FeatureCollection' as const,
+  features: MARITIME_SPATIAL_ASSETS.filter((a) => a.category === 'fishing_harbour').map((a) => ({
+    type: 'Feature' as const,
+    properties: {
+      id: a.id,
+      name: a.name,
+      category: a.category,
+      category_label: '🔵 Fishing Harbour',
+      subcategory: a.subcategory,
+      risk_level: a.risk_level,
+      description: a.description,
+      fleet_count: a.fleet_count || 0,
+      economic_annual_cr: a.economic_annual_cr || 0,
+      advisory_status: a.advisory_status,
+      distance_km: a.distance_to_spill_km || 0,
+    },
+    geometry: {
+      type: 'Point' as const,
+      coordinates: a.coordinates as [number, number],
+    },
+  })),
+};
+
+// 🟣 3. Aquaculture GeoJSON
+const AQUACULTURE_GEOJSON = {
+  type: 'FeatureCollection' as const,
+  features: MARITIME_SPATIAL_ASSETS.filter((a) => a.category === 'aquaculture').map((a) => ({
+    type: 'Feature' as const,
+    properties: {
+      id: a.id,
+      name: a.name,
+      category: a.category,
+      category_label: '🟣 Aquaculture',
+      subcategory: a.subcategory,
+      risk_level: a.risk_level,
+      description: a.description,
+      economic_annual_cr: a.economic_annual_cr || 0,
+      advisory_status: a.advisory_status,
+      distance_km: a.distance_to_spill_km || 0,
+    },
+    geometry: {
+      type: 'Polygon' as const,
+      coordinates: a.coordinates as number[][][],
+    },
+  })),
+};
+
+// 🟠 4. Coastal Communities GeoJSON
+const COASTAL_COMMUNITIES_GEOJSON = {
+  type: 'FeatureCollection' as const,
+  features: MARITIME_SPATIAL_ASSETS.filter((a) => a.category === 'coastal_community').map((a) => ({
+    type: 'Feature' as const,
+    properties: {
+      id: a.id,
+      name: a.name,
+      category: a.category,
+      category_label: '🟠 Coastal Community',
+      subcategory: a.subcategory,
+      risk_level: a.risk_level,
+      description: a.description,
+      population: a.population || 0,
+      advisory_status: a.advisory_status,
+      distance_km: a.distance_to_spill_km || 0,
+    },
+    geometry: {
+      type: 'Point' as const,
+      coordinates: a.coordinates as [number, number],
+    },
+  })),
+};
+
 interface TacticalMapProps {
   spills: SpillFeatureCollection;
   vessels: Vessel[];
@@ -77,89 +179,6 @@ interface TacticalMapProps {
   scenario?: string;
   onOpenMobileDrawer?: () => void;
 }
-
-// Marine Ecology Protected Habitats & Commercial Fishery GeoJSON
-const MARINE_ECOLOGY_FEATURES = {
-  type: 'FeatureCollection' as const,
-  features: [
-    {
-      type: 'Feature' as const,
-      properties: {
-        id: 'HAB-01',
-        name: 'Thane Creek Flamingo Sanctuary & Mangrove Reserve',
-        type: 'Mangrove / Wetland MPA',
-        risk_level: 'HIGH',
-      },
-      geometry: {
-        type: 'Polygon' as const,
-        coordinates: [[
-          [72.95, 19.00],
-          [73.02, 19.00],
-          [73.02, 19.14],
-          [72.95, 19.14],
-          [72.95, 19.00],
-        ]],
-      },
-    },
-    {
-      type: 'Feature' as const,
-      properties: {
-        id: 'HAB-02',
-        name: 'Prongs Reef & South Mumbai Coastal Biotope',
-        type: 'Intertidal Coral Reef',
-        risk_level: 'CRITICAL',
-      },
-      geometry: {
-        type: 'Polygon' as const,
-        coordinates: [[
-          [72.78, 18.88],
-          [72.84, 18.88],
-          [72.84, 18.94],
-          [72.78, 18.94],
-          [72.78, 18.88],
-        ]],
-      },
-    },
-    {
-      type: 'Feature' as const,
-      properties: {
-        id: 'FISH-01',
-        name: 'Mumbai High Pelagic Commercial Fishing Fairway',
-        type: 'Active Trawler Zone',
-        risk_level: 'ELEVATED',
-      },
-      geometry: {
-        type: 'Polygon' as const,
-        coordinates: [[
-          [72.00, 18.85],
-          [72.30, 18.85],
-          [72.30, 19.20],
-          [72.00, 19.20],
-          [72.00, 18.85],
-        ]],
-      },
-    },
-    {
-      type: 'Feature' as const,
-      properties: {
-        id: 'FISH-02',
-        name: 'JNPT Approach Inshore Artisanal Fishery',
-        type: 'Gillnet & Purse Seine Fleet',
-        risk_level: 'HIGH',
-      },
-      geometry: {
-        type: 'Polygon' as const,
-        coordinates: [[
-          [72.75, 18.80],
-          [72.92, 18.80],
-          [72.92, 18.96],
-          [72.75, 18.96],
-          [72.75, 18.80],
-        ]],
-      },
-    },
-  ],
-};
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
   spills,
@@ -189,11 +208,18 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [operationalMode, setOperationalMode] = useState<MapOperationalMode>('surveillance');
   const [showLayerDrawer, setShowLayerDrawer] = useState(false);
 
-  // Manual Layer Overrides
+  // 5 Color-Coded Maritime Asset Categories Layer Toggles
+  const [showFishingZones, setShowFishingZones] = useState<boolean>(true);
+  const [showFishingHarbours, setShowFishingHarbours] = useState<boolean>(true);
+  const [showAquaculture, setShowAquaculture] = useState<boolean>(true);
+  const [showCoastalCommunities, setShowCoastalCommunities] = useState<boolean>(true);
+  const [showOilSpills, setShowOilSpills] = useState<boolean>(true);
+
+  // Manual Drift & Trail Overrides
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
   const [showHindcast, setShowHindcast] = useState(true);
-  const [showEcology, setShowEcology] = useState(true);
+  const [showLegend, setShowLegend] = useState(true);
 
   // Active Incident Config
   const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
@@ -406,39 +432,159 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     map.on('load', () => {
       setMapLoaded(true);
 
-      // 1. Marine Ecology & Fishery Habitats Source & Layers
-      map.addSource('ecology-source', {
+      // 🟢 1. Fishing Zones Source & Layers
+      map.addSource('fishing-zones-source', {
         type: 'geojson',
-        data: MARINE_ECOLOGY_FEATURES,
+        data: FISHING_ZONES_GEOJSON,
       });
 
       map.addLayer({
-        id: 'ecology-fill',
+        id: 'fishing-zones-fill',
         type: 'fill',
-        source: 'ecology-source',
+        source: 'fishing-zones-source',
         paint: {
-          'fill-color': [
-            'match',
-            ['get', 'risk_level'],
-            'CRITICAL', '#10b981',
-            'HIGH', '#059669',
-            '#047857'
-          ],
-          'fill-opacity': 0.12,
+          'fill-color': '#10b981',
+          'fill-opacity': 0.14,
         },
       });
 
       map.addLayer({
-        id: 'ecology-line',
+        id: 'fishing-zones-line',
         type: 'line',
-        source: 'ecology-source',
+        source: 'fishing-zones-source',
         paint: {
           'line-color': '#10b981',
-          'line-width': 1.5,
-          'line-dasharray': [3, 2],
-          'line-opacity': 0.6,
+          'line-width': 1.8,
+          'line-dasharray': [4, 2],
+          'line-opacity': 0.8,
         },
       });
+
+      // 🔵 2. Fishing Harbours Source & Layers
+      map.addSource('fishing-harbours-source', {
+        type: 'geojson',
+        data: FISHING_HARBOURS_GEOJSON,
+      });
+
+      map.addLayer({
+        id: 'fishing-harbours-glow',
+        type: 'circle',
+        source: 'fishing-harbours-source',
+        paint: {
+          'circle-radius': 12,
+          'circle-color': '#3b82f6',
+          'circle-opacity': 0.25,
+        },
+      });
+
+      map.addLayer({
+        id: 'fishing-harbours-circle',
+        type: 'circle',
+        source: 'fishing-harbours-source',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#3b82f6',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 1.8,
+        },
+      });
+
+      // 🟣 3. Aquaculture Source & Layers
+      map.addSource('aquaculture-source', {
+        type: 'geojson',
+        data: AQUACULTURE_GEOJSON,
+      });
+
+      map.addLayer({
+        id: 'aquaculture-fill',
+        type: 'fill',
+        source: 'aquaculture-source',
+        paint: {
+          'fill-color': '#a855f7',
+          'fill-opacity': 0.16,
+        },
+      });
+
+      map.addLayer({
+        id: 'aquaculture-line',
+        type: 'line',
+        source: 'aquaculture-source',
+        paint: {
+          'line-color': '#c084fc',
+          'line-width': 1.8,
+          'line-dasharray': [3, 2],
+          'line-opacity': 0.75,
+        },
+      });
+
+      // 🟠 4. Coastal Communities Source & Layers
+      map.addSource('coastal-communities-source', {
+        type: 'geojson',
+        data: COASTAL_COMMUNITIES_GEOJSON,
+      });
+
+      map.addLayer({
+        id: 'coastal-communities-glow',
+        type: 'circle',
+        source: 'coastal-communities-source',
+        paint: {
+          'circle-radius': 10,
+          'circle-color': '#f97316',
+          'circle-opacity': 0.25,
+        },
+      });
+
+      map.addLayer({
+        id: 'coastal-communities-circle',
+        type: 'circle',
+        source: 'coastal-communities-source',
+        paint: {
+          'circle-radius': 5,
+          'circle-color': '#fb923c',
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 1.5,
+        },
+      });
+
+      // Interactive Click Popups on Spatial Assets
+      const assetPopup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: '280px' });
+
+      const attachAssetPopup = (layerId: string) => {
+        map.on('click', layerId, (e) => {
+          if (e.features && e.features[0]) {
+            const props = e.features[0].properties as any;
+            const badge = props.category_label || props.category;
+            const html = `
+              <div style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; padding: 6px 8px; color: #f1f5f9; background: #070b14; border: 1px solid #334155; border-radius: 8px; font-size: 11px;">
+                <div style="font-weight: 800; font-size: 12px; margin-bottom: 3px; color: #ffffff;">${props.name}</div>
+                <div style="margin-bottom: 4px; font-size: 10px; font-weight: 700;">${badge}</div>
+                <div style="color: #94a3b8; margin-bottom: 6px; font-size: 10px; line-height: 1.3;">${props.description || ''}</div>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid #1e293b; padding-top: 4px; font-size: 10px;">
+                  <span style="color: #64748b;">Distance to Slick:</span>
+                  <strong style="color: #38bdf8;">${props.distance_km ? props.distance_km + ' km' : 'Proximity Zone'}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 10px; margin-top: 2px;">
+                  <span style="color: #64748b;">Protection Advisory:</span>
+                  <strong style="color: #f43f5e;">${props.advisory_status || 'MONITORING'}</strong>
+                </div>
+              </div>
+            `;
+            assetPopup.setLngLat(e.lngLat).setHTML(html).addTo(map);
+          }
+        });
+
+        map.on('mouseenter', layerId, () => {
+          map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', layerId, () => {
+          map.getCanvas().style.cursor = '';
+        });
+      };
+
+      attachAssetPopup('fishing-zones-fill');
+      attachAssetPopup('fishing-harbours-circle');
+      attachAssetPopup('aquaculture-fill');
+      attachAssetPopup('coastal-communities-circle');
 
       // 2. Forecast Source & Layers (Cyan Fan)
       map.addSource('forecast-source', {
@@ -683,13 +829,24 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const dumpSrc = map.getSource('dump-origin-source') as maplibregl.GeoJSONSource;
     if (dumpSrc) dumpSrc.setData(dumpOriginFeature);
 
-    // 5. Update Ecology Layer Visibility
-    const ecologyFill = map.getLayer('ecology-fill');
-    const isEcologyMode = operationalMode === 'ecology';
-    if (ecologyFill) {
-      map.setLayoutProperty('ecology-fill', 'visibility', (showEcology && isEcologyMode) ? 'visible' : 'none');
-      map.setLayoutProperty('ecology-line', 'visibility', (showEcology && isEcologyMode) ? 'visible' : 'none');
-    }
+    // 5. Update 5-Category Layer Visibility
+    const setVisibility = (layerId: string, visible: boolean) => {
+      if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+      }
+    };
+
+    setVisibility('fishing-zones-fill', showFishingZones);
+    setVisibility('fishing-zones-line', showFishingZones);
+    setVisibility('fishing-harbours-glow', showFishingHarbours);
+    setVisibility('fishing-harbours-circle', showFishingHarbours);
+    setVisibility('aquaculture-fill', showAquaculture);
+    setVisibility('aquaculture-line', showAquaculture);
+    setVisibility('coastal-communities-glow', showCoastalCommunities);
+    setVisibility('coastal-communities-circle', showCoastalCommunities);
+    setVisibility('spills-glow', showOilSpills);
+    setVisibility('spills-fill', showOilSpills);
+    setVisibility('spills-line', showOilSpills);
 
     // 6. Update Background Trajectories for all vessels
     const allTrajSrc = map.getSource('all-trajectories') as maplibregl.GeoJSONSource;
@@ -745,7 +902,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     dumpOriginFeature,
     activeSuspect,
     showTrails,
-    showEcology,
+    showFishingZones,
+    showFishingHarbours,
+    showAquaculture,
+    showCoastalCommunities,
+    showOilSpills,
     operationalMode
   ]);
 
@@ -974,72 +1135,148 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       </div>
 
       {/* ============================================================== */}
-      {/* FLOATING COLLAPSIBLE LAYERS BUTTON & DRAWER (TOP LEFT) */}
+      {/* 5-CATEGORY TACTICAL LAYER SELECTOR & LEGEND (TOP LEFT) */}
       {/* ============================================================== */}
-      <div className="absolute top-16 left-3 sm:left-4 z-20 flex flex-col font-mono text-xs select-none">
+      <div className="absolute top-16 left-3 sm:left-4 z-20 flex flex-col font-mono text-xs select-none max-w-xs">
         <button
           onClick={() => setShowLayerDrawer(!showLayerDrawer)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111622]/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 shadow-xl backdrop-blur-md transition-all active:scale-95"
-          title="Toggle individual map layers"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b0f19]/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-800/90 shadow-xl backdrop-blur-md transition-all active:scale-95"
+          title="Toggle 5-category maritime layers and tactical feeds"
         >
           <Layers className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-[11px] font-bold">Layers</span>
+          <span className="text-[11px] font-bold">Tactical Layers & Legend</span>
           {showLayerDrawer ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
         </button>
 
         {showLayerDrawer && (
-          <div className="mt-2 bg-[#111622]/95 border border-slate-700 rounded-xl p-2.5 flex flex-col gap-1.5 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-top-2 w-52">
-            <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider px-1">
-              Active Layer Overrides
-            </span>
-            <button
-              onClick={() => setShowHindcast(!showHindcast)}
-              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all text-[11px] ${
-                showHindcast ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5" />
-                <span>-6h Hindcast Cone</span>
-              </div>
-              <span className="text-[9px]">{showHindcast ? 'ON' : 'OFF'}</span>
-            </button>
-            <button
-              onClick={() => setShowForecast(!showForecast)}
-              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all text-[11px] ${
-                showForecast ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <Navigation className="w-3.5 h-3.5" />
-                <span>+6h Drift Fan</span>
-              </div>
-              <span className="text-[9px]">{showForecast ? 'ON' : 'OFF'}</span>
-            </button>
-            <button
-              onClick={() => setShowTrails(!showTrails)}
-              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all text-[11px] ${
-                showTrails ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5" />
-                <span>AIS Kinematics</span>
-              </div>
-              <span className="text-[9px]">{showTrails ? 'ON' : 'OFF'}</span>
-            </button>
-            <button
-              onClick={() => setShowEcology(!showEcology)}
-              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all text-[11px] ${
-                showEcology ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <Fish className="w-3.5 h-3.5" />
-                <span>Ecology & Fish</span>
-              </div>
-              <span className="text-[9px]">{showEcology ? 'ON' : 'OFF'}</span>
-            </button>
+          <div className="mt-2 bg-[#070b14]/95 border border-slate-800 rounded-xl p-3 flex flex-col gap-2 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2 w-64 ring-1 ring-slate-800">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+              <span className="text-[10px] text-cyan-400 font-extrabold uppercase tracking-wider">
+                Coastal & Threat Layers
+              </span>
+              <span className="text-[9px] text-slate-500 font-mono">5 ACTIVE CLASSES</span>
+            </div>
+
+            {/* 5 Core Categories */}
+            <div className="space-y-1">
+              <button
+                onClick={() => setShowFishingZones(!showFishingZones)}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
+                  showFishingZones
+                    ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 shadow-sm shadow-emerald-500/50" />
+                  <span>🟢 Fishing zones</span>
+                </div>
+                <span className="text-[10px] font-mono">{showFishingZones ? 'ON' : 'OFF'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowFishingHarbours(!showFishingHarbours)}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
+                  showFishingHarbours
+                    ? 'bg-blue-950/40 text-blue-300 border border-blue-500/40 shadow-sm'
+                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
+                  <span>🔵 Fishing harbours</span>
+                </div>
+                <span className="text-[10px] font-mono">{showFishingHarbours ? 'ON' : 'OFF'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowAquaculture(!showAquaculture)}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
+                  showAquaculture
+                    ? 'bg-purple-950/40 text-purple-300 border border-purple-500/40 shadow-sm'
+                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-purple-500 shadow-sm shadow-purple-500/50" />
+                  <span>🟣 Aquaculture</span>
+                </div>
+                <span className="text-[10px] font-mono">{showAquaculture ? 'ON' : 'OFF'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowCoastalCommunities(!showCoastalCommunities)}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
+                  showCoastalCommunities
+                    ? 'bg-orange-950/40 text-orange-300 border border-orange-500/40 shadow-sm'
+                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm shadow-orange-500/50" />
+                  <span>🟠 Coastal communities</span>
+                </div>
+                <span className="text-[10px] font-mono">{showCoastalCommunities ? 'ON' : 'OFF'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowOilSpills(!showOilSpills)}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
+                  showOilSpills
+                    ? 'bg-red-950/40 text-red-300 border border-red-500/40 shadow-sm'
+                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-sm bg-red-500 shadow-sm shadow-red-500/50 animate-pulse" />
+                  <span>🔴 Oil spill</span>
+                </div>
+                <span className="text-[10px] font-mono">{showOilSpills ? 'ON' : 'OFF'}</span>
+              </button>
+            </div>
+
+            {/* Tactical Overlays */}
+            <div className="pt-2 border-t border-slate-800/80 space-y-1">
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider px-1">
+                Kinematic Vectors
+              </span>
+              <button
+                onClick={() => setShowHindcast(!showHindcast)}
+                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
+                  showHindcast ? 'text-amber-300 font-semibold' : 'text-slate-500'
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <History className="w-3 h-3 text-amber-400" />
+                  <span>-6h Hindcast Cone</span>
+                </div>
+                <span className="text-[9px] font-mono">{showHindcast ? 'ON' : 'OFF'}</span>
+              </button>
+              <button
+                onClick={() => setShowForecast(!showForecast)}
+                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
+                  showForecast ? 'text-cyan-300 font-semibold' : 'text-slate-500'
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Navigation className="w-3 h-3 text-cyan-400" />
+                  <span>+6h Drift Fan</span>
+                </div>
+                <span className="text-[9px] font-mono">{showForecast ? 'ON' : 'OFF'}</span>
+              </button>
+              <button
+                onClick={() => setShowTrails(!showTrails)}
+                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
+                  showTrails ? 'text-rose-300 font-semibold' : 'text-slate-500'
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <ShieldAlert className="w-3 h-3 text-rose-400" />
+                  <span>AIS Vessel Tracks</span>
+                </div>
+                <span className="text-[9px] font-mono">{showTrails ? 'ON' : 'OFF'}</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1105,6 +1342,66 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             {currentIncident.threat.overall_severity_score}/100 ({currentIncident.threat.overall_severity_level})
           </span>
         </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* 5-CATEGORY QUICK LEGEND CHIPS (BOTTOM LEFT ABOVE SCRUBBER) */}
+      {/* ============================================================== */}
+      <div className="absolute bottom-20 left-3 sm:left-4 z-20 hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#070b14]/90 border border-slate-800/80 shadow-2xl backdrop-blur-md font-mono text-[10px]">
+        <button
+          onClick={() => setShowFishingZones(!showFishingZones)}
+          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+            showFishingZones ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'text-slate-500 hover:text-slate-300'
+          }`}
+          title="Toggle 🟢 Fishing zones"
+        >
+          <span className="w-2 h-2 rounded-sm bg-emerald-500 shadow-sm" />
+          <span>🟢 Fishing zones</span>
+        </button>
+
+        <button
+          onClick={() => setShowFishingHarbours(!showFishingHarbours)}
+          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+            showFishingHarbours ? 'bg-blue-950/80 text-blue-300 border border-blue-500/40' : 'text-slate-500 hover:text-slate-300'
+          }`}
+          title="Toggle 🔵 Fishing harbours"
+        >
+          <span className="w-2 h-2 rounded-full bg-blue-500 shadow-sm" />
+          <span>🔵 Fishing harbours</span>
+        </button>
+
+        <button
+          onClick={() => setShowAquaculture(!showAquaculture)}
+          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+            showAquaculture ? 'bg-purple-950/80 text-purple-300 border border-purple-500/40' : 'text-slate-500 hover:text-slate-300'
+          }`}
+          title="Toggle 🟣 Aquaculture"
+        >
+          <span className="w-2 h-2 rounded-sm bg-purple-500 shadow-sm" />
+          <span>🟣 Aquaculture</span>
+        </button>
+
+        <button
+          onClick={() => setShowCoastalCommunities(!showCoastalCommunities)}
+          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+            showCoastalCommunities ? 'bg-orange-950/80 text-orange-300 border border-orange-500/40' : 'text-slate-500 hover:text-slate-300'
+          }`}
+          title="Toggle 🟠 Coastal communities"
+        >
+          <span className="w-2 h-2 rounded-full bg-orange-500 shadow-sm" />
+          <span>🟠 Coastal communities</span>
+        </button>
+
+        <button
+          onClick={() => setShowOilSpills(!showOilSpills)}
+          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+            showOilSpills ? 'bg-red-950/80 text-red-300 border border-red-500/40' : 'text-slate-500 hover:text-slate-300'
+          }`}
+          title="Toggle 🔴 Oil spill"
+        >
+          <span className="w-2 h-2 rounded-sm bg-red-500 shadow-sm animate-pulse" />
+          <span>🔴 Oil spill</span>
+        </button>
       </div>
     </div>
   );
