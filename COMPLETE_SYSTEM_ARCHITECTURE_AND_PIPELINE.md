@@ -69,7 +69,13 @@ graph TD
    - **Resolution**: 10 meters by 10 meters spatial resolution with a 250 km swath width.
    - **Advantage**: Works 24/7 in total darkness and penetrates thick cloud cover and monsoon rains.
 
-2. **Vessel Automatic Identification System (AIS)**:
+2. **Deep SAR Oil Spill Segmentation AI Dataset (Sentinel-1 / ALOS PALSAR)**:
+   - **Dataset Repository**: [Samarth6840 / Deep-SAR-Oil-Spill-Segmentation- (github.com/Samarth6840/Deep-SAR-Oil-Spill-Segmentation-)](https://github.com/Samarth6840/Deep-SAR-Oil-Spill-Segmentation-)
+   - **Origin & Benchmark**: Deep SAR Oil Spill Segmentation (Refined) benchmark dataset from Kaggle.
+   - **Dataset Contents**: Expert-annotated Sentinel-1 C-Band and ALOS PALSAR L-Band SAR images with paired pixel-level binary ground truth segmentation masks (5,000+ augmented training samples).
+   - **Model Role**: Trained using U-Net architecture with combined Binary Cross-Entropy (BCE) and Soft Dice Loss to produce calibrated model weights (`apps/api/ml/weights/deep_sar_unet.pth`).
+
+3. **Vessel Automatic Identification System (AIS)**:
    - **Data Providers & Networks**:
      - **Spire Global Maritime**: [Spire Maritime Data API (spire.com/maritime)](https://spire.com/maritime)
      - **MarineTraffic Global Vessel Tracking**: [MarineTraffic Portal (marinetraffic.com)](https://www.marinetraffic.com)
@@ -77,7 +83,7 @@ graph TD
    - **Parameters Ingested**: MMSI (vessel identification number), IMO number, Vessel Name, Call Sign, Vessel Class (Tanker, Cargo, Bulk carrier, etc.), Length, Beam, Draft, Instantaneous GPS Coordinates, Speed Over Ground (in knots), and Course Over Ground (in degrees).
    - **Sampling Rate**: Interpolated to 1-minute keyframe steps over a 6-hour historical window.
 
-3. **Metocean Weather Feeds & Ocean Current Models**:
+4. **Metocean Weather Feeds & Ocean Current Models**:
    - **INCOIS (Indian National Centre for Ocean Information Services)**:
      - **Official Portal**: [INCOIS Marine Observation Network (incois.gov.in)](https://incois.gov.in)
      - **Role**: Arabian Sea & Bay of Bengal surface currents, wave heights, and sea-state forecasts (Ministry of Earth Sciences, Government of India).
@@ -88,7 +94,7 @@ graph TD
      - **Official Portal**: [NOAA Ocean Surface Current Analyses Real-time (ncei.noaa.gov)](https://www.ncei.noaa.gov)
      - **Role**: Global ocean circulation currents, sea surface temperature, and wave energy data.
 
-4. **Tactical Basemap & Maritime GIS Cartography**:
+5. **Tactical Basemap & Maritime GIS Cartography**:
    - **ESRI ArcGIS World Dark Gray Canvas**:
      - **Official Resource**: [ESRI Living Atlas Dark Gray Base (arcgis.com)](https://www.arcgis.com/home/item.html?id=10df2279f9684e4a9f6a7f08febac2a9)
      - **Role**: High-contrast, watermark-free dark oceanic cartography and world reference labels.
@@ -96,7 +102,7 @@ graph TD
      - **Official Project**: [MapLibre Open-Source Mapping (maplibre.org)](https://maplibre.org)
      - **Role**: Client-side WebGL GPU vector rendering engine.
 
-5. **Marine Protected Areas (MPA) & Ecological Reserves**:
+6. **Marine Protected Areas (MPA) & Ecological Reserves**:
    - **UNEP-WCMC & IUCN Protected Planet**:
      - **Official Portal**: [Protected Planet Marine Reserves Database (protectedplanet.net)](https://www.protectedplanet.net)
      - **Role**: Global geospatial boundaries of sensitive marine sanctuaries and biotope zones.
