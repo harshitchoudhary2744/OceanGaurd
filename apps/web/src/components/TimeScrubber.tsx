@@ -105,10 +105,10 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   };
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 w-[96%] sm:w-[92%] max-w-4xl tactical-glass rounded-2xl flex flex-col p-2 sm:p-3.5 gap-2 z-30 shadow-2xl border border-slate-700/70 select-none backdrop-blur-md">
+    <div className="w-full max-w-[720px] mx-auto pointer-events-auto tactical-glass rounded-2xl flex flex-col p-2 sm:p-3 gap-1.5 shadow-2xl border border-slate-700/70 select-none backdrop-blur-md">
       
       {/* Top Status & Anomaly Event HUD Banner */}
-      <div className="flex items-center justify-between px-1.5 sm:px-2 gap-2 text-xs font-mono border-b border-slate-800/80 pb-2">
+      <div className="flex items-center justify-between px-1.5 sm:px-2 gap-2 text-xs font-mono border-b border-slate-800/80 pb-1.5">
         <div className="flex items-center gap-2 min-w-0">
           <span className="flex items-center gap-1.5 text-cyan-400 font-bold shrink-0 text-[11px] sm:text-xs">
             <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />

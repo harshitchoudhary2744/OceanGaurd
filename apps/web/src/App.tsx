@@ -324,7 +324,7 @@ export function App() {
           />
 
           {/* Time-Scrubber Timeline (-360m to 0) */}
-          <div className="absolute bottom-20 sm:bottom-4 left-4 right-4 z-20 pointer-events-auto">
+          <div className="absolute bottom-20 sm:bottom-4 left-3 right-3 z-20 pointer-events-none flex justify-center">
             <TimeScrubber
               timeOffsetMinutes={timeOffsetMinutes}
               onChangeTimeOffset={setTimeOffsetMinutes}
