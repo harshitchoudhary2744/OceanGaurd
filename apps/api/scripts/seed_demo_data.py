@@ -177,7 +177,7 @@ def generate_mumbai_demo_data():
             "nav_status": p["status"]
         })
 
-    # CHEMBULK GIBRALTAR (Primary Culprit for INC-MUM-2024-04 - Course 155° SSE)
+    # 4. CHEMBULK GIBRALTAR (Primary Culprit for INC-MUM-2024-04 - Course 155° SSE)
     chem_pts = [
         {"lon": 71.915, "lat": 19.395, "t_offset_m": 360, "speed": 13.4, "heading": 155.0, "status": "Under way using engine"},
         {"lon": 71.950, "lat": 19.320, "t_offset_m": 180, "speed": 13.4, "heading": 155.0, "status": "Under way using engine"},
@@ -188,6 +188,42 @@ def generate_mumbai_demo_data():
         pt_time = base_time - timedelta(minutes=p["t_offset_m"])
         telemetry.append({
             "mmsi": 563032000,
+            "timestamp": pt_time.isoformat(),
+            "latitude": p["lat"],
+            "longitude": p["lon"],
+            "speed_knots": p["speed"],
+            "heading_degrees": p["heading"],
+            "nav_status": p["status"]
+        })
+
+    # 5. MT JAG LOK (Crude Oil Tanker - Course 245° WSW)
+    jaglok_pts = [
+        {"lon": 72.450, "lat": 19.100, "t_offset_m": 360, "speed": 12.4, "heading": 245.0, "status": "Under way using engine"},
+        {"lon": 72.360, "lat": 19.060, "t_offset_m": 180, "speed": 12.4, "heading": 245.0, "status": "Under way using engine"},
+        {"lon": 72.270, "lat": 19.020, "t_offset_m": 0,   "speed": 12.4, "heading": 245.0, "status": "Under way using engine"}
+    ]
+    for p in jaglok_pts:
+        pt_time = base_time - timedelta(minutes=p["t_offset_m"])
+        telemetry.append({
+            "mmsi": 419000456,
+            "timestamp": pt_time.isoformat(),
+            "latitude": p["lat"],
+            "longitude": p["lon"],
+            "speed_knots": p["speed"],
+            "heading_degrees": p["heading"],
+            "nav_status": p["status"]
+        })
+
+    # 6. ICGS SAMUDRA PRAHARI (Pollution Control Vessel - Course 310° NW)
+    samudra_pts = [
+        {"lon": 72.420, "lat": 18.900, "t_offset_m": 360, "speed": 18.5, "heading": 310.0, "status": "Under way using engine"},
+        {"lon": 72.300, "lat": 18.980, "t_offset_m": 180, "speed": 18.5, "heading": 310.0, "status": "Under way using engine"},
+        {"lon": 72.180, "lat": 19.060, "t_offset_m": 0,   "speed": 18.5, "heading": 310.0, "status": "Under way using engine"}
+    ]
+    for p in samudra_pts:
+        pt_time = base_time - timedelta(minutes=p["t_offset_m"])
+        telemetry.append({
+            "mmsi": 419000999,
             "timestamp": pt_time.isoformat(),
             "latitude": p["lat"],
             "longitude": p["lon"],
@@ -298,28 +334,36 @@ def generate_mumbai_demo_data():
             "mmsi": 419000123,
             "vessel_name": "MT DESH SHANTI",
             "probability_score": 98.4,
-            "distance_meters": 0.0
+            "distance_meters": 0.0,
+            "trajectory_delta_time_min": -42.3,
+            "drift_alignment_pct": 97.5
         },
         {
             "spill_id": "INC-MUM-2024-02",
             "mmsi": 255806000,
             "vessel_name": "MSC KANOKO",
             "probability_score": 94.8,
-            "distance_meters": 0.0
+            "distance_meters": 0.0,
+            "trajectory_delta_time_min": -30.0,
+            "drift_alignment_pct": 94.2
         },
         {
             "spill_id": "INC-MUM-2024-03",
             "mmsi": 419000789,
             "vessel_name": "MT SWARNA SINDHU",
             "probability_score": 91.2,
-            "distance_meters": 0.0
+            "distance_meters": 0.0,
+            "trajectory_delta_time_min": -25.0,
+            "drift_alignment_pct": 91.8
         },
         {
             "spill_id": "INC-MUM-2024-04",
             "mmsi": 563032000,
             "vessel_name": "CHEMBULK GIBRALTAR",
             "probability_score": 89.6,
-            "distance_meters": 0.0
+            "distance_meters": 0.0,
+            "trajectory_delta_time_min": -20.0,
+            "drift_alignment_pct": 89.5
         }
     ]
 

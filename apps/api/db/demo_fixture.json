@@ -15,7 +15,7 @@
         "longitude": 72.1,
         "speed_knots": 14.8,
         "heading_degrees": 325.0,
-        "timestamp": "2026-08-30T18:17:26.333129+00:00"
+        "timestamp": "2026-08-31T17:59:24.743617+00:00"
       }
     },
     {
@@ -33,7 +33,7 @@
         "longitude": 72.896,
         "speed_knots": 15.6,
         "heading_degrees": 18.0,
-        "timestamp": "2026-08-30T18:17:26.333129+00:00"
+        "timestamp": "2026-08-31T17:59:24.743617+00:00"
       }
     },
     {
@@ -51,7 +51,7 @@
         "longitude": 72.871,
         "speed_knots": 11.2,
         "heading_degrees": 72.0,
-        "timestamp": "2026-08-30T18:17:26.333129+00:00"
+        "timestamp": "2026-08-31T17:59:24.743617+00:00"
       }
     },
     {
@@ -69,7 +69,7 @@
         "longitude": 72.02,
         "speed_knots": 12.8,
         "heading_degrees": 155.0,
-        "timestamp": "2026-08-30T18:17:26.333129+00:00"
+        "timestamp": "2026-08-31T17:59:24.743617+00:00"
       }
     },
     {
@@ -87,7 +87,7 @@
         "longitude": 72.27,
         "speed_knots": 12.4,
         "heading_degrees": 245.0,
-        "timestamp": "2026-08-30T18:17:26.333129+00:00"
+        "timestamp": "2026-08-31T17:59:24.743617+00:00"
       }
     },
     {
@@ -105,14 +105,14 @@
         "longitude": 72.18,
         "speed_knots": 18.5,
         "heading_degrees": 310.0,
-        "timestamp": "2026-08-30T18:17:26.333129+00:00"
+        "timestamp": "2026-08-31T17:59:24.743617+00:00"
       }
     }
   ],
   "telemetry": [
     {
       "mmsi": 419000123,
-      "timestamp": "2026-08-30T12:17:26.333129+00:00",
+      "timestamp": "2026-08-31T11:59:24.743617+00:00",
       "latitude": 18.88,
       "longitude": 72.26,
       "speed_knots": 14.8,
@@ -121,7 +121,7 @@
     },
     {
       "mmsi": 419000123,
-      "timestamp": "2026-08-30T15:17:26.333129+00:00",
+      "timestamp": "2026-08-31T14:59:24.743617+00:00",
       "latitude": 18.964,
       "longitude": 72.202,
       "speed_knots": 14.8,
@@ -130,7 +130,7 @@
     },
     {
       "mmsi": 419000123,
-      "timestamp": "2026-08-30T17:35:26.333129+00:00",
+      "timestamp": "2026-08-31T17:17:24.743617+00:00",
       "latitude": 19.048,
       "longitude": 72.145,
       "speed_knots": 5.2,
@@ -139,7 +139,7 @@
     },
     {
       "mmsi": 419000123,
-      "timestamp": "2026-08-30T18:17:26.333129+00:00",
+      "timestamp": "2026-08-31T17:59:24.743617+00:00",
       "latitude": 19.112,
       "longitude": 72.1,
       "speed_knots": 14.8,
@@ -148,7 +148,7 @@
     },
     {
       "mmsi": 255806000,
-      "timestamp": "2026-08-30T12:17:26.333129+00:00",
+      "timestamp": "2026-08-31T11:59:24.743617+00:00",
       "latitude": 18.735,
       "longitude": 72.818,
       "speed_knots": 16.5,
@@ -157,7 +157,7 @@
     },
     {
       "mmsi": 255806000,
-      "timestamp": "2026-08-30T15:17:26.333129+00:00",
+      "timestamp": "2026-08-31T14:59:24.743617+00:00",
       "latitude": 18.815,
       "longitude": 72.844,
       "speed_knots": 16.5,
@@ -166,7 +166,7 @@
     },
     {
       "mmsi": 255806000,
-      "timestamp": "2026-08-30T17:47:26.333129+00:00",
+      "timestamp": "2026-08-31T17:29:24.743617+00:00",
       "latitude": 18.895,
       "longitude": 72.87,
       "speed_knots": 6.8,
@@ -175,7 +175,7 @@
     },
     {
       "mmsi": 255806000,
-      "timestamp": "2026-08-30T18:17:26.333129+00:00",
+      "timestamp": "2026-08-31T17:59:24.743617+00:00",
       "latitude": 18.975,
       "longitude": 72.896,
       "speed_knots": 15.6,
@@ -184,7 +184,7 @@
     },
     {
       "mmsi": 419000789,
-      "timestamp": "2026-08-30T12:17:26.333129+00:00",
+      "timestamp": "2026-08-31T11:59:24.743617+00:00",
       "latitude": 18.855,
       "longitude": 72.643,
       "speed_knots": 12.0,
@@ -193,7 +193,7 @@
     },
     {
       "mmsi": 419000789,
-      "timestamp": "2026-08-30T15:17:26.333129+00:00",
+      "timestamp": "2026-08-31T14:59:24.743617+00:00",
       "latitude": 18.88,
       "longitude": 72.719,
       "speed_knots": 12.0,
@@ -202,7 +202,7 @@
     },
     {
       "mmsi": 419000789,
-      "timestamp": "2026-08-30T17:52:26.333129+00:00",
+      "timestamp": "2026-08-31T17:34:24.743617+00:00",
       "latitude": 18.905,
       "longitude": 72.795,
       "speed_knots": 4.5,
@@ -211,7 +211,7 @@
     },
     {
       "mmsi": 419000789,
-      "timestamp": "2026-08-30T18:17:26.333129+00:00",
+      "timestamp": "2026-08-31T17:59:24.743617+00:00",
       "latitude": 18.93,
       "longitude": 72.871,
       "speed_knots": 11.2,
@@ -220,7 +220,7 @@
     },
     {
       "mmsi": 563032000,
-      "timestamp": "2026-08-30T12:17:26.333129+00:00",
+      "timestamp": "2026-08-31T11:59:24.743617+00:00",
       "latitude": 19.395,
       "longitude": 71.915,
       "speed_knots": 13.4,
@@ -229,7 +229,7 @@
     },
     {
       "mmsi": 563032000,
-      "timestamp": "2026-08-30T15:17:26.333129+00:00",
+      "timestamp": "2026-08-31T14:59:24.743617+00:00",
       "latitude": 19.32,
       "longitude": 71.95,
       "speed_knots": 13.4,
@@ -238,7 +238,7 @@
     },
     {
       "mmsi": 563032000,
-      "timestamp": "2026-08-30T17:57:26.333129+00:00",
+      "timestamp": "2026-08-31T17:39:24.743617+00:00",
       "latitude": 19.245,
       "longitude": 71.985,
       "speed_knots": 5.8,
@@ -247,11 +247,65 @@
     },
     {
       "mmsi": 563032000,
-      "timestamp": "2026-08-30T18:17:26.333129+00:00",
+      "timestamp": "2026-08-31T17:59:24.743617+00:00",
       "latitude": 19.17,
       "longitude": 72.02,
       "speed_knots": 12.8,
       "heading_degrees": 155.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000456,
+      "timestamp": "2026-08-31T11:59:24.743617+00:00",
+      "latitude": 19.1,
+      "longitude": 72.45,
+      "speed_knots": 12.4,
+      "heading_degrees": 245.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000456,
+      "timestamp": "2026-08-31T14:59:24.743617+00:00",
+      "latitude": 19.06,
+      "longitude": 72.36,
+      "speed_knots": 12.4,
+      "heading_degrees": 245.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000456,
+      "timestamp": "2026-08-31T17:59:24.743617+00:00",
+      "latitude": 19.02,
+      "longitude": 72.27,
+      "speed_knots": 12.4,
+      "heading_degrees": 245.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000999,
+      "timestamp": "2026-08-31T11:59:24.743617+00:00",
+      "latitude": 18.9,
+      "longitude": 72.42,
+      "speed_knots": 18.5,
+      "heading_degrees": 310.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000999,
+      "timestamp": "2026-08-31T14:59:24.743617+00:00",
+      "latitude": 18.98,
+      "longitude": 72.3,
+      "speed_knots": 18.5,
+      "heading_degrees": 310.0,
+      "nav_status": "Under way using engine"
+    },
+    {
+      "mmsi": 419000999,
+      "timestamp": "2026-08-31T17:59:24.743617+00:00",
+      "latitude": 19.06,
+      "longitude": 72.18,
+      "speed_knots": 18.5,
+      "heading_degrees": 310.0,
       "nav_status": "Under way using engine"
     }
   ],
@@ -259,7 +313,7 @@
     {
       "id": "INC-MUM-2024-01",
       "name": "Mumbai High Sector Alpha - Heavy Crude Discharge",
-      "detection_timestamp": "2026-08-30T18:17:26.333129+00:00",
+      "detection_timestamp": "2026-08-31T17:59:24.743617+00:00",
       "area_sq_km": 5.4,
       "perimeter_km": 14.8,
       "confidence_score": 0.988,
@@ -309,7 +363,7 @@
     {
       "id": "INC-MUM-2024-02",
       "name": "JNPT Channel Approach - Bilge Sludge Flush",
-      "detection_timestamp": "2026-08-30T18:17:26.333129+00:00",
+      "detection_timestamp": "2026-08-31T17:59:24.743617+00:00",
       "area_sq_km": 2.85,
       "perimeter_km": 8.6,
       "confidence_score": 0.965,
@@ -359,7 +413,7 @@
     {
       "id": "INC-MUM-2024-03",
       "name": "Prongs Reef Anchorage - Bunker Fuel Leak",
-      "detection_timestamp": "2026-08-30T18:17:26.333129+00:00",
+      "detection_timestamp": "2026-08-31T17:59:24.743617+00:00",
       "area_sq_km": 1.95,
       "perimeter_km": 6.2,
       "confidence_score": 0.942,
@@ -409,7 +463,7 @@
     {
       "id": "INC-MUM-2024-04",
       "name": "Neelam South Offshore - Condensate Sheen",
-      "detection_timestamp": "2026-08-30T18:17:26.333129+00:00",
+      "detection_timestamp": "2026-08-31T17:59:24.743617+00:00",
       "area_sq_km": 3.6,
       "perimeter_km": 10.4,
       "confidence_score": 0.958,
@@ -463,28 +517,36 @@
       "mmsi": 419000123,
       "vessel_name": "MT DESH SHANTI",
       "probability_score": 98.4,
-      "distance_meters": 0.0
+      "distance_meters": 0.0,
+      "trajectory_delta_time_min": -42.3,
+      "drift_alignment_pct": 97.5
     },
     {
       "spill_id": "INC-MUM-2024-02",
       "mmsi": 255806000,
       "vessel_name": "MSC KANOKO",
       "probability_score": 94.8,
-      "distance_meters": 0.0
+      "distance_meters": 0.0,
+      "trajectory_delta_time_min": -30.0,
+      "drift_alignment_pct": 94.2
     },
     {
       "spill_id": "INC-MUM-2024-03",
       "mmsi": 419000789,
       "vessel_name": "MT SWARNA SINDHU",
       "probability_score": 91.2,
-      "distance_meters": 0.0
+      "distance_meters": 0.0,
+      "trajectory_delta_time_min": -25.0,
+      "drift_alignment_pct": 91.8
     },
     {
       "spill_id": "INC-MUM-2024-04",
       "mmsi": 563032000,
       "vessel_name": "CHEMBULK GIBRALTAR",
       "probability_score": 89.6,
-      "distance_meters": 0.0
+      "distance_meters": 0.0,
+      "trajectory_delta_time_min": -20.0,
+      "drift_alignment_pct": 89.5
     }
   ]
 }
