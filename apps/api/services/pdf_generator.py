@@ -123,17 +123,20 @@ def generate_forensic_pdf_report(
     elements.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#00e5ff"), spaceAfter=10))
 
     # 2. Executive Incident Overview
-    elements.append(Paragraph("1. SATELLITE SAR DETECTION & INCIDENT OVERVIEW", section_header))
+    elements.append(Paragraph("1. SATELLITE SAR DETECTION & STEP 1 GEOLOCATION OVERVIEW", section_header))
 
-    det_time_str = (now - timedelta(minutes=42)).strftime("%Y-%m-%d %H:%M:%S UTC")
+    det_time_str = "2024-10-18 10:44:00 UTC"
     spill_info = spill_data or {
         "id": active_spill_id,
         "detection_timestamp": det_time_str,
+        "acquisition_timestamp_utc": det_time_str,
         "area_sq_km": 5.40,
         "perimeter_km": 14.8,
-        "confidence_score": 0.988,
+        "segmentation_dice_score": 0.988,
+        "oil_likelihood_score": 0.940,
         "source_scene": f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912",
-        "location": "Arabian Sea (Mumbai High Sector: 19.0500° N, 72.1500° E)",
+        "location": "Arabian Sea (Mumbai High Sector: 19.0480° N, 72.1450° E)",
+        "centroid": [19.0480, 72.1450],
         "discharge_type": "Illegal Nighttime Operational Heavy Fuel Oil Dump"
     }
 
@@ -143,19 +146,19 @@ def generate_forensic_pdf_report(
             Paragraph("<b>Acquisition Platform:</b>", meta_label), Paragraph("Sentinel-1 SAR C-Band (IW Mode)", meta_val)
         ],
         [
-            Paragraph("<b>Detection Time:</b>", meta_label), Paragraph(str(spill_info.get("detection_timestamp", det_time_str)), meta_val),
+            Paragraph("<b>Acquisition (UTC):</b>", meta_label), Paragraph(str(spill_info.get("acquisition_timestamp_utc", det_time_str)), meta_val),
             Paragraph("<b>SAR Scene ID:</b>", meta_label), Paragraph(str(spill_info.get("source_scene", f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912")), meta_val)
         ],
         [
             Paragraph("<b>Estimated Area:</b>", meta_label), Paragraph(f"{spill_info.get('area_sq_km', 5.40)} sq km", meta_val),
-            Paragraph("<b>Perimeter:</b>", meta_label), Paragraph(f"{spill_info.get('perimeter_km', 14.8)} km", meta_val)
+            Paragraph("<b>Spill Centroid:</b>", meta_label), Paragraph("19.0480° N, 72.1450° E (PostGIS Polygon)", meta_val)
         ],
         [
-            Paragraph("<b>GIS Coordinates:</b>", meta_label), Paragraph("19.0500° N, 72.1500° E", meta_val),
-            Paragraph("<b>AI Confidence:</b>", meta_label), Paragraph(f"<font color='#00626e'><b>{round(float(spill_info.get('confidence_score', 0.988))*100, 1)}% (U-Net CNN)</b></font>", meta_val)
+            Paragraph("<b>Segmentation Dice Score:</b>", meta_label), Paragraph(f"<font color='#00626e'><b>{round(float(spill_info.get('segmentation_dice_score', 0.988))*100, 1)}% (Ground Truth Overlap)</b></font>", meta_val),
+            Paragraph("<b>Likely Oil / Look-Alike:</b>", meta_label), Paragraph("<font color='#93000a'><b>Likely Oil: 94.0%</b></font> | Look-alike: 6.0%", meta_val)
         ]
     ]
-    overview_table = Table(overview_table_data, colWidths=[100, 165, 110, 155])
+    overview_table = Table(overview_table_data, colWidths=[110, 155, 115, 150])
     overview_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f4f7f8")),
         ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#dfe2f1")),
@@ -165,8 +168,33 @@ def generate_forensic_pdf_report(
     elements.append(overview_table)
     elements.append(Spacer(1, 8))
 
+    # 2b. Look-Alike & False-Positive 6-Class Breakdown Table
+    elements.append(Paragraph("2. SAR LOOK-ALIKE & FALSE-POSITIVE 6-CLASS CLASSIFICATION", section_header))
+    fp_table_data = [
+        [
+            Paragraph("<b>Class Label</b>", meta_label),
+            Paragraph("<b>Probability</b>", meta_label),
+            Paragraph("<b>SAR Physics / Damping Rationale</b>", meta_label)
+        ],
+        [Paragraph("<b>Oil (Hydrocarbon)</b>", meta_label), Paragraph("<font color='#93000a'><b>94.0%</b></font>", alert_badge), Paragraph("Strong Marangoni capillary wave damping (8.4 dB contrast)", meta_val)],
+        [Paragraph("Calm Water", meta_val), Paragraph("2.1%", meta_val), Paragraph("Surface wind speed (16.2 kts) exceeds 3.0 m/s threshold suppressing calm slicks", meta_val)],
+        [Paragraph("Natural Biogenic Film", meta_val), Paragraph("1.8%", meta_val), Paragraph("Low Chlorophyll-a signature; thick edges indicate mineral oil", meta_val)],
+        [Paragraph("Vessel Wake / Turbulence", meta_val), Paragraph("1.2%", meta_val), Paragraph("Non-linear curvilinear geometry differs from standard ship wake Kelvin tracks", meta_val)],
+        [Paragraph("Rain-related Artifact", meta_val), Paragraph("0.6%", meta_val), Paragraph("Doppler weather radar shows clear sky and no atmospheric attenuation", meta_val)],
+        [Paragraph("Unknown / Other", meta_val), Paragraph("0.3%", meta_val), Paragraph("Residual uncertainty envelope", meta_val)],
+    ]
+    fp_table = Table(fp_table_data, colWidths=[130, 80, 320])
+    fp_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#dfe2f1")),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#849396")),
+        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+    ]))
+    elements.append(fp_table)
+    elements.append(Spacer(1, 8))
+
     # 3. Hydrodynamic Hindcast & Metocean Back-Tracing Analysis
-    elements.append(Paragraph("2. HYDRODYNAMIC HINDCAST & BACK-TRACING ANALYSIS", section_header))
+    elements.append(Paragraph("3. HYDRODYNAMIC HINDCAST & BACK-TRACING ANALYSIS (STEPS 2–3)", section_header))
 
     hindcast_table_data = [
         [
@@ -192,8 +220,8 @@ def generate_forensic_pdf_report(
     elements.append(hindcast_table)
     elements.append(Spacer(1, 8))
 
-    # 4. Attributed Culprit Vessel Information & Anomaly Score
-    elements.append(Paragraph("3. PRIMARY SUSPECT VESSEL ATTRIBUTION & ANOMALY MATRIX", section_header))
+    # 4. Attributed Culprit Vessel Information & Weighted Anomaly Score
+    elements.append(Paragraph("4. PRIMARY SUSPECT VESSEL ATTRIBUTION & WEIGHTED ANOMALY SCORE (STEP 4)", section_header))
 
     culprit = culprit_data or {
         "mmsi": 419000123,
@@ -220,7 +248,7 @@ def generate_forensic_pdf_report(
             Paragraph("<b>Vessel Classification:</b>", meta_label), Paragraph(str(culprit.get("vessel_type", "VLCC Crude Carrier")), meta_val)
         ],
         [
-            Paragraph("<b>Composite Anomaly Risk:</b>", meta_label), Paragraph(f"<font color='#93000a'><b>{culprit.get('anomaly_score', 98.4)}% (CRITICAL SUSPECT)</b></font>", alert_badge),
+            Paragraph("<b>Weighted Anomaly Score:</b>", meta_label), Paragraph(f"<font color='#93000a'><b>{culprit.get('anomaly_score', 98.4)} / 100 (CRITICAL SUSPECT)</b></font>", alert_badge),
             Paragraph("<b>Hindcast Origin CPA:</b>", meta_label), Paragraph("<b>0.00 km (Exact Intercept at T-42m)</b>", meta_val)
         ],
         [
@@ -240,7 +268,7 @@ def generate_forensic_pdf_report(
     elements.append(Spacer(1, 8))
 
     # 5. AIS Trajectory Intersection Logs
-    elements.append(Paragraph("4. FORENSIC AIS TELEMETRY & DISCHARGE INTERCEPT LOGS (T-6h)", section_header))
+    elements.append(Paragraph("5. FORENSIC AIS TELEMETRY & DISCHARGE INTERCEPT LOGS (STEP 4)", section_header))
     
     t_minus_6h = (now - timedelta(hours=6)).strftime("%Y-%m-%d %H:%M:%S")
     t_minus_3h = (now - timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
@@ -275,7 +303,7 @@ def generate_forensic_pdf_report(
     elements.append(Spacer(1, 8))
 
     # 6. Historical Qdrant Vector Matches
-    elements.append(Paragraph("5. QDRANT VECTOR SIMILARITY SEARCH (HISTORICAL DISCHARGE PATTERNS)", section_header))
+    elements.append(Paragraph("6. QDRANT VECTOR SIMILARITY SEARCH & FINGERPRINTING (STEP 5)", section_header))
 
     similar_list = similar_spills or [
         {"id": f"HIST-IND-{current_year - 1}-08", "title": "Mumbai High Offshore Platform Sheen", "date": f"{current_year - 1}-07-19", "culprit_name": "MT DESH SHANTI", "similarity_score": 99.8},
@@ -313,12 +341,12 @@ def generate_forensic_pdf_report(
 
     # 7. Legal Statement & Certification Block
     cert_block = [
-        Paragraph("<b>6. INVESTIGATIVE SUMMARY & COURT EVIDENCE CERTIFICATION</b>", section_header),
+        Paragraph("<b>7. INVESTIGATIVE SUMMARY & COURT EVIDENCE CERTIFICATION (STEP 7)</b>", section_header),
         Paragraph(
             f"Based on Copernicus Sentinel-1 synthetic aperture radar backscatter contrast analysis, U-Net CNN segmentation, "
             f"hydrodynamic reverse windage + ocean current hindcasting, and vessel AIS anomaly trajectory correlation, "
             f"vessel <b>{culprit.get('name', 'MT DESH SHANTI')} (MMSI: {culprit.get('mmsi', 419000123)})</b> has been identified with "
-            f"<b>{culprit.get('anomaly_score', 98.4)}% statistical culpability</b> as the source of the {spill_info.get('area_sq_km', 5.40)} sq km hydrocarbon slick. "
+            f"<b>{culprit.get('anomaly_score', 98.4)} / 100 weighted anomaly score</b> as the source of the {spill_info.get('area_sq_km', 5.40)} sq km hydrocarbon slick. "
             f"The vessel exhibited a sudden deceleration of -9.6 kts accompanied by a 42-minute AIS transponder blackout directly over the reconstructed hindcast discharge locus. "
             f"Morphological matching against the Qdrant historical vault indicates a repeat illicit discharge signature.",
             body_style

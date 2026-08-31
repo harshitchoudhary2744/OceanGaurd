@@ -568,6 +568,7 @@ class VesselCorrelationEngine:
                 "distance_km": round(min_dist / 1000.0, 2),
                 "probability_score": anomaly["composite_score"],
                 "anomaly_score": anomaly["composite_score"],
+                "weighted_anomaly_score": anomaly["composite_score"],
                 "anomaly_breakdown": anomaly,
                 "evidence_tags": anomaly["evidence_tags"],
                 "speed_knots": latest_point.get("speed_knots", 14.2),

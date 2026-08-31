@@ -17,13 +17,19 @@ import {
   Anchor,
   Fish,
   TreePine,
-  ChevronRight
+  ChevronRight,
+  CheckCircle2,
+  HelpCircle,
+  Clock,
+  Sparkles,
+  Layers,
+  MapPin
 } from 'lucide-react';
 import { SuspectVessel, VectorMatch, SpillProperties, SpillGeoFeature, MetoceanData } from '../types';
 import { downloadPdfReportUrl } from '../lib/api';
 import { MUMBAI_INCIDENTS, calculateEnvironmentalThreat } from '../lib/simulationEngine';
 
-export type InspectorTabType = 'overview' | 'threat' | 'suspects' | 'hindcast' | 'metocean' | 'intel';
+export type InspectorTabType = 'overview' | 'false_positive' | 'threat' | 'suspects' | 'hindcast' | 'metocean' | 'intel';
 
 interface InspectorPanelProps {
   spill?: SpillProperties;
@@ -76,6 +82,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     suspects[0];
 
   const interceptCoords = `${currentIncident.originCoords[1].toFixed(3)}° N, ${currentIncident.originCoords[0].toFixed(3)}° E`;
+  const centroidCoords = `${currentIncident.centroid[0].toFixed(3)}° N, ${currentIncident.centroid[1].toFixed(3)}° E`;
+  const falsePositive = currentIncident.false_positive_analysis;
 
   const handleDownloadPdf = async () => {
     try {
@@ -107,7 +115,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           <Radar className="w-4 h-4 text-cyan-400 animate-pulse shrink-0" />
           <div>
             <h2 className="font-mono text-xs font-bold text-white uppercase tracking-wider">
-              Incident Inspector
+              Incident Inspector • Step 1–7 Pipeline
             </h2>
             <span className="text-[9.5px] font-mono text-slate-400 block sm:hidden">
               {currentIncident.name}
@@ -131,7 +139,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
       </div>
 
       <div className="p-3 sm:p-4 flex flex-col gap-3 pb-24 lg:pb-6">
-        {/* 2. Top Key Metrics Row */}
+        {/* 2. Top Key Metrics Row (Updated with Scientific Metrics) */}
         <div className="grid grid-cols-3 gap-2">
           <div className="p-2 sm:p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/90 text-center shadow-md">
             <span className="text-[8.5px] sm:text-[9.5px] font-mono text-slate-400 block mb-0.5">SLICK AREA</span>
@@ -140,9 +148,9 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </span>
           </div>
           <div className="p-2 sm:p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/90 text-center shadow-md">
-            <span className="text-[8.5px] sm:text-[9.5px] font-mono text-slate-400 block mb-0.5">EST. VOLUME</span>
-            <span className="font-mono font-bold text-white text-xs sm:text-sm">
-              ~{Math.round(currentIncident.volumeLiters / 1000)} <span className="text-[9px] text-slate-400 font-normal">kL</span>
+            <span className="text-[8.5px] sm:text-[9.5px] font-mono text-slate-400 block mb-0.5">DICE SCORE</span>
+            <span className="font-mono font-bold text-emerald-400 text-xs sm:text-sm">
+              {(currentIncident.segmentation_dice_score * 100).toFixed(1)}%
             </span>
           </div>
           <div className="p-2 sm:p-2.5 bg-slate-900/90 rounded-xl border border-slate-800/90 text-center shadow-md">
@@ -154,7 +162,52 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           </div>
         </div>
 
-        {/* 3. SPILL SEVERITY & COASTAL THREAT DUAL CARDS */}
+        {/* 3. SAR LOOK-ALIKE & FALSE-POSITIVE CLASSIFICATION BANNER */}
+        <div className="p-3 bg-slate-900/95 rounded-xl border border-cyan-500/30 flex flex-col gap-2 font-mono text-xs shadow-md">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+            <span className="text-[10.5px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              SAR Look-Alike & False-Positive Analysis
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 font-bold border border-emerald-500/40 text-[9.5px]">
+                Likely Oil: {falsePositive.likely_oil_pct}%
+              </span>
+              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold border border-slate-700 text-[9.5px]">
+                Look-alike: {falsePositive.lookalike_pct}%
+              </span>
+            </div>
+          </div>
+
+          {/* 6-Class Distribution Progress Bars */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-[10px]">
+            {Object.entries(falsePositive.classes).map(([className, pct]) => {
+              const isOil = className === 'Oil';
+              return (
+                <div key={className} className="p-1.5 bg-slate-950/80 rounded border border-slate-800 flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                    <span className={isOil ? 'text-rose-300 font-bold' : 'text-slate-400'}>{className}</span>
+                    <strong className={isOil ? 'text-emerald-400 font-bold' : 'text-slate-300'}>{pct}%</strong>
+                  </div>
+                  <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${isOil ? 'bg-gradient-to-r from-emerald-500 to-rose-500' : 'bg-slate-500'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* SAR Physics Validation Note */}
+          <div className="text-[9.5px] text-slate-400 leading-relaxed bg-slate-950/60 p-2 rounded border border-slate-800/80">
+            <span className="text-cyan-400 font-semibold">SAR Physics: </span>
+            {falsePositive.sar_physics_reasoning}
+          </div>
+        </div>
+
+        {/* 4. SPILL SEVERITY & COASTAL THREAT DUAL CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {/* Card 1: SPILL SEVERITY */}
           <div className="p-2.5 sm:p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-1.5 font-mono text-xs shadow-md">
@@ -249,7 +302,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           </div>
         </div>
 
-        {/* 4. Active Inspected Suspect Spotlight Banner */}
+        {/* 5. Active Inspected Suspect Spotlight Banner */}
         {activeVessel && (
           <div className="p-3 bg-gradient-to-br from-rose-950/40 via-slate-900/90 to-slate-900/90 rounded-xl border border-rose-500/40 shadow-lg flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -258,7 +311,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 {activeVessel.mmsi === currentIncident.culpritMmsi ? 'PRIMARY CULPRIT MATCH' : 'CORRELATED ANOMALY FOCUS'}
               </span>
               <span className="bg-rose-600 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm shrink-0">
-                {activeVessel.anomaly_score || activeVessel.probability_score}% Anomaly
+                Weighted Anomaly Score: {activeVessel.anomaly_score || activeVessel.probability_score} / 100
               </span>
             </div>
 
@@ -318,7 +371,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
           </div>
         )}
 
-        {/* 5. Tab Navigation */}
+        {/* 6. Tab Navigation */}
         <div className="flex items-center bg-slate-900/95 rounded-lg p-1 border border-slate-800 text-[11px] font-mono overflow-x-auto gap-1">
           <button
             onClick={() => setActiveTab('overview')}
@@ -326,7 +379,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               activeTab === 'overview' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Overview
+            Overview (Step 1)
           </button>
           <button
             onClick={() => setActiveTab('threat')}
@@ -334,7 +387,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               activeTab === 'threat' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Ecology & Risk
+            Threat (Step 6)
           </button>
           <button
             onClick={() => setActiveTab('suspects')}
@@ -342,7 +395,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               activeTab === 'suspects' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Anomalies ({suspects.length})
+            Anomalies (Step 4)
           </button>
           <button
             onClick={() => setActiveTab('hindcast')}
@@ -350,7 +403,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               activeTab === 'hindcast' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Drift & Hindcast
+            Hindcast (Step 2–3)
           </button>
           <button
             onClick={() => setActiveTab('metocean')}
@@ -366,13 +419,44 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
               activeTab === 'intel' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Vectors
+            Fingerprint (Step 5)
           </button>
         </div>
 
-        {/* 6. Tab Content Area */}
+        {/* 7. Tab Content Area */}
         {activeTab === 'overview' && (
           <div className="flex flex-col gap-2.5 font-mono text-xs">
+            {/* Step 1 Geolocation & Acquisition Stage */}
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+                  Step 1: Geolocation & Acquisition Data
+                </span>
+                <span className="text-[9px] bg-emerald-950 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-500/40">
+                  GeoJSON PostGIS Ready
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div>
+                  <span className="text-slate-400 block text-[9.5px]">ACQUISITION TIMESTAMP</span>
+                  <span className="text-white font-semibold">{currentIncident.acquisition_timestamp_utc}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[9.5px]">SPILL CENTROID</span>
+                  <span className="text-cyan-300 font-semibold">{centroidCoords}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[9.5px]">SEGMENTATION DICE SCORE</span>
+                  <span className="text-emerald-400 font-semibold">{(currentIncident.segmentation_dice_score * 100).toFixed(1)}%</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[9.5px]">OIL LIKELIHOOD SCORE</span>
+                  <span className="text-cyan-300 font-semibold">{(currentIncident.oil_likelihood_score * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+
             <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
               <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">
                 Incident Metadata
@@ -393,8 +477,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   <span className="text-rose-300 font-semibold">{currentIncident.slickType}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[9.5px]">AI CONFIDENCE</span>
-                  <span className="text-emerald-400 font-semibold">{(currentIncident.confidence * 100).toFixed(1)}%</span>
+                  <span className="text-slate-400 block text-[9.5px]">EST. DISCHARGE</span>
+                  <span className="text-white font-semibold">~{currentIncident.volumeLiters.toLocaleString()} L</span>
                 </div>
               </div>
             </div>
@@ -505,7 +589,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         isCulprit ? 'bg-rose-950 text-rose-300 border border-rose-600/50' : 'bg-slate-800 text-slate-400'
                       }`}
                     >
-                      {vessel.probability_score}% Match
+                      Score: {vessel.probability_score} / 100
                     </span>
                   </div>
 
@@ -533,7 +617,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
               <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <History className="w-3.5 h-3.5" />
-                -6h Hindcast Reverse Origin
+                -6h Hindcast Reverse Origin (Step 3)
               </span>
               <div className="text-[11px] text-slate-300 flex flex-col gap-1.5">
                 <div className="flex justify-between">
@@ -554,7 +638,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-2">
               <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <Navigation className="w-3.5 h-3.5" />
-                +6h Fay Drift Dispersal
+                +6h Fay Drift Dispersal (Step 2)
               </span>
               <div className="text-[11px] text-slate-300 flex flex-col gap-1.5">
                 <div className="flex justify-between">
@@ -613,7 +697,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         {activeTab === 'intel' && (
           <div className="flex flex-col gap-2.5 font-mono text-xs">
             <span className="text-[10px] text-slate-400 uppercase font-bold px-1">
-              Historical Fingerprint Vector Matches ({vectorMatches.length})
+              Historical Fingerprint Vector Matches (Step 5) ({vectorMatches.length})
             </span>
             {vectorMatches.map((m, idx) => (
               <div key={idx} className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col gap-1.5">
@@ -634,3 +718,4 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     </div>
   );
 };
+

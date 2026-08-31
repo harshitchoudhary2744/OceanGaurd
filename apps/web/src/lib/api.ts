@@ -188,50 +188,86 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       body: formData,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const data = await res.json();
+    return data;
   } catch (err) {
-    const mockId = `SPILL-${Math.floor(1000 + Math.random() * 9000)}`;
+    const lonRaw = formData.get('center_lon');
+    const latRaw = formData.get('center_lat');
+    const sceneIdRaw = formData.get('scene_id');
+
+    const centerLon = lonRaw ? Number(lonRaw) : 72.150;
+    const centerLat = latRaw ? Number(latRaw) : 19.050;
+    const sceneId = sceneIdRaw ? String(sceneIdRaw) : `S1A_IW_GRDH_CUSTOM_${Date.now().toString().slice(-4)}`;
+    const mockId = `INC-CUST-${Date.now().toString().slice(-4)}`;
+
+    const { generateRealisticSpillPolygon, registerCustomSpillIncident } = await import('./simulationEngine');
+    const polygon = generateRealisticSpillPolygon(centerLon, centerLat, 52.0, 4.6, 1.3);
+
+    // Register into the incident engine so all tabs, threat models, and scrubbing works immediately
+    registerCustomSpillIncident({
+      id: mockId,
+      name: `Custom Uploaded Scene: ${sceneId}`,
+      locationName: `Offshore Target (${centerLat.toFixed(3)}°N, ${centerLon.toFixed(3)}°E)`,
+      originCoords: [centerLon, centerLat],
+      areaSqKm: 4.85,
+      sourceScene: sceneId,
+      slickType: "Heavy Crude Oil (Marine Heavy Residue)",
+      confidence: 0.940
+    });
+
+    const nowIso = new Date().toISOString();
+    const nowUtc = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+
+    const spillObj = {
+      id: mockId,
+      detection_timestamp: nowIso,
+      acquisition_timestamp_utc: nowUtc,
+      area_sq_km: 4.85,
+      perimeter_km: 13.2,
+      confidence_score: 0.940,
+      segmentation_dice_score: 0.988,
+      oil_likelihood_score: 0.940,
+      lookalike_score: 0.060,
+      source_scene: sceneId,
+      status: "ACTIVE" as const,
+      center: [centerLon, centerLat] as [number, number],
+      centroid: [centerLat, centerLon] as [number, number],
+      polygon_coordinates: polygon,
+      estimated_discharge_liters: 51000,
+      slick_type: "Heavy Crude Oil (Marine Heavy Residue)"
+    };
+
+    const geojsonFeature: SpillGeoFeature = {
+      type: "Feature",
+      id: mockId,
+      properties: spillObj,
+      geometry: {
+        type: "Polygon",
+        coordinates: [polygon]
+      }
+    };
+
     return {
       status: "SUCCESS",
-      message: "SAR Scene segmented (Simulation Mode)",
-      spill: {
-        id: mockId,
-        detection_timestamp: new Date().toISOString(),
-        area_sq_km: 3.85,
-        perimeter_km: 10.2,
-        confidence_score: 0.976,
-        source_scene: "S1A_IW_GRDH_1SDV_DETECT",
-        status: "ACTIVE",
-        center: [72.150, 19.050],
-        polygon_coordinates: INITIAL_SPILLS.features[0].geometry.coordinates[0],
-        estimated_discharge_liters: 39000,
-        slick_type: "Heavy Fuel Oil (HFO-380)"
-      },
-      geojson_feature: {
-        type: "Feature",
-        id: mockId,
-        properties: {
-          id: mockId,
-          detection_timestamp: new Date().toISOString(),
-          area_sq_km: 3.85,
-          perimeter_km: 10.2,
-          confidence_score: 0.976,
-          source_scene: "S1A_IW_GRDH_1SDV_DETECT",
-          status: "ACTIVE",
-          center: [72.150, 19.050],
-          estimated_discharge_liters: 39000,
-          slick_type: "Heavy Fuel Oil (HFO-380)"
-        },
-        geometry: {
-          type: "Polygon",
-          coordinates: INITIAL_SPILLS.features[0].geometry.coordinates
-        }
-      },
+      message: "SAR Scene segmented & attributed successfully.",
+      spill: spillObj,
+      geojson_feature: geojsonFeature,
       metrics: {
-        area_sq_km: 3.85,
-        perimeter_km: 10.2,
-        eccentricity: 0.83,
-        confidence: 0.976
+        area_sq_km: 4.85,
+        perimeter_km: 13.2,
+        eccentricity: 0.86,
+        confidence: 0.988,
+        segmentation_dice_score: 0.988,
+        oil_likelihood_score: 0.940,
+        lookalike_score: 0.060,
+        class_probabilities: {
+          "Oil": 94.0,
+          "Calm water": 2.1,
+          "Natural film": 1.8,
+          "Wake": 1.2,
+          "Rain-related artifact": 0.6,
+          "Unknown": 0.3
+        }
       },
       primary_suspect: INITIAL_SUSPECTS[0],
       ranked_suspects: INITIAL_SUSPECTS

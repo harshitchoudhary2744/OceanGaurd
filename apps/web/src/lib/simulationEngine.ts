@@ -168,9 +168,12 @@ export interface TimedWaypoint {
 }
 
 export interface TimelineKeyEvent {
-  tMinutes: number; // e.g. -360, -180, -42, -15, 0
+  tMinutes: number; // time offset from live in minutes (-360 to 0)
+  timestamp_utc: string; // e.g. "09:42 UTC"
+  timestamp_ist: string; // e.g. "15:12 IST"
+  action_headline: string; // e.g. "Vessel enters region", "Vessel slows", "Possible source corridor"
   label: string; // short badge, e.g. "Transit", "Deviation", "Breach", "SAR Pass", "Live"
-  title: string; // full headline, e.g. "Illicit Crude Discharge & AIS Blackout"
+  title: string; // full headline
   type: 'transit' | 'anomaly_onset' | 'breach' | 'sar_detection' | 'live';
   icon: string; // e.g. "⚓", "⚠️", "🚨", "🛰️", "🎯"
   speed: number;
@@ -183,7 +186,9 @@ export interface MumbaiIncidentConfig {
   id: string;
   name: string;
   locationName: string;
-  originCoords: [number, number];
+  originCoords: [number, number]; // [lon, lat]
+  centroid: [number, number]; // [lat, lon]
+  acquisition_timestamp_utc: string; // e.g. "2024-10-18 10:44 UTC"
   dischargeOffsetMinutes: number;
   trackHeading: number;
   baseAreaSqKm: number;
@@ -193,7 +198,26 @@ export interface MumbaiIncidentConfig {
   culpritName: string;
   volumeLiters: number;
   slickType: string;
-  confidence: number;
+  confidence: number; // Oil likelihood
+  segmentation_dice_score: number; // Ground truth benchmark overlap
+  oil_likelihood_score: number; // 94% vs Lookalike
+  lookalike_score: number; // 6%
+  false_positive_analysis: {
+    likely_oil_pct: number;
+    lookalike_pct: number;
+    dominant_class: 'Oil' | 'Calm water' | 'Natural film' | 'Wake' | 'Rain-related artifact' | 'Unknown';
+    classes: {
+      'Oil': number;
+      'Calm water': number;
+      'Natural film': number;
+      'Wake': number;
+      'Rain-related artifact': number;
+      'Unknown': number;
+    };
+    marangoni_damping_db: number;
+    wind_threshold_valid: boolean;
+    sar_physics_reasoning: string;
+  };
   sourceScene: string;
   threat: EnvironmentalThreat;
   events: TimelineKeyEvent[];
@@ -205,7 +229,9 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     name: "Mumbai High Sector Alpha",
     locationName: "Mumbai High Offshore (19° 02.9' N, 72° 08.7' E)",
     originCoords: [72.145, 19.048],
-    dischargeOffsetMinutes: -42,
+    centroid: [19.048, 72.145],
+    acquisition_timestamp_utc: "2024-10-18 10:44:00 UTC",
+    dischargeOffsetMinutes: -43,
     trackHeading: 325,
     baseAreaSqKm: 5.40,
     baseLengthKm: 4.8,
@@ -214,7 +240,26 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     culpritName: "MT DESH SHANTI",
     volumeLiters: 58000,
     slickType: "Heavy Crude Oil (Arabian Heavy)",
-    confidence: 0.988,
+    confidence: 0.940,
+    segmentation_dice_score: 0.988,
+    oil_likelihood_score: 0.940,
+    lookalike_score: 0.060,
+    false_positive_analysis: {
+      likely_oil_pct: 94.0,
+      lookalike_pct: 6.0,
+      dominant_class: "Oil",
+      classes: {
+        "Oil": 94.0,
+        "Calm water": 2.1,
+        "Natural film": 1.8,
+        "Wake": 1.2,
+        "Rain-related artifact": 0.6,
+        "Unknown": 0.3,
+      },
+      marangoni_damping_db: 8.4,
+      wind_threshold_valid: true,
+      sar_physics_reasoning: "Wind speed 16.2 kts suppresses calm-water look-alikes (>3.0 m/s threshold). Strong Marangoni capillary wave damping ratio (8.4 dB) validates mineral crude oil slick.",
+    },
     sourceScene: "S1A_IW_GRDH_1SDV_MUMBAI_HIGH_ALPHA",
     threat: {
       coast_distance_km: 42.0,
@@ -231,54 +276,69 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     },
     events: [
       {
-        tMinutes: -360,
-        label: "Transit",
-        title: "Entry into Mumbai High TSS Sector",
+        tMinutes: -78,
+        timestamp_utc: "09:42 UTC",
+        timestamp_ist: "15:12 IST",
+        action_headline: "Vessel enters region",
+        label: "Entry",
+        title: "Vessel enters Mumbai High TSS Sector",
         type: "transit",
         icon: "⚓",
         speed: 14.8,
         coordinates: [72.260, 18.880],
-        details: "Normal navigation at 14.8 kts along deep-water offshore route.",
+        details: "Normal navigation at 14.8 kts along deep-water offshore international corridor.",
       },
       {
-        tMinutes: -180,
-        label: "Deviation",
-        title: "Approach to Offshore SPM Cluster",
+        tMinutes: -57,
+        timestamp_utc: "10:03 UTC",
+        timestamp_ist: "15:33 IST",
+        action_headline: "Vessel slows",
+        label: "Deceleration",
+        title: "Sudden Speed Drop & AIS Blackout",
         type: "anomaly_onset",
         icon: "⚠️",
-        speed: 14.8,
-        coordinates: [72.202, 18.964],
-        details: "Course alignment adjusted towards loading fairway.",
+        speed: 5.2,
+        coordinates: [72.180, 18.995],
+        details: "Sudden deceleration from 14.8 to 5.2 kts (-9.6 kts drop). AIS transponder blackout initiates.",
       },
       {
-        tMinutes: -42,
+        tMinutes: -43,
+        timestamp_utc: "10:17 UTC",
+        timestamp_ist: "15:47 IST",
+        action_headline: "Possible source corridor",
         label: "BREACH",
-        title: "Illicit Crude Discharge & AIS Blackout",
+        title: "Illicit Crude Discharge Locus",
         type: "breach",
         icon: "🚨",
         speed: 5.2,
         coordinates: [72.145, 19.048],
-        details: "Sudden speed drop (-9.6 kts) & AIS transmitter blackout during ~58,000 L crude discharge.",
+        details: "Estimated ~58,000 L crude discharge along hindcast trajectory corridor (0.00 km CPA).",
       },
       {
-        tMinutes: -15,
+        tMinutes: -16,
+        timestamp_utc: "10:44 UTC",
+        timestamp_ist: "16:14 IST",
+        action_headline: "SAR Satellite Acquisition",
         label: "SAR Pass",
-        title: "Sentinel-1 SAR Satellite Acquisition",
+        title: "Sentinel-1 C-Band SAR Acquisition",
         type: "sar_detection",
         icon: "🛰️",
         speed: 14.8,
         coordinates: [72.115, 19.090],
-        details: "SAR backscatter depression detected 4.33 km² oil slick with 98.4% correlation.",
+        details: "Satellite SAR radar backscatter depression detects 5.40 km² oil slick (Segmentation Dice: 98.8%).",
       },
       {
         tMinutes: 0,
-        label: "Live Alert",
-        title: "Current Track & Intercept Assessment",
+        timestamp_utc: "11:00 UTC",
+        timestamp_ist: "16:30 IST",
+        action_headline: "Live Intercept Assessment",
+        label: "Live Track",
+        title: "Current Track & Coastal Threat",
         type: "live",
         icon: "🎯",
         speed: 14.8,
         coordinates: [72.100, 19.112],
-        details: "Live tracking active. 41 km from coast with 11.5h projected landfall arrival.",
+        details: "Live tracking active. 42.0 km from coast with 11.5h projected landfall arrival at South Mumbai / Alibaug.",
       },
     ],
   },
@@ -287,6 +347,8 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     name: "JNPT Access Channel",
     locationName: "JNPT Deep-Water Channel (18° 53.7' N, 72° 52.2' E)",
     originCoords: [72.870, 18.895],
+    centroid: [18.895, 72.870],
+    acquisition_timestamp_utc: "2024-10-18 10:48:00 UTC",
     dischargeOffsetMinutes: -30,
     trackHeading: 18,
     baseAreaSqKm: 2.85,
@@ -296,7 +358,26 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     culpritName: "MSC KANOKO",
     volumeLiters: 31000,
     slickType: "Heavy Fuel Oil (HFO-380 Bilge Sludge)",
-    confidence: 0.965,
+    confidence: 0.925,
+    segmentation_dice_score: 0.974,
+    oil_likelihood_score: 0.925,
+    lookalike_score: 0.075,
+    false_positive_analysis: {
+      likely_oil_pct: 92.5,
+      lookalike_pct: 7.5,
+      dominant_class: "Oil",
+      classes: {
+        "Oil": 92.5,
+        "Calm water": 1.5,
+        "Natural film": 2.2,
+        "Wake": 3.0,
+        "Rain-related artifact": 0.5,
+        "Unknown": 0.3,
+      },
+      marangoni_damping_db: 7.9,
+      wind_threshold_valid: true,
+      sar_physics_reasoning: "Channel approach wind 16.2 kts suppresses calm patches. High damping signature in narrow fairway confirms heavy bunker sludge.",
+    },
     sourceScene: "S1A_IW_GRDH_1SDV_JNPT_CHANNEL",
     threat: {
       coast_distance_km: 6.5,
@@ -313,9 +394,12 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     },
     events: [
       {
-        tMinutes: -360,
-        label: "Transit",
-        title: "Inbound Transit from South Arabian Sea",
+        tMinutes: -60,
+        timestamp_utc: "10:00 UTC",
+        timestamp_ist: "15:30 IST",
+        action_headline: "Vessel enters region",
+        label: "Entry",
+        title: "Inbound Transit South Channel Approach",
         type: "transit",
         icon: "⚓",
         speed: 16.5,
@@ -323,38 +407,50 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
         details: "Container carrier inbound at cruising speed 16.5 kts.",
       },
       {
-        tMinutes: -180,
-        label: "Fairway",
-        title: "Entering Dredged Harbor Approach",
+        tMinutes: -40,
+        timestamp_utc: "10:20 UTC",
+        timestamp_ist: "15:50 IST",
+        action_headline: "Vessel slows",
+        label: "Deceleration",
+        title: "Approaching Dredged Harbor Fairway",
         type: "anomaly_onset",
         icon: "⚠️",
-        speed: 16.5,
+        speed: 6.8,
         coordinates: [72.844, 18.815],
-        details: "Pilot rendezvous preparation in approach channel.",
+        details: "Speed reduction from 16.5 to 6.8 kts entering pilot rendezvous corridor.",
       },
       {
         tMinutes: -30,
+        timestamp_utc: "10:30 UTC",
+        timestamp_ist: "16:00 IST",
+        action_headline: "Possible source corridor",
         label: "BREACH",
         title: "Nighttime Bilge Washings Discharge",
         type: "breach",
         icon: "🚨",
         speed: 6.8,
         coordinates: [72.870, 18.895],
-        details: "Speed reduction (-9.7 kts) coinciding with illicit release of ~31,000 L HFO bilge washings.",
+        details: "Illicit discharge of ~31,000 L HFO bilge washings along JNPT deep channel.",
       },
       {
         tMinutes: -12,
+        timestamp_utc: "10:48 UTC",
+        timestamp_ist: "16:18 IST",
+        action_headline: "SAR Satellite Acquisition",
         label: "SAR Pass",
         title: "Sentinel-1 SAR Synthetic Aperture Match",
         type: "sar_detection",
         icon: "🛰️",
         speed: 15.6,
         coordinates: [72.885, 18.940],
-        details: "SAR radar image confirmed 2.34 km² linear dark slick in channel.",
+        details: "SAR radar image confirms 2.85 km² dark slick in dredged navigation fairway.",
       },
       {
         tMinutes: 0,
-        label: "Live Alert",
+        timestamp_utc: "11:00 UTC",
+        timestamp_ist: "16:30 IST",
+        action_headline: "Live Intercept Assessment",
+        label: "Live Track",
         title: "Current Channel Position (Nhava Sheva)",
         type: "live",
         icon: "🎯",
@@ -369,6 +465,8 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     name: "Prongs Reef Anchorage",
     locationName: "Mumbai Outer Anchorage (18° 54.3' N, 72° 47.7' E)",
     originCoords: [72.795, 18.905],
+    centroid: [18.905, 72.795],
+    acquisition_timestamp_utc: "2024-10-18 10:50:00 UTC",
     dischargeOffsetMinutes: -25,
     trackHeading: 72,
     baseAreaSqKm: 1.95,
@@ -378,7 +476,26 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     culpritName: "MT SWARNA SINDHU",
     volumeLiters: 19000,
     slickType: "Intermediate Fuel Oil (IFO-180)",
-    confidence: 0.942,
+    confidence: 0.935,
+    segmentation_dice_score: 0.968,
+    oil_likelihood_score: 0.935,
+    lookalike_score: 0.065,
+    false_positive_analysis: {
+      likely_oil_pct: 93.5,
+      lookalike_pct: 6.5,
+      dominant_class: "Oil",
+      classes: {
+        "Oil": 93.5,
+        "Calm water": 2.0,
+        "Natural film": 2.5,
+        "Wake": 1.2,
+        "Rain-related artifact": 0.5,
+        "Unknown": 0.3,
+      },
+      marangoni_damping_db: 8.1,
+      wind_threshold_valid: true,
+      sar_physics_reasoning: "Anchorage area verified. Damping ratio of 8.1 dB and high aspect ratio rule out natural algal surfactant films.",
+    },
     sourceScene: "S1A_IW_GRDH_1SDV_PRONGS_REEF",
     threat: {
       coast_distance_km: 4.2,
@@ -395,9 +512,12 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     },
     events: [
       {
-        tMinutes: -360,
-        label: "Transit",
-        title: "Western Coastal Approach",
+        tMinutes: -55,
+        timestamp_utc: "10:05 UTC",
+        timestamp_ist: "15:35 IST",
+        action_headline: "Vessel enters region",
+        label: "Entry",
+        title: "Western Coastal Outer Limits Approach",
         type: "transit",
         icon: "⚓",
         speed: 12.0,
@@ -405,44 +525,56 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
         details: "Product tanker approaching Mumbai harbor outer limits at 12.0 kts.",
       },
       {
-        tMinutes: -180,
-        label: "Maneuver",
-        title: "Outer Anchorage Alignment",
+        tMinutes: -35,
+        timestamp_utc: "10:25 UTC",
+        timestamp_ist: "15:55 IST",
+        action_headline: "Vessel slows",
+        label: "Deceleration",
+        title: "Outer Anchorage Loitering & Alignment",
         type: "anomaly_onset",
         icon: "⚠️",
-        speed: 12.0,
+        speed: 4.5,
         coordinates: [72.719, 18.880],
-        details: "Slowing down for anchorage berth allocation.",
+        details: "Deceleration to 4.5 kts. Loitering maneuver during unlogged bunkering transfer.",
       },
       {
         tMinutes: -25,
+        timestamp_utc: "10:35 UTC",
+        timestamp_ist: "16:05 IST",
+        action_headline: "Possible source corridor",
         label: "BREACH",
-        title: "Unreported Bunkering Transfer Leak",
+        title: "Bunkering Transfer Overflow Release",
         type: "breach",
         icon: "🚨",
         speed: 4.5,
         coordinates: [72.795, 18.905],
-        details: "Loitering anomaly at anchorage. ~19,000 L IFO-180 fuel oil discharge during transfer.",
+        details: "Unreported ~19,000 L IFO-180 fuel oil discharge during anchorage transfer.",
       },
       {
         tMinutes: -10,
+        timestamp_utc: "10:50 UTC",
+        timestamp_ist: "16:20 IST",
+        action_headline: "SAR Satellite Acquisition",
         label: "SAR Pass",
         title: "Sentinel-1 SAR Detection at Reef Zone",
         type: "sar_detection",
         icon: "🛰️",
         speed: 11.2,
         coordinates: [72.830, 18.918],
-        details: "SAR radar identified 1.59 km² slick drifting 69.3° towards Colaba Point.",
+        details: "SAR radar identifies 1.95 km² slick drifting 69.3° towards Colaba Point.",
       },
       {
         tMinutes: 0,
-        label: "Live Alert",
+        timestamp_utc: "11:00 UTC",
+        timestamp_ist: "16:30 IST",
+        action_headline: "Live Intercept Assessment",
+        label: "Live Track",
         title: "Current Inbound Position (Refinery Channel)",
         type: "live",
         icon: "🎯",
         speed: 11.2,
         coordinates: [72.871, 18.930],
-        details: "Target transiting at 11.2 kts. Projected coral impact within 1.2 hours.",
+        details: "Target transiting at 11.2 kts. Projected coral reef impact within 1.2 hours.",
       },
     ],
   },
@@ -451,6 +583,8 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     name: "Neelam South Offshore",
     locationName: "Neelam Offshore Field (19° 14.7' N, 71° 59.1' E)",
     originCoords: [71.985, 19.245],
+    centroid: [19.245, 71.985],
+    acquisition_timestamp_utc: "2024-10-18 10:52:00 UTC",
     dischargeOffsetMinutes: -20,
     trackHeading: 155,
     baseAreaSqKm: 3.60,
@@ -460,7 +594,26 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     culpritName: "CHEMBULK GIBRALTAR",
     volumeLiters: 42000,
     slickType: "Condensate & Light Crude Sheen",
-    confidence: 0.958,
+    confidence: 0.915,
+    segmentation_dice_score: 0.958,
+    oil_likelihood_score: 0.915,
+    lookalike_score: 0.085,
+    false_positive_analysis: {
+      likely_oil_pct: 91.5,
+      lookalike_pct: 8.5,
+      dominant_class: "Oil",
+      classes: {
+        "Oil": 91.5,
+        "Calm water": 2.8,
+        "Natural film": 3.1,
+        "Wake": 1.5,
+        "Rain-related artifact": 0.8,
+        "Unknown": 0.3,
+      },
+      marangoni_damping_db: 7.6,
+      wind_threshold_valid: true,
+      sar_physics_reasoning: "Chemical condensate sheen validated against biogenic slicks via multi-polarization damping characteristics.",
+    },
     sourceScene: "S1A_IW_GRDH_1SDV_NEELAM_SOUTH",
     threat: {
       coast_distance_km: 38.0,
@@ -477,9 +630,12 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     },
     events: [
       {
-        tMinutes: -360,
-        label: "Transit",
-        title: "Southbound Tanker TSS Transit",
+        tMinutes: -60,
+        timestamp_utc: "10:00 UTC",
+        timestamp_ist: "15:30 IST",
+        action_headline: "Vessel enters region",
+        label: "Entry",
+        title: "Southbound Chemical Tanker TSS Transit",
         type: "transit",
         icon: "⚓",
         speed: 13.4,
@@ -487,38 +643,50 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
         details: "Chemical tanker cruising at 13.4 kts along offshore international corridor.",
       },
       {
-        tMinutes: -180,
-        label: "Platform",
-        title: "Neelam Platform Cluster Approach",
+        tMinutes: -30,
+        timestamp_utc: "10:30 UTC",
+        timestamp_ist: "16:00 IST",
+        action_headline: "Vessel slows",
+        label: "Deceleration",
+        title: "Neelam Platform Cluster Course Adjustment",
         type: "anomaly_onset",
         icon: "⚠️",
-        speed: 13.4,
+        speed: 5.8,
         coordinates: [71.950, 19.320],
-        details: "Transiting within 2.5 nm of Neelam offshore drilling complex.",
+        details: "Course deflection and speed drop to 5.8 kts near Neelam drilling complex.",
       },
       {
         tMinutes: -20,
+        timestamp_utc: "10:40 UTC",
+        timestamp_ist: "16:10 IST",
+        action_headline: "Possible source corridor",
         label: "BREACH",
-        title: "Chemical Tank Washings Illicit Discharge",
+        title: "Tank Washings Illicit Discharge",
         type: "breach",
         icon: "🚨",
         speed: 5.8,
         coordinates: [71.985, 19.245],
-        details: "Speed drop to 5.8 kts. Illicit discharge of ~42,000 L chemical condensate & tank washings.",
+        details: "Illicit discharge of ~42,000 L chemical condensate & tank washings.",
       },
       {
         tMinutes: -8,
+        timestamp_utc: "10:52 UTC",
+        timestamp_ist: "16:22 IST",
+        action_headline: "SAR Satellite Acquisition",
         label: "SAR Pass",
         title: "SAR Multi-Polarimetric Anomaly Confirmed",
         type: "sar_detection",
         icon: "🛰️",
         speed: 12.8,
         coordinates: [72.000, 19.210],
-        details: "Sentinel-1 SAR validated 2.27 km² high-contrast surface slick with 89.6% match.",
+        details: "Sentinel-1 SAR validates 3.60 km² high-contrast surface slick.",
       },
       {
         tMinutes: 0,
-        label: "Live Alert",
+        timestamp_utc: "11:00 UTC",
+        timestamp_ist: "16:30 IST",
+        action_headline: "Live Intercept Assessment",
+        label: "Live Track",
         title: "Current Southbound Position",
         type: "live",
         icon: "🎯",
@@ -797,12 +965,17 @@ export class AutonomousSimulationEngine {
         properties: {
           id: config.id,
           detection_timestamp: new Date(now.getTime() - Math.abs(config.dischargeOffsetMinutes) * 60000).toISOString(),
+          acquisition_timestamp_utc: config.acquisition_timestamp_utc,
           area_sq_km: live.area,
           perimeter_km: live.perimeter,
           confidence_score: config.confidence,
+          segmentation_dice_score: config.segmentation_dice_score,
+          oil_likelihood_score: config.oil_likelihood_score,
+          false_positive_analysis: config.false_positive_analysis,
           source_scene: config.sourceScene,
           status: "ACTIVE",
           center: live.center,
+          centroid: config.centroid,
           estimated_discharge_liters: config.volumeLiters,
           slick_type: config.slickType,
         },
@@ -1212,4 +1385,143 @@ export class AutonomousSimulationEngine {
   }
 }
 
+export function registerCustomSpillIncident(spill: {
+  id: string;
+  name?: string;
+  locationName?: string;
+  originCoords: [number, number]; // [lon, lat]
+  areaSqKm?: number;
+  slickType?: string;
+  sourceScene?: string;
+  confidence?: number;
+}): MumbaiIncidentConfig {
+  const lon = spill.originCoords[0];
+  const lat = spill.originCoords[1];
+  const id = spill.id;
+  const area = spill.areaSqKm || 4.85;
+
+  const config: MumbaiIncidentConfig = {
+    id: id,
+    name: spill.name || `Custom SAR Detection (${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E)`,
+    locationName: spill.locationName || `Offshore Sector (${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E)`,
+    originCoords: [lon, lat],
+    centroid: [lat, lon],
+    acquisition_timestamp_utc: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+    sourceScene: spill.sourceScene || `S1A_IW_GRDH_${id}`,
+    dischargeOffsetMinutes: -42,
+    trackHeading: 52.0,
+    baseAreaSqKm: area,
+    baseLengthKm: Number((Math.sqrt(area) * 2.2).toFixed(2)),
+    baseWidthKm: Number((Math.sqrt(area) * 0.7).toFixed(2)),
+    culpritMmsi: 419000123,
+    culpritName: "MT DESH SHANTI",
+    volumeLiters: Math.round(area * 10500),
+    slickType: spill.slickType || "Heavy Fuel Oil (HFO-380 / Bilge Sludge)",
+    confidence: spill.confidence || 0.940,
+    segmentation_dice_score: 0.988,
+    oil_likelihood_score: 0.940,
+    lookalike_score: 0.060,
+    false_positive_analysis: {
+      likely_oil_pct: 94.0,
+      lookalike_pct: 6.0,
+      dominant_class: 'Oil',
+      classes: {
+        'Oil': 94.0,
+        'Calm water': 2.1,
+        'Natural film': 1.8,
+        'Wake': 1.2,
+        'Rain-related artifact': 0.6,
+        'Unknown': 0.3,
+      },
+      marangoni_damping_db: 8.4,
+      wind_threshold_valid: true,
+      sar_physics_reasoning: 'Capillary wave damping ratio (8.4 dB) validates biogenic vs mineral oil contrast under 16.2 kts surface wind.',
+    },
+    threat: {
+      coast_distance_km: Number((Math.max(4.0, Math.abs(72.85 - lon) * 111.0)).toFixed(1)),
+      growth_rate_pct_per_hour: 14.5,
+      fishing_zone_risk: 'HIGH',
+      fishing_zone_name: 'Custom Offshore Sector Fairway',
+      marine_habitat_risk: 'MEDIUM',
+      marine_habitat_name: 'Coastal Inshore Pelagic Zone',
+      overall_severity_score: 86,
+      overall_severity_level: 'CRITICAL',
+      predicted_arrival_hours: Number((Math.max(2.0, (Math.abs(72.85 - lon) * 111.0) / 3.6)).toFixed(1)),
+      coastal_threat_risk: 'HIGH',
+      projected_impact_zone: 'Mumbai Coastal Corridor',
+    },
+    events: [
+      {
+        tMinutes: -360,
+        timestamp_utc: '05:00 UTC',
+        timestamp_ist: '10:30 IST',
+        action_headline: 'Vessel enters region',
+        label: 'Transit',
+        title: 'Vessel Enters Coastal Sector Alpha',
+        type: 'transit',
+        icon: '⚓',
+        speed: 14.8,
+        coordinates: [lon - 0.25, lat - 0.20],
+        details: 'Vessel enters radar coverage cruising at nominal speed.',
+      },
+      {
+        tMinutes: -60,
+        timestamp_utc: '10:00 UTC',
+        timestamp_ist: '15:30 IST',
+        action_headline: 'Vessel slows',
+        label: 'Deceleration',
+        title: 'Abrupt Speed Drop & Engine Loiter',
+        type: 'anomaly_onset',
+        icon: '⚠️',
+        speed: 5.2,
+        coordinates: [lon - 0.05, lat - 0.04],
+        details: 'Speed abruptly decelerated from 14.8 to 5.2 kts with course drift.',
+      },
+      {
+        tMinutes: -42,
+        timestamp_utc: '10:18 UTC',
+        timestamp_ist: '15:48 IST',
+        action_headline: 'Possible source corridor',
+        label: 'Discharge',
+        title: 'Illicit Discharge & Transponder Blackout',
+        type: 'breach',
+        icon: '🚨',
+        speed: 5.4,
+        coordinates: [lon, lat],
+        details: 'Illicit bilge wash dump with simultaneous 42-minute dark period.',
+      },
+      {
+        tMinutes: -16,
+        timestamp_utc: '10:44 UTC',
+        timestamp_ist: '16:14 IST',
+        action_headline: 'SAR Pass Detection',
+        label: 'SAR Pass',
+        title: 'Sentinel-1 C-Band Acquisition Pass',
+        type: 'sar_detection',
+        icon: '🛰️',
+        speed: 12.6,
+        coordinates: [lon + 0.10, lat + 0.08],
+        details: 'Copernicus Sentinel-1 satellite radar acquisition passes overhead.',
+      },
+      {
+        tMinutes: 0,
+        timestamp_utc: '11:00 UTC',
+        timestamp_ist: '16:30 IST',
+        action_headline: 'Live Tactical Intercept',
+        label: 'Live',
+        title: 'Real-Time Intercept & Coast Guard Dispatch',
+        type: 'live',
+        icon: '🎯',
+        speed: 14.8,
+        coordinates: [lon + 0.20, lat + 0.15],
+        details: 'Indian Coast Guard Fast Patrol Vessel dispatched for intercept.',
+      },
+    ],
+  };
+
+  MUMBAI_INCIDENTS[id] = config;
+  return config;
+}
+
 export const globalSimulation = new AutonomousSimulationEngine();
+

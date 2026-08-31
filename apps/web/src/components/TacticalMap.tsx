@@ -1,6 +1,25 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Plus, Minus, Crosshair, Eye, Navigation, Wind, Waves, Compass, Layers, History, ShieldAlert, ChevronUp, AlertTriangle, Ship } from 'lucide-react';
+import {
+  Plus,
+  Minus,
+  Crosshair,
+  Eye,
+  Navigation,
+  Wind,
+  Waves,
+  Compass,
+  Layers,
+  History,
+  ShieldAlert,
+  ChevronUp,
+  ChevronDown,
+  AlertTriangle,
+  Ship,
+  Sparkles,
+  Fish,
+  Satellite
+} from 'lucide-react';
 import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData, SpillGeoFeature } from '../types';
 import {
   calculateSynchronizedOilSpill,
@@ -41,6 +60,8 @@ function generateConeBetweenPoints(
   return [leftStart, rightStart, rightEnd, tipEnd, leftEnd, leftStart];
 }
 
+export type MapOperationalMode = 'surveillance' | 'hindcast' | 'forecast' | 'ecology' | 'sar';
+
 interface TacticalMapProps {
   spills: SpillFeatureCollection;
   vessels: Vessel[];
@@ -56,6 +77,89 @@ interface TacticalMapProps {
   scenario?: string;
   onOpenMobileDrawer?: () => void;
 }
+
+// Marine Ecology Protected Habitats & Commercial Fishery GeoJSON
+const MARINE_ECOLOGY_FEATURES = {
+  type: 'FeatureCollection' as const,
+  features: [
+    {
+      type: 'Feature' as const,
+      properties: {
+        id: 'HAB-01',
+        name: 'Thane Creek Flamingo Sanctuary & Mangrove Reserve',
+        type: 'Mangrove / Wetland MPA',
+        risk_level: 'HIGH',
+      },
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [[
+          [72.95, 19.00],
+          [73.02, 19.00],
+          [73.02, 19.14],
+          [72.95, 19.14],
+          [72.95, 19.00],
+        ]],
+      },
+    },
+    {
+      type: 'Feature' as const,
+      properties: {
+        id: 'HAB-02',
+        name: 'Prongs Reef & South Mumbai Coastal Biotope',
+        type: 'Intertidal Coral Reef',
+        risk_level: 'CRITICAL',
+      },
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [[
+          [72.78, 18.88],
+          [72.84, 18.88],
+          [72.84, 18.94],
+          [72.78, 18.94],
+          [72.78, 18.88],
+        ]],
+      },
+    },
+    {
+      type: 'Feature' as const,
+      properties: {
+        id: 'FISH-01',
+        name: 'Mumbai High Pelagic Commercial Fishing Fairway',
+        type: 'Active Trawler Zone',
+        risk_level: 'ELEVATED',
+      },
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [[
+          [72.00, 18.85],
+          [72.30, 18.85],
+          [72.30, 19.20],
+          [72.00, 19.20],
+          [72.00, 18.85],
+        ]],
+      },
+    },
+    {
+      type: 'Feature' as const,
+      properties: {
+        id: 'FISH-02',
+        name: 'JNPT Approach Inshore Artisanal Fishery',
+        type: 'Gillnet & Purse Seine Fleet',
+        risk_level: 'HIGH',
+      },
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [[
+          [72.75, 18.80],
+          [72.92, 18.80],
+          [72.92, 18.96],
+          [72.75, 18.96],
+          [72.75, 18.80],
+        ]],
+      },
+    },
+  ],
+};
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
   spills,
@@ -80,9 +184,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   onSelectSpillRef.current = onSelectSpill;
 
   const [mapLoaded, setMapLoaded] = useState(false);
+  
+  // Tactical Operational Mode State (Top Tabs)
+  const [operationalMode, setOperationalMode] = useState<MapOperationalMode>('surveillance');
+  const [showLayerDrawer, setShowLayerDrawer] = useState(false);
+
+  // Manual Layer Overrides
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
   const [showHindcast, setShowHindcast] = useState(true);
+  const [showEcology, setShowEcology] = useState(true);
 
   // Active Incident Config
   const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
@@ -90,7 +201,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const isPostDischarge = timeOffsetMinutes >= dischargeOffset;
   const baseOrigin = currentIncident.originCoords;
 
-  // Active Inspected Suspect Vessel (matches selectedVesselMmsi or incident culprit)
+  // Active Inspected Suspect Vessel
   const activeSuspect = useMemo(() => {
     if (!suspects || suspects.length === 0) return null;
     return (
@@ -100,11 +211,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     );
   }, [suspects, selectedVesselMmsi, currentIncident]);
 
-  // Synchronized Hydrodynamic Oil Spill Polygons: ONLY the selected anomaly's spill replays
+  // Synchronized Hydrodynamic Oil Spill Polygons
   const currentSpills = useMemo<SpillFeatureCollection>(() => {
     const features: SpillGeoFeature[] = Object.values(MUMBAI_INCIDENTS).map((config) => {
-      // If this is the active spill, evaluate dynamic growth at timeOffsetMinutes.
-      // Other spills remain static at t=0 so the replay focuses exclusively on the active anomaly!
       const offsetToUse = config.id === selectedSpillId ? timeOffsetMinutes : 0;
       const live = calculateSynchronizedOilSpill(offsetToUse, config.id, metocean);
 
@@ -114,12 +223,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         properties: {
           id: config.id,
           detection_timestamp: new Date().toISOString(),
+          acquisition_timestamp_utc: config.acquisition_timestamp_utc,
           area_sq_km: live.area,
           perimeter_km: live.perimeter,
           confidence_score: config.confidence,
+          segmentation_dice_score: config.segmentation_dice_score,
+          oil_likelihood_score: config.oil_likelihood_score,
           source_scene: config.sourceScene,
           status: "ACTIVE",
           center: live.center,
+          centroid: config.centroid,
           estimated_discharge_liters: config.volumeLiters,
           slick_type: config.slickType,
         },
@@ -145,73 +258,20 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     return baseOrigin;
   }, [currentSpills, selectedSpillId, baseOrigin]);
 
-  // Hydrodynamic Hindcast Back-Tracing for Active Spill
+  // Hydrodynamic Hindcast Back-Tracing
   const hindcastFeatures = useMemo(() => {
-    if (!showHindcast || !isPostDischarge) {
+    const shouldShow = showHindcast && (operationalMode === 'hindcast' || operationalMode === 'surveillance');
+    if (!shouldShow || !isPostDischarge) {
       return { type: "FeatureCollection" as const, features: [] };
     }
 
-    const isAtOrigin =
-      Math.abs(slickCentroid[0] - baseOrigin[0]) < 0.001 && Math.abs(slickCentroid[1] - baseOrigin[1]) < 0.001;
-
-    const coneCoords = isAtOrigin
-      ? [
-          [baseOrigin[0] - 0.003, baseOrigin[1] - 0.003],
-          [baseOrigin[0] + 0.003, baseOrigin[1] - 0.003],
-          [baseOrigin[0] + 0.003, baseOrigin[1] + 0.003],
-          [baseOrigin[0] - 0.003, baseOrigin[1] + 0.003],
-          [baseOrigin[0] - 0.003, baseOrigin[1] - 0.003],
-        ]
-      : generateConeBetweenPoints(
-          slickCentroid[0],
-          slickCentroid[1],
-          baseOrigin[0],
-          baseOrigin[1],
-          0.30,
-          0.75
-        );
-
-    const coneFeature = {
-      type: "Feature" as const,
-      properties: { name: "Hindcast Reverse Dispersal Cone" },
-      geometry: {
-        type: "Polygon" as const,
-        coordinates: [coneCoords],
-      },
-    };
-
-    const lineFeature = {
-      type: "Feature" as const,
-      properties: { name: "Hindcast Reverse Vector" },
-      geometry: {
-        type: "LineString" as const,
-        coordinates: [
-          [slickCentroid[0], slickCentroid[1]],
-          [baseOrigin[0], baseOrigin[1]],
-        ],
-      },
-    };
-
-    return {
-      type: "FeatureCollection" as const,
-      features: [coneFeature, lineFeature],
-    };
-  }, [slickCentroid, baseOrigin, isPostDischarge, showHindcast]);
-
-  // +6h Hydrodynamic Forecast Dispersal Fan
-  const forecastFeatures = useMemo(() => {
-    if (!showForecast || !isPostDischarge) {
-      return { type: "FeatureCollection" as const, features: [] };
-    }
-    const driftDir = metocean?.net_drift_direction_deg || 69.3;
-    const driftSpeed = metocean?.net_drift_speed_kts || 1.95;
-
-    const cone = generateForecastCone(
+    const hindcastCone = generateConeBetweenPoints(
       slickCentroid[0],
       slickCentroid[1],
-      driftDir,
-      driftSpeed,
-      6
+      baseOrigin[0],
+      baseOrigin[1],
+      0.35,
+      0.90
     );
 
     return {
@@ -219,84 +279,103 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       features: [
         {
           type: "Feature" as const,
-          properties: { name: "+6h Dispersal Forecast Fan" },
+          properties: { type: "hindcast_cone", title: "Reverse Drift Advection (-6h)" },
+          geometry: { type: "Polygon" as const, coordinates: [hindcastCone] },
+        },
+        {
+          type: "Feature" as const,
+          properties: { type: "hindcast_vector", title: "Back-Track Drift Vector" },
           geometry: {
-            type: "Polygon" as const,
-            coordinates: [cone],
+            type: "LineString" as const,
+            coordinates: [
+              [slickCentroid[0], slickCentroid[1]],
+              [baseOrigin[0], baseOrigin[1]],
+            ],
           },
         },
       ],
     };
-  }, [slickCentroid, metocean, isPostDischarge, showForecast]);
+  }, [showHindcast, operationalMode, isPostDischarge, slickCentroid, baseOrigin]);
 
-  // Dump Origin Point GeoJSON Feature
+  // Hydrodynamic +6h Drift Forecast Fan
+  const forecastFeatures = useMemo(() => {
+    const shouldShow = showForecast && (operationalMode === 'forecast' || operationalMode === 'surveillance');
+    if (!shouldShow || !isPostDischarge) {
+      return { type: "FeatureCollection" as const, features: [] };
+    }
+
+    const driftBearing = metocean ? (metocean.current_direction_deg || 65) : 65;
+    const driftSpeed = metocean ? (metocean.current_speed_kts || 1.1) : 1.1;
+    const cone = generateForecastCone(slickCentroid[0], slickCentroid[1], driftBearing, driftSpeed, 6);
+
+    return {
+      type: "FeatureCollection" as const,
+      features: [
+        {
+          type: "Feature" as const,
+          properties: { type: "forecast_fan", title: "+6h Fay Hydrodynamic Dispersion Fan" },
+          geometry: { type: "Polygon" as const, coordinates: [cone] },
+        },
+      ],
+    };
+  }, [showForecast, operationalMode, isPostDischarge, slickCentroid, metocean]);
+
+  // Dump Origin GPS Point Marker
   const dumpOriginFeature = useMemo(() => {
+    const shouldShow = isPostDischarge && (operationalMode === 'hindcast' || operationalMode === 'surveillance');
+    if (!shouldShow) {
+      return { type: "FeatureCollection" as const, features: [] };
+    }
     return {
       type: "FeatureCollection" as const,
       features: [
         {
           type: "Feature" as const,
           properties: {
-            name: `${currentIncident.name} Breach Origin`,
-            id: selectedSpillId,
+            title: `Reconstructed Discharge Origin (10:18 UTC)`,
+            timestamp_utc: "10:18 UTC",
+            incident_id: currentIncident.id,
           },
-          geometry: {
-            type: "Point" as const,
-            coordinates: baseOrigin,
-          },
+          geometry: { type: "Point" as const, coordinates: baseOrigin },
         },
       ],
     };
-  }, [currentIncident, selectedSpillId, baseOrigin]);
+  }, [isPostDischarge, operationalMode, currentIncident, baseOrigin]);
 
-  // Initialize MapLibre GL Map
+  // Initialize MapLibre Engine
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
-
-    const initCenter: [number, number] = centerCoordinates || [72.350, 19.050];
-    const initZoom = 9.8;
+    if (!mapContainerRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: {
         version: 8,
         sources: {
-          'esri-dark-base': {
+          'carto-dark': {
             type: 'raster',
             tiles: [
-              'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+              'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+              'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+              'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
             ],
             tileSize: 256,
-            attribution: 'Esri, GEBCO, Garmin',
-          },
-          'esri-dark-reference': {
-            type: 'raster',
-            tiles: [
-              'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
-            ],
-            tileSize: 256,
+            attribution: '© CartoDB, OpenStreetMap',
           },
         },
         layers: [
           {
-            id: 'base-tiles',
+            id: 'carto-dark-layer',
             type: 'raster',
-            source: 'esri-dark-base',
+            source: 'carto-dark',
             minzoom: 0,
-            maxzoom: 19,
-          },
-          {
-            id: 'reference-tiles',
-            type: 'raster',
-            source: 'esri-dark-reference',
-            minzoom: 0,
-            maxzoom: 19,
-            paint: { 'raster-opacity': 0.65 },
+            maxzoom: 20,
           },
         ],
       },
-      center: initCenter,
-      zoom: initZoom,
+      center: centerCoordinates || baseOrigin,
+      zoom: 10.4,
+      pitch: 32,
+      bearing: -12,
       attributionControl: false,
     });
 
@@ -305,7 +384,41 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     map.on('load', () => {
       setMapLoaded(true);
 
-      // 1. Forecast Source & Layers (Cyan Fan)
+      // 1. Marine Ecology & Fishery Habitats Source & Layers
+      map.addSource('ecology-source', {
+        type: 'geojson',
+        data: MARINE_ECOLOGY_FEATURES,
+      });
+
+      map.addLayer({
+        id: 'ecology-fill',
+        type: 'fill',
+        source: 'ecology-source',
+        paint: {
+          'fill-color': [
+            'match',
+            ['get', 'risk_level'],
+            'CRITICAL', '#10b981',
+            'HIGH', '#059669',
+            '#047857'
+          ],
+          'fill-opacity': 0.12,
+        },
+      });
+
+      map.addLayer({
+        id: 'ecology-line',
+        type: 'line',
+        source: 'ecology-source',
+        paint: {
+          'line-color': '#10b981',
+          'line-width': 1.5,
+          'line-dasharray': [3, 2],
+          'line-opacity': 0.6,
+        },
+      });
+
+      // 2. Forecast Source & Layers (Cyan Fan)
       map.addSource('forecast-source', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -317,7 +430,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'forecast-source',
         paint: {
           'fill-color': '#06b6d4',
-          'fill-opacity': 0.12,
+          'fill-opacity': 0.14,
         },
       });
 
@@ -327,12 +440,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'forecast-source',
         paint: {
           'line-color': '#22d3ee',
-          'line-width': 1.5,
+          'line-width': 1.8,
           'line-dasharray': [3, 3],
         },
       });
 
-      // 2. Hindcast Source & Layers (Amber Reverse Cone & Vector)
+      // 3. Hindcast Source & Layers (Amber Reverse Cone & Vector)
       map.addSource('hindcast-source', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -345,7 +458,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         filter: ['==', '$type', 'Polygon'],
         paint: {
           'fill-color': '#f59e0b',
-          'fill-opacity': 0.14,
+          'fill-opacity': 0.16,
         },
       });
 
@@ -361,7 +474,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 3. Dump Origin Point Layers
+      // 4. Dump Origin Point Layers
       map.addSource('dump-origin-source', {
         type: 'geojson',
         data: dumpOriginFeature,
@@ -400,7 +513,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 4. Secondary Background Trajectories
+      // 5. Secondary Background Trajectories
       map.addSource('all-trajectories', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -414,11 +527,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           'line-color': '#64748b',
           'line-width': 1.5,
           'line-dasharray': [3, 3],
-          'line-opacity': 0.45,
+          'line-opacity': 0.40,
         },
       });
 
-      // 5. Active Culprit Trajectory Layers
+      // 6. Active Culprit Trajectory Layers
       map.addSource('culprit-trajectory', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] },
@@ -446,7 +559,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 6. Oil Spill Layers (Multi-Spill Polygons)
+      // 7. Oil Spill Layers (Multi-Spill Polygons)
       map.addSource('spills-source', {
         type: 'geojson',
         data: currentSpills,
@@ -458,8 +571,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'spills-source',
         paint: {
           'line-color': '#e11d48',
-          'line-width': 6,
-          'line-opacity': 0.35,
+          'line-width': 7,
+          'line-opacity': 0.40,
         },
       });
 
@@ -477,7 +590,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           'fill-opacity': [
             'case',
             ['==', ['get', 'id'], selectedSpillId],
-            0.60,
+            0.65,
             0.35
           ],
         },
@@ -497,7 +610,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           'line-width': [
             'case',
             ['==', ['get', 'id'], selectedSpillId],
-            2.8,
+            3.0,
             1.5
           ],
         },
@@ -548,9 +661,18 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const dumpSrc = map.getSource('dump-origin-source') as maplibregl.GeoJSONSource;
     if (dumpSrc) dumpSrc.setData(dumpOriginFeature);
 
-    // 5. Update Background Trajectories for all vessels
+    // 5. Update Ecology Layer Visibility
+    const ecologyFill = map.getLayer('ecology-fill');
+    const isEcologyMode = operationalMode === 'ecology';
+    if (ecologyFill) {
+      map.setLayoutProperty('ecology-fill', 'visibility', (showEcology && isEcologyMode) ? 'visible' : 'none');
+      map.setLayoutProperty('ecology-line', 'visibility', (showEcology && isEcologyMode) ? 'visible' : 'none');
+    }
+
+    // 6. Update Background Trajectories for all vessels
     const allTrajSrc = map.getSource('all-trajectories') as maplibregl.GeoJSONSource;
-    if (allTrajSrc && showTrails) {
+    const shouldShowTrails = showTrails && (operationalMode === 'hindcast' || operationalMode === 'surveillance');
+    if (allTrajSrc && shouldShowTrails) {
       const bgFeatures = MUMBAI_VESSEL_WAYPOINTS.map((vw) => ({
         type: 'Feature' as const,
         properties: { mmsi: vw.mmsi, name: vw.name },
@@ -564,10 +686,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       allTrajSrc.setData({ type: 'FeatureCollection', features: [] });
     }
 
-    // 6. Update Active Inspected Culprit Trajectory Track (Persisted Always)
+    // 7. Update Active Inspected Culprit Trajectory Track
     const trajSrc = map.getSource('culprit-trajectory') as maplibregl.GeoJSONSource;
-    if (trajSrc && showTrails) {
-      // Find track points from suspect data or waypoints
+    if (trajSrc && shouldShowTrails) {
       const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === activeSuspect?.mmsi);
       let lineCoords: number[][] = [];
 
@@ -594,14 +715,23 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     } else if (trajSrc) {
       trajSrc.setData({ type: 'FeatureCollection', features: [] });
     }
-  }, [mapLoaded, currentSpills, hindcastFeatures, forecastFeatures, dumpOriginFeature, activeSuspect, showTrails]);
+  }, [
+    mapLoaded,
+    currentSpills,
+    hindcastFeatures,
+    forecastFeatures,
+    dumpOriginFeature,
+    activeSuspect,
+    showTrails,
+    showEcology,
+    operationalMode
+  ]);
 
   // Smooth camera fly-to when selected incident or vessel changes
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
 
-    // Center on active vessel position or incident origin
     const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === activeSuspect?.mmsi);
     const lastWp = activeWaypointTrack?.waypoints[activeWaypointTrack.waypoints.length - 1];
     const targetLon = lastWp?.lon ?? activeSuspect?.last_lon ?? baseOrigin[0];
@@ -655,12 +785,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         el.style.alignItems = 'center';
         el.style.justifyContent = 'center';
 
-        // Outer focus pulse ring for selected vessel
         const ring = document.createElement('div');
         ring.className = 'marker-ring absolute inset-0 rounded-full transition-all pointer-events-none';
         el.appendChild(ring);
 
-        // Vessel SVG Ship icon container (rotates with vessel heading)
         const svgContainer = document.createElement('div');
         svgContainer.className = 'marker-icon-container relative z-10 flex items-center justify-center pointer-events-none';
         svgContainer.style.width = '26px';
@@ -684,7 +812,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         svgContainer.appendChild(svg);
         el.appendChild(svgContainer);
 
-        // Label tooltip centered above marker (stays strictly horizontal)
         const label = document.createElement('div');
         label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-slate-700 text-[9px] font-mono text-white whitespace-nowrap pointer-events-none transition-all shadow-md z-30 flex items-center gap-1';
         label.innerText = name.split(' ')[0] || name;
@@ -704,7 +831,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         marker.setLngLat([v.lon, v.lat]);
       }
 
-      // Update styling and heading rotation
       const el = marker.getElement();
       const ring = el.querySelector('.marker-ring') as HTMLElement;
       const svgContainer = el.querySelector('.marker-icon-container') as HTMLElement;
@@ -741,7 +867,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       }
     });
 
-    // Cleanup markers no longer active
     const activeKeys = new Set(displayVessels.map((v) => `vessel-${v.mmsi}`));
     Object.keys(markersRef.current).forEach((key) => {
       if (!activeKeys.has(key)) {
@@ -752,77 +877,155 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   }, [mapLoaded, vessels, scrubbedVessels, activeSuspect, currentIncident]);
 
   return (
-    <div className="relative w-full h-full bg-[#0b0f19] overflow-hidden">
+    <div className="relative w-full h-full bg-[#0b0f19] overflow-hidden select-none">
       {/* MapLibre WebGL Canvas */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Mobile Floating Tactical HUD Banner (Top of Map on Mobile) */}
-      <div
-        onClick={onOpenMobileDrawer}
-        className="lg:hidden absolute top-2.5 left-2.5 right-2.5 z-20 p-2.5 bg-[#111622]/95 border border-cyan-500/40 rounded-xl backdrop-blur-md font-mono shadow-2xl flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all ring-1 ring-cyan-500/20 select-none"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-white font-bold text-xs truncate">{currentIncident.name}</span>
-              <span className="text-[8.5px] bg-rose-950 text-rose-300 font-bold px-1.5 py-0.2 rounded border border-rose-600/40 shrink-0">
-                {currentIncident.threat.overall_severity_score}/100
-              </span>
-            </div>
-            <div className="text-[9.5px] text-slate-300 flex items-center gap-1.5 truncate mt-0.5">
-              <span>Area: <strong className="text-rose-300">{currentIncident.baseAreaSqKm} km²</strong></span>
-              <span>•</span>
-              <span>Coast: <strong className="text-white">{currentIncident.threat.coast_distance_km} km</strong></span>
-              <span>•</span>
-              <span>ETA: <strong className="text-amber-300">{currentIncident.threat.predicted_arrival_hours}h</strong></span>
-            </div>
+      {/* ============================================================== */}
+      {/* MAP OPERATIONAL MODE TABS (TOP CENTER) - REORGANIZED & CLEAN */}
+      {/* ============================================================== */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center bg-[#111622]/95 border border-cyan-500/40 p-1 rounded-xl shadow-2xl backdrop-blur-md font-mono text-[10.5px] max-w-[95vw] overflow-x-auto no-scrollbar gap-1 ring-1 ring-cyan-500/20">
+        <button
+          onClick={() => setOperationalMode('surveillance')}
+          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+            operationalMode === 'surveillance'
+              ? 'bg-cyan-500 text-slate-950 shadow-md scale-105'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+          title="Default clean tactical view"
+        >
+          <Crosshair className="w-3.5 h-3.5" />
+          <span>Surveillance</span>
+        </button>
+
+        <button
+          onClick={() => setOperationalMode('hindcast')}
+          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+            operationalMode === 'hindcast'
+              ? 'bg-amber-500 text-slate-950 shadow-md scale-105'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+          title="Reverse drift cone and AIS kinematics"
+        >
+          <History className="w-3.5 h-3.5" />
+          <span>-6h Hindcast</span>
+        </button>
+
+        <button
+          onClick={() => setOperationalMode('forecast')}
+          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+            operationalMode === 'forecast'
+              ? 'bg-cyan-400 text-slate-950 shadow-md scale-105'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+          title="+6h Fay forward drift dispersion"
+        >
+          <Navigation className="w-3.5 h-3.5" />
+          <span>+6h Landfall</span>
+        </button>
+
+        <button
+          onClick={() => setOperationalMode('ecology')}
+          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+            operationalMode === 'ecology'
+              ? 'bg-emerald-500 text-slate-950 shadow-md scale-105'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+          title="MPAs, Coral Reefs & Commercial Fishery sectors"
+        >
+          <Fish className="w-3.5 h-3.5" />
+          <span>Ecology & Habitats</span>
+        </button>
+
+        <button
+          onClick={() => setOperationalMode('sar')}
+          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
+            operationalMode === 'sar'
+              ? 'bg-rose-500 text-white shadow-md scale-105'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+          title="Sentinel-1 SAR radar backscatter & 6-class breakdown"
+        >
+          <Satellite className="w-3.5 h-3.5" />
+          <span>SAR Radar</span>
+        </button>
+      </div>
+
+      {/* ============================================================== */}
+      {/* FLOATING COLLAPSIBLE LAYERS BUTTON & DRAWER (TOP LEFT) */}
+      {/* ============================================================== */}
+      <div className="absolute top-16 left-3 sm:left-4 z-20 flex flex-col font-mono text-xs select-none">
+        <button
+          onClick={() => setShowLayerDrawer(!showLayerDrawer)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111622]/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 shadow-xl backdrop-blur-md transition-all active:scale-95"
+          title="Toggle individual map layers"
+        >
+          <Layers className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="text-[11px] font-bold">Layers</span>
+          {showLayerDrawer ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
+        </button>
+
+        {showLayerDrawer && (
+          <div className="mt-2 bg-[#111622]/95 border border-slate-700 rounded-xl p-2.5 flex flex-col gap-1.5 backdrop-blur-md shadow-2xl animate-in fade-in slide-in-from-top-2 w-52">
+            <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider px-1">
+              Active Layer Overrides
+            </span>
+            <button
+              onClick={() => setShowHindcast(!showHindcast)}
+              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all text-[11px] ${
+                showHindcast ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <History className="w-3.5 h-3.5" />
+                <span>-6h Hindcast Cone</span>
+              </div>
+              <span className="text-[9px]">{showHindcast ? 'ON' : 'OFF'}</span>
+            </button>
+            <button
+              onClick={() => setShowForecast(!showForecast)}
+              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all text-[11px] ${
+                showForecast ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Navigation className="w-3.5 h-3.5" />
+                <span>+6h Drift Fan</span>
+              </div>
+              <span className="text-[9px]">{showForecast ? 'ON' : 'OFF'}</span>
+            </button>
+            <button
+              onClick={() => setShowTrails(!showTrails)}
+              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all text-[11px] ${
+                showTrails ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>AIS Kinematics</span>
+              </div>
+              <span className="text-[9px]">{showTrails ? 'ON' : 'OFF'}</span>
+            </button>
+            <button
+              onClick={() => setShowEcology(!showEcology)}
+              className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all text-[11px] ${
+                showEcology ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold' : 'text-slate-400 hover:text-white hover:bg-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Fish className="w-3.5 h-3.5" />
+                <span>Ecology & Fish</span>
+              </div>
+              <span className="text-[9px]">{showEcology ? 'ON' : 'OFF'}</span>
+            </button>
           </div>
-        </div>
-        <div className="flex items-center gap-1 text-[9.5px] text-cyan-300 font-bold bg-cyan-950/60 px-2 py-1 rounded-lg border border-cyan-500/40 shrink-0 ml-2">
-          <span>Inspector</span>
-          <ChevronUp className="w-3.5 h-3.5" />
-        </div>
+        )}
       </div>
 
-      {/* Layer Toggles & Map Controls Overlay */}
-      <div className="absolute top-16 sm:top-4 left-3 sm:left-4 flex flex-col gap-2 z-10 font-mono text-xs select-none">
-        <div className="bg-[#111622]/90 border border-slate-800 rounded-lg p-1.5 sm:p-2 flex flex-col gap-1 sm:gap-1.5 backdrop-blur-md shadow-lg">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider px-1">
-            Tactical Layers
-          </span>
-          <button
-            onClick={() => setShowHindcast(!showHindcast)}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded text-left transition-all ${
-              showHindcast ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>-6h Hindcast Cone</span>
-          </button>
-          <button
-            onClick={() => setShowForecast(!showForecast)}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded text-left transition-all ${
-              showForecast ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Navigation className="w-3.5 h-3.5" />
-            <span>+6h Drift Forecast</span>
-          </button>
-          <button
-            onClick={() => setShowTrails(!showTrails)}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded text-left transition-all ${
-              showTrails ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>AIS Kinematic Tracks</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Map Zoom & Center Controls */}
-      <div className="absolute top-4 right-4 flex flex-col gap-1.5 z-10 select-none">
+      {/* ============================================================== */}
+      {/* MAP ZOOM & CENTER CONTROLS (TOP RIGHT) */}
+      {/* ============================================================== */}
+      <div className="absolute top-16 right-3 sm:right-4 flex flex-col gap-1.5 z-20 select-none">
         <button
           onClick={() => mapRef.current?.zoomIn()}
           className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
@@ -850,35 +1053,33 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </button>
       </div>
 
-      {/* Active Incident Legend Indicator (Bottom-Right) */}
-      <div className="absolute bottom-20 right-4 z-10 hidden sm:flex flex-col gap-1.5 p-3 bg-[#111622]/95 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-2xl max-w-xs ring-1 ring-slate-800/80">
+      {/* ============================================================== */}
+      {/* TOP-RIGHT DOCKED TELEMETRY CAPSULE (NON-OVERLAPPING) */}
+      {/* ============================================================== */}
+      <div className="absolute top-32 right-3 sm:right-4 z-10 hidden md:flex flex-col gap-1 p-2.5 bg-[#111622]/95 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-2xl max-w-[240px] ring-1 ring-slate-800/80">
         <div className="flex items-center justify-between font-bold text-white border-b border-slate-800 pb-1">
           <span className="flex items-center gap-1.5 text-cyan-400">
             <Compass className="w-3.5 h-3.5" />
-            MUMBAI TACTICAL RADAR
+            MUMBAI EEZ RADAR
           </span>
           <span className="text-rose-400 font-bold">{timeOffsetMinutes === 0 ? 'LIVE' : `T${timeOffsetMinutes}m`}</span>
         </div>
-        <div className="flex justify-between items-center text-[10px]">
-          <span className="text-slate-400">Target Vessel:</span>
-          <strong className="text-white">{activeSuspect?.name || 'Inspecting...'}</strong>
+        <div className="flex justify-between items-center text-[10px] pt-0.5">
+          <span className="text-slate-400">Incident:</span>
+          <strong className="text-white truncate max-w-[130px]">{currentIncident.name}</strong>
         </div>
         <div className="flex justify-between items-center text-[10px]">
-          <span className="text-slate-400">Breach Origin:</span>
-          <strong className="text-amber-300">{currentIncident.name}</strong>
+          <span className="text-slate-400">Centroid:</span>
+          <strong className="text-cyan-300">{currentIncident.centroid[0].toFixed(3)}°N, {currentIncident.centroid[1].toFixed(3)}°E</strong>
         </div>
         <div className="flex justify-between items-center text-[10px]">
-          <span className="text-slate-400">Coast Distance:</span>
-          <strong className="text-rose-300">{currentIncident.threat.coast_distance_km} km</strong>
-        </div>
-        <div className="flex justify-between items-center text-[10px]">
-          <span className="text-slate-400">Landfall Arrival:</span>
-          <strong className="text-amber-400">{currentIncident.threat.predicted_arrival_hours} hrs</strong>
+          <span className="text-slate-400">Culprit:</span>
+          <strong className="text-rose-400">{activeSuspect?.name || 'Inspecting...'}</strong>
         </div>
         <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-800/80">
-          <span className="text-slate-400">Threat Severity:</span>
+          <span className="text-slate-400">Threat Level:</span>
           <span className="flex items-center gap-1 text-rose-400 font-bold">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
             {currentIncident.threat.overall_severity_score}/100 ({currentIncident.threat.overall_severity_level})
           </span>
         </div>

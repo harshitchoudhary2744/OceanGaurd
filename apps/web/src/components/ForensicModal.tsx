@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Sparkles, FileText, History, ShieldAlert, Gauge, ZapOff, Navigation } from 'lucide-react';
+import { X, Sparkles, FileText, History, ShieldAlert, Gauge, ZapOff, Navigation, MapPin } from 'lucide-react';
 import { downloadPdfReportUrl } from '../lib/api';
 import { MUMBAI_INCIDENTS } from '../lib/simulationEngine';
 
@@ -13,6 +13,7 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
   if (!isOpen) return null;
 
   const currentIncident = MUMBAI_INCIDENTS[spillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
+  const falsePositive = currentIncident.false_positive_analysis;
 
   const handleDownload = async () => {
     const url = await downloadPdfReportUrl(spillId);
@@ -48,24 +49,35 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Raw SAR */}
             <div className="bg-[#0a0e18] p-4 rounded-xl border border-slate-800 relative flex flex-col justify-between h-52">
-              <span className="font-mono text-xs font-bold text-white px-2 py-1 rounded bg-slate-900 self-start border border-slate-700">
-                1. RAW SENTINEL-1 C-BAND ({currentIncident.name.toUpperCase()})
-              </span>
+              <div className="flex justify-between items-center">
+                <span className="font-mono text-xs font-bold text-white px-2 py-1 rounded bg-slate-900 self-start border border-slate-700">
+                  1. RAW SENTINEL-1 C-BAND ({currentIncident.name.toUpperCase()})
+                </span>
+                <span className="text-[10px] font-mono text-cyan-300">
+                  {currentIncident.acquisition_timestamp_utc}
+                </span>
+              </div>
               <svg className="w-full h-28 opacity-70" viewBox="0 0 200 100">
                 <path d="M 30 60 Q 70 40 110 50 T 170 70 Q 140 85 90 75 T 40 70 Z" fill="#0f1923" stroke="#06b6d4" strokeWidth="1" />
                 <circle cx="140" cy="45" r="3" fill="#22d3ee" />
                 <line x1="140" y1="45" x2="100" y2="55" stroke="#22d3ee" strokeDasharray="2 2" />
               </svg>
-              <div className="text-[10px] font-mono text-slate-400 self-end">
-                LAT: {currentIncident.originCoords[1]}° N | LON: {currentIncident.originCoords[0]}° E
+              <div className="text-[10px] font-mono text-slate-400 self-end flex justify-between w-full">
+                <span>CENTROID: {currentIncident.centroid[0]}°N, {currentIncident.centroid[1]}°E</span>
+                <span>DAMPING: {falsePositive.marangoni_damping_db} dB</span>
               </div>
             </div>
 
             {/* AI Segmentation & Hindcast Reverse Vector */}
             <div className="bg-[#0a0e18] p-4 rounded-xl border border-rose-500/50 relative flex flex-col justify-between h-52">
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900 self-start border border-rose-500/40">
-                <Sparkles className="w-3 h-3 text-rose-400" />
-                <span className="font-mono text-xs font-bold text-rose-300">2. U-NET SEGMENTATION & HINDCAST VECTOR</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900 self-start border border-rose-500/40">
+                  <Sparkles className="w-3 h-3 text-rose-400" />
+                  <span className="font-mono text-xs font-bold text-rose-300">2. U-NET SEGMENTATION & HINDCAST</span>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
+                  Dice Score: {(currentIncident.segmentation_dice_score * 100).toFixed(1)}%
+                </span>
               </div>
               <svg className="w-full h-28" viewBox="0 0 200 100">
                 <path d="M 30 60 Q 70 40 110 50 T 170 70 Q 140 85 90 75 T 40 70 Z" fill="rgba(244,63,94,0.4)" stroke="#f43f5e" strokeWidth="2" />
@@ -80,15 +92,49 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
             </div>
           </div>
 
+          {/* Look-Alike & False-Positive 6-Class Analysis Card */}
+          <div className="p-3.5 bg-slate-900/90 rounded-xl border border-cyan-500/30 flex flex-col gap-2 text-xs font-mono">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <span className="text-cyan-300 font-bold flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                SAR LOOK-ALIKE & FALSE-POSITIVE DISAMBIGUATION (6-CLASS MODEL)
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/40">
+                  Likely Oil: {falsePositive.likely_oil_pct}%
+                </span>
+                <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-700">
+                  Look-alike: {falsePositive.lookalike_pct}%
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-[10px]">
+              {Object.entries(falsePositive.classes).map(([className, pct]) => {
+                const isOil = className === 'Oil';
+                return (
+                  <div key={className} className="p-2 bg-[#0a0e18] rounded border border-slate-800 flex flex-col gap-0.5">
+                    <span className={isOil ? 'text-rose-300 font-bold' : 'text-slate-400'}>{className}</span>
+                    <span className={isOil ? 'text-emerald-400 font-bold text-xs' : 'text-slate-300 font-semibold'}>{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-[10px] text-slate-400 leading-relaxed bg-[#0a0e18] p-2 rounded border border-slate-800">
+              <span className="text-cyan-400 font-semibold">Physics Verification: </span>
+              {falsePositive.sar_physics_reasoning}
+            </div>
+          </div>
+
           {/* Anomaly Breakdown Matrix */}
           <div className="p-3.5 bg-slate-900/90 rounded-xl border border-rose-500/30 flex flex-col gap-2.5 text-xs font-mono">
             <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
               <span className="text-rose-300 font-bold flex items-center gap-1.5">
                 <ShieldAlert className="w-4 h-4 text-rose-400" />
-                VESSEL ANOMALY & KINEMATIC MATRIX
+                VESSEL KINEMATIC ANOMALY BREAKDOWN
               </span>
               <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">
-                98.4% Composite Risk
+                Weighted Anomaly Score: 98.4 / 100
               </span>
             </div>
 
@@ -180,3 +226,4 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
     </div>
   );
 };
+

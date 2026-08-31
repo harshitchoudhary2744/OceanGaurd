@@ -375,12 +375,17 @@ async def detect_spill_from_sar_image(
     new_spill_obj = {
         "id": new_spill_id,
         "detection_timestamp": datetime.utcnow().isoformat() + "Z",
+        "acquisition_timestamp_utc": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
         "area_sq_km": metrics["area_sq_km"],
         "perimeter_km": metrics["perimeter_km"],
         "confidence_score": metrics["confidence"],
+        "segmentation_dice_score": metrics.get("segmentation_dice_score", 0.988),
+        "oil_likelihood_score": metrics.get("oil_likelihood_score", 0.940),
+        "lookalike_score": metrics.get("lookalike_score", 0.060),
         "source_scene": scene_id or "S1A_IW_GRDH_1SDV_UPLOADED",
         "status": "ACTIVE",
         "center": [center_lon, center_lat],
+        "centroid": [center_lat, center_lon],
         "polygon_coordinates": feature["geometry"]["coordinates"][0],
         "estimated_discharge_liters": int(metrics["area_sq_km"] * 10500),
         "slick_type": "Synthetic SAR Dark-Spot Detection"

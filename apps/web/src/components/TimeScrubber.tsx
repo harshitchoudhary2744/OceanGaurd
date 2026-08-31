@@ -1,5 +1,24 @@
 import React, { useState, useMemo } from 'react';
-import { Play, Pause, RotateCcw, AlertTriangle, Radio, Navigation2, Satellite, Target, ChevronRight, ChevronLeft } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  AlertTriangle,
+  Radio,
+  Navigation2,
+  Satellite,
+  Target,
+  ChevronRight,
+  ChevronLeft,
+  ListOrdered,
+  Clock,
+  ArrowDown,
+  ChevronDown,
+  ChevronUp,
+  ShieldAlert,
+  Gauge,
+  ZapOff
+} from 'lucide-react';
 import { MUMBAI_INCIDENTS, TimelineKeyEvent } from '../lib/simulationEngine';
 
 interface TimeScrubberProps {
@@ -22,6 +41,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   activeSpillId = 'INC-MUM-2024-01',
 }) => {
   const [hoveredEvent, setHoveredEvent] = useState<TimelineKeyEvent | null>(null);
+  const [showTimelineDrawer, setShowTimelineDrawer] = useState<boolean>(false);
   const currentIncident = MUMBAI_INCIDENTS[activeSpillId] || MUMBAI_INCIDENTS['INC-MUM-2024-01'];
   const events = currentIncident.events || [];
 
@@ -31,6 +51,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   // Calculate formatted times for active scrubber position
   const activeDate = useMemo(() => new Date(now.getTime() + timeOffsetMinutes * 60 * 1000), [now, timeOffsetMinutes]);
   const activeTimeStr = activeDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
+  const activeUtcStr = activeDate.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour12: false }) + ' UTC';
   const activeDateStr = activeDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
   
   const absMins = Math.abs(timeOffsetMinutes);
@@ -105,35 +126,55 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   };
 
   return (
-    <div className="w-full max-w-[720px] mx-auto pointer-events-auto tactical-glass rounded-2xl flex flex-col p-2 sm:p-3 gap-1.5 shadow-2xl border border-slate-700/70 select-none backdrop-blur-md">
+    <div className="w-full max-w-[760px] mx-auto pointer-events-auto tactical-glass rounded-2xl flex flex-col p-2 sm:p-3 gap-1.5 shadow-2xl border border-slate-700/70 select-none backdrop-blur-md relative">
       
       {/* Top Status & Anomaly Event HUD Banner */}
       <div className="flex items-center justify-between px-1.5 sm:px-2 gap-2 text-xs font-mono border-b border-slate-800/80 pb-1.5">
         <div className="flex items-center gap-2 min-w-0">
           <span className="flex items-center gap-1.5 text-cyan-400 font-bold shrink-0 text-[11px] sm:text-xs">
             <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-            <span>{currentIncident.name}</span>
+            <span className="hidden xs:inline">{currentIncident.name}</span>
+            <span className="xs:hidden">Live Replay</span>
           </span>
           <span className="text-slate-600 hidden sm:inline">|</span>
           {activeEvent && (
             <div className="flex items-center gap-1.5 truncate text-[10px] sm:text-[11px]">
               <span className={`px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold border ${getEventBadgeStyle(activeEvent.type)}`}>
-                {activeEvent.icon} {activeEvent.label} ({activeEvent.tMinutes === 0 ? 'LIVE' : `T${activeEvent.tMinutes}m`})
+                {activeEvent.icon} {activeEvent.action_headline || activeEvent.label}
               </span>
               <span className="text-slate-200 font-semibold truncate hidden md:inline">{activeEvent.title}</span>
-              <span className="text-slate-400 text-[10px] hidden lg:inline">({activeEvent.speed.toFixed(1)} kts • {activeEvent.coordinates[1].toFixed(3)}°N, {activeEvent.coordinates[0].toFixed(3)}°E)</span>
+              <span className="text-cyan-300 font-mono text-[10px] hidden lg:inline">({activeEvent.timestamp_utc || `${activeEvent.tMinutes}m`})</span>
             </div>
           )}
         </div>
 
-        {/* Current Playback Real Timestamp Readout */}
+        {/* Action Timeline Toggle Button & Current Playback Real Timestamp Readout */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Action Timeline Flow Button */}
+          <button
+            onClick={() => setShowTimelineDrawer(!showTimelineDrawer)}
+            className={`px-2 py-1 rounded-lg text-[10px] sm:text-xs font-mono font-bold flex items-center gap-1.5 transition-all border ${
+              showTimelineDrawer
+                ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md ring-2 ring-cyan-500/30'
+                : 'bg-slate-900/90 text-cyan-300 hover:text-white border-cyan-500/40 hover:bg-slate-800'
+            }`}
+            title="Toggle step-by-step Action Timeline with exact timestamps"
+            aria-label="Toggle action timeline flow"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Timeline</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-slate-800 text-cyan-300 text-[9px] border border-cyan-500/30">
+              {events.length}
+            </span>
+            {showTimelineDrawer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+
           <div className="text-right">
             <div className="text-[10px] sm:text-xs font-bold text-cyan-300 tracking-wider">
               {activeTimeStr}
             </div>
             <div className="text-[8px] sm:text-[9px] text-slate-400 font-medium">
-              {activeDateStr} • <span className="text-rose-400 font-bold">{tMinusString}</span>
+              <span className="text-slate-300 font-mono">{activeUtcStr}</span> • <span className="text-rose-400 font-bold">{tMinusString}</span>
             </div>
           </div>
         </div>
@@ -180,13 +221,32 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
           </button>
         </div>
 
-        {/* Timeline Slider with Embedded Major Event Pins */}
-        <div className="flex-1 flex flex-col gap-1 min-w-0 relative">
-          <div className="relative flex items-center h-6">
+        {/* Timeline Slider with Dedicated Visible Timestamps Directly Along the Bar */}
+        <div className="flex-1 flex flex-col gap-1.5 min-w-0 relative">
+          {/* Top Timestamps Row Directly on the Bar Track */}
+          <div className="flex justify-between items-center text-[9.5px] font-mono text-slate-400 font-bold px-1 select-none">
+            <span className="text-slate-400 bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800 shadow-sm">
+              05:00 UTC (-6h)
+            </span>
+            <span className="text-slate-400 hidden sm:inline bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800 shadow-sm">
+              07:00 UTC (-4h)
+            </span>
+            <span className="text-slate-400 bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800 shadow-sm">
+              09:00 UTC (-2h)
+            </span>
+            <span className="text-rose-300 bg-rose-950/90 px-2 py-0.5 rounded border border-rose-500/50 shadow-sm animate-pulse">
+              10:18 UTC (BREACH)
+            </span>
+            <span className="text-cyan-300 bg-cyan-950/90 px-2 py-0.5 rounded border border-cyan-500/50 shadow-sm">
+              11:00 UTC (LIVE)
+            </span>
+          </div>
+
+          <div className="relative flex items-center h-7">
             {/* Background Track with Gradient for Breach Zone */}
-            <div className="absolute inset-x-0 h-1.5 bg-slate-900 rounded-full border border-slate-700/80 overflow-hidden">
+            <div className="absolute inset-x-0 h-2 bg-slate-900/95 rounded-full border border-slate-700/80 overflow-hidden shadow-inner">
               <div
-                className="h-full bg-gradient-to-r from-slate-700 via-amber-500/40 via-rose-500/80 to-cyan-400 transition-all"
+                className="h-full bg-gradient-to-r from-slate-700 via-amber-500/60 via-rose-500/90 to-cyan-400 transition-all shadow-[0_0_12px_rgba(6,182,212,0.5)]"
                 style={{ width: `${((timeOffsetMinutes - -360) / 360) * 100}%` }}
               />
             </div>
@@ -199,63 +259,62 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
               step={1}
               value={timeOffsetMinutes}
               onChange={(e) => onChangeTimeOffset(Number(e.target.value))}
-              className="w-full h-4 opacity-0 z-20 cursor-pointer absolute inset-0"
+              className="w-full h-6 opacity-0 z-20 cursor-pointer absolute inset-0"
               aria-label="Time playback position in minutes from live"
             />
 
             {/* Embedded Keyframe Event Markers on the Track */}
             {events.map((evt) => {
               const leftPercent = ((evt.tMinutes - -360) / 360) * 100;
-              const isSelected = Math.abs(timeOffsetMinutes - evt.tMinutes) <= 3;
-              const evtDate = new Date(now.getTime() + evt.tMinutes * 60 * 1000);
-              const evtTimeStr = evtDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
+              const isSelected = Math.abs(timeOffsetMinutes - evt.tMinutes) <= 4;
 
               return (
                 <div
                   key={evt.tMinutes}
-                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 group"
+                  className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 group pointer-events-none"
                   style={{ left: `${leftPercent}%` }}
                 >
                   {/* Pin element */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onChangeTimeOffset(evt.tMinutes);
-                    }}
-                    onMouseEnter={() => setHoveredEvent(evt)}
-                    onMouseLeave={() => setHoveredEvent(null)}
-                    className={`rounded-full transition-transform cursor-pointer flex items-center justify-center ${getEventPinStyle(evt.type, isSelected)}`}
-                    aria-label={`Jump to ${evt.title}`}
+                  <div
+                    className={`rounded-full transition-transform flex items-center justify-center ${getEventPinStyle(evt.type, isSelected)}`}
                   />
 
                   {/* Pulsing ring on Breach keyframe */}
                   {evt.type === 'breach' && (
-                    <span className="absolute inset-0 -m-1 rounded-full border border-rose-500 animate-ping pointer-events-none" />
+                    <span className="absolute inset-0 -m-1.5 rounded-full border border-rose-500 animate-ping pointer-events-none" />
                   )}
                 </div>
               );
             })}
+
+            {/* Floating Current Time Marker Needle Follower */}
+            <div
+              className="absolute top-0 bottom-0 pointer-events-none z-30 flex flex-col items-center -translate-x-1/2 transition-all duration-75"
+              style={{ left: `${((timeOffsetMinutes - -360) / 360) * 100}%` }}
+            >
+              <div className="w-3.5 h-3.5 rounded-full bg-cyan-400 border-2 border-white shadow-[0_0_12px_#22d3ee] mt-1.5 scale-110" />
+            </div>
           </div>
 
-          {/* Keyframe Labels & Clickable Event Tags Underneath */}
-          <div className="flex justify-between items-center font-mono text-[9px] text-slate-400 overflow-x-auto gap-1 py-0.5 no-scrollbar">
+          {/* Keyframe Labels & Clickable Exact-Timestamp Event Chips Underneath */}
+          <div className="flex justify-between items-center font-mono text-[9.5px] text-slate-400 overflow-x-auto gap-1 py-0.5 no-scrollbar">
             {events.map((evt) => {
-              const isCurrent = Math.abs(timeOffsetMinutes - evt.tMinutes) <= 8;
+              const isCurrent = Math.abs(timeOffsetMinutes - evt.tMinutes) <= 6;
               return (
                 <button
                   key={evt.tMinutes}
                   onClick={() => onChangeTimeOffset(evt.tMinutes)}
-                  className={`px-1.5 py-0.5 rounded transition-all whitespace-nowrap flex items-center gap-1 ${
+                  className={`px-2 py-0.5 rounded-md transition-all whitespace-nowrap flex items-center gap-1.5 ${
                     isCurrent
-                      ? 'bg-slate-800 text-cyan-300 font-bold border border-cyan-500/50 shadow-sm'
-                      : 'hover:bg-slate-800/60 hover:text-slate-200 text-slate-400'
+                      ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400 shadow-md scale-105 ring-1 ring-cyan-400/40'
+                      : 'hover:bg-slate-800/80 hover:text-slate-200 text-slate-400 bg-slate-900/60 border border-slate-800'
                   }`}
-                  title={`${evt.title} (${evt.tMinutes === 0 ? 'LIVE' : `T${evt.tMinutes}m`})`}
+                  title={`${evt.title} (${evt.timestamp_utc || `T${evt.tMinutes}m`})`}
                 >
                   <span>{evt.icon}</span>
-                  <span>{evt.label}</span>
-                  <span className="text-[8px] opacity-75">
-                    ({evt.tMinutes === 0 ? '0m' : `T${evt.tMinutes}m`})
+                  <span className="font-semibold">{evt.action_headline || evt.label}</span>
+                  <span className="text-[8.5px] text-cyan-400 font-mono font-bold">
+                    {evt.timestamp_utc ? evt.timestamp_utc : (evt.tMinutes === 0 ? 'LIVE' : `T${evt.tMinutes}m`)}
                   </span>
                 </button>
               );
@@ -281,16 +340,119 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
         </div>
       </div>
 
+      {/* ============================================================== */}
+      {/* EXPANDABLE ACTION TIMELINE FLOW DRAWER (EXACT TIMESTAMPS & FLOW) */}
+      {/* ============================================================== */}
+      {showTimelineDrawer && (
+        <div className="mt-2 pt-2 border-t border-slate-800/90 flex flex-col gap-2 font-mono animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
+              <ListOrdered className="w-3.5 h-3.5 text-cyan-400" />
+              <span>ACTION TIMELINE FLOW • EXACT CHRONOLOGY</span>
+            </span>
+            <span className="text-[9.5px] text-slate-400">
+              Click any stage to scrub simulation immediately
+            </span>
+          </div>
+
+          <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 flex flex-col gap-1 shadow-inner">
+            {events.map((evt, idx) => {
+              const isCurrent = Math.abs(timeOffsetMinutes - evt.tMinutes) <= 6;
+              const isBreach = evt.type === 'breach';
+              const isSar = evt.type === 'sar_detection';
+
+              return (
+                <React.Fragment key={evt.tMinutes}>
+                  {/* Event Card Node */}
+                  <div
+                    onClick={() => onChangeTimeOffset(evt.tMinutes)}
+                    className={`p-2.5 rounded-xl border cursor-pointer transition-all flex flex-col gap-1 relative ${
+                      isCurrent
+                        ? 'bg-slate-900 border-cyan-400 shadow-lg ring-2 ring-cyan-400/40 scale-[1.01]'
+                        : isBreach
+                        ? 'bg-rose-950/20 border-rose-500/30 hover:border-rose-400 hover:bg-rose-950/40'
+                        : isSar
+                        ? 'bg-cyan-950/20 border-cyan-500/30 hover:border-cyan-400 hover:bg-cyan-950/40'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
+                    }`}
+                  >
+                    {/* Header Row: Timestamp + Action Headline + Type Badge */}
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        {/* Glowing Active Indicator */}
+                        <div className="flex items-center justify-center shrink-0">
+                          {isCurrent ? (
+                            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                          ) : (
+                            <span className="text-base">{evt.icon}</span>
+                          )}
+                        </div>
+
+                        {/* Exact Timestamps */}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="font-bold text-white text-xs bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+                            timeline {evt.timestamp_utc || `${Math.abs(evt.tMinutes)}m ago`}
+                          </span>
+                          <span className="text-[10px] text-cyan-400 font-semibold hidden sm:inline">
+                            ({evt.timestamp_ist})
+                          </span>
+                        </div>
+
+                        {/* Action Headline */}
+                        <span className="font-bold text-cyan-200 text-xs truncate">
+                          {evt.action_headline}
+                        </span>
+                      </div>
+
+                      {/* Right Tag / Speed Indicator */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] text-slate-300 font-semibold hidden sm:inline">
+                          {evt.speed.toFixed(1)} kts
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[9.5px] font-bold border ${getEventBadgeStyle(
+                            evt.type
+                          )}`}
+                        >
+                          {evt.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Subtext & Details */}
+                    <div className="text-[10px] text-slate-300 pl-6 leading-relaxed flex items-center justify-between">
+                      <span>{evt.details}</span>
+                      <span className="text-[9px] text-slate-400 font-mono hidden md:inline shrink-0 ml-2">
+                        GPS: {evt.coordinates[1].toFixed(3)}°N, {evt.coordinates[0].toFixed(3)}°E
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Downward Connecting Flow Arrow (↓) between steps */}
+                  {idx < events.length - 1 && (
+                    <div className="flex items-center justify-center py-0.5 text-cyan-400/80">
+                      <div className="flex items-center gap-1 text-[11px] font-bold text-cyan-400/70">
+                        <span>↓</span>
+                      </div>
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Floating Detailed Keyframe Tooltip on Hover */}
-      {hoveredEvent && (
+      {hoveredEvent && !showTimelineDrawer && (
         <div className="absolute -top-24 left-1/2 -translate-x-1/2 bg-slate-950/95 border border-cyan-500/60 rounded-xl p-2.5 shadow-2xl z-40 max-w-sm w-[90%] font-mono pointer-events-none backdrop-blur-md">
           <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-1 mb-1">
             <span className="text-cyan-300 font-bold flex items-center gap-1.5">
               <span>{hoveredEvent.icon}</span>
-              <span>{hoveredEvent.title}</span>
+              <span>{hoveredEvent.action_headline || hoveredEvent.title}</span>
             </span>
             <span className="text-rose-400 font-bold text-[10px]">
-              {hoveredEvent.tMinutes === 0 ? 'LIVE' : `T${hoveredEvent.tMinutes}m`}
+              {hoveredEvent.timestamp_utc || `T${hoveredEvent.tMinutes}m`}
             </span>
           </div>
           <div className="text-[10px] text-slate-300 leading-tight">
@@ -305,4 +467,5 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
     </div>
   );
 };
+
 

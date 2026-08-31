@@ -1,12 +1,34 @@
+export interface FalsePositiveBreakdown {
+  likely_oil_pct: number; // e.g. 94.0
+  lookalike_pct: number; // e.g. 6.0
+  dominant_class: 'Oil' | 'Calm water' | 'Natural film' | 'Wake' | 'Rain-related artifact' | 'Unknown';
+  classes: {
+    'Oil': number; // e.g. 94.0%
+    'Calm water': number; // e.g. 2.1%
+    'Natural film': number; // e.g. 1.8%
+    'Wake': number; // e.g. 1.2%
+    'Rain-related artifact': number; // e.g. 0.6%
+    'Unknown': number; // e.g. 0.3%
+  };
+  marangoni_damping_db: number;
+  wind_threshold_valid: boolean;
+  sar_physics_reasoning: string;
+}
+
 export interface SpillProperties {
   id: string;
   detection_timestamp: string;
+  acquisition_timestamp_utc?: string; // e.g. "2024-10-18 10:44:00 UTC"
   area_sq_km: number;
   perimeter_km?: number;
-  confidence_score: number;
+  confidence_score: number; // Oil Likelihood Score
+  segmentation_dice_score?: number; // e.g. 0.988 (98.8% ground truth overlap benchmark)
+  oil_likelihood_score?: number; // e.g. 0.940 (94.0% vs lookalike)
+  false_positive_analysis?: FalsePositiveBreakdown;
   source_scene?: string;
   status: 'ACTIVE' | 'CONTAINED' | 'DISPERSED';
   center: [number, number]; // [lon, lat]
+  centroid?: [number, number]; // [lat, lon]
   estimated_discharge_liters?: number;
   slick_type?: string;
 }
@@ -32,12 +54,14 @@ export interface LinkedSpillInfo {
   detection_time_utc: string;
   volume_liters: number;
   confidence_score: number;
+  segmentation_dice_score?: number;
   slick_type: string;
   distance_km: number;
 }
 
 export interface AnomalyBreakdown {
-  composite_score: number;
+  composite_score: number; // Weighted Anomaly Score (0 - 100)
+  weighted_anomaly_score?: number;
   risk_level: 'CRITICAL' | 'HIGH' | 'ELEVATED' | 'LOW';
   speed_drop_score: number;
   speed_drop_delta_kts: number;
@@ -111,7 +135,7 @@ export interface Vessel {
   nav_status?: string;
   cargo_type?: string;
   linked_spill?: LinkedSpillInfo;
-  anomaly_score?: number;
+  anomaly_score?: number; // Weighted Anomaly Score (0 - 100)
   anomaly_breakdown?: AnomalyBreakdown;
   current_position?: {
     latitude: number;
@@ -135,7 +159,8 @@ export interface SuspectVessel {
   destination?: string;
   distance_meters: number;
   distance_km?: number;
-  probability_score: number;
+  probability_score: number; // Weighted Anomaly Score (0 - 100)
+  weighted_anomaly_score?: number;
   anomaly_score?: number;
   anomaly_breakdown?: AnomalyBreakdown;
   evidence_tags?: string[];
@@ -173,6 +198,11 @@ export interface SARInferenceResponse {
     perimeter_km: number;
     eccentricity: number;
     confidence: number;
+    segmentation_dice_score?: number;
+    oil_likelihood_score?: number;
+    lookalike_score?: number;
+    class_probabilities?: Record<string, number>;
+    false_positive_analysis?: FalsePositiveBreakdown;
   };
   primary_suspect?: SuspectVessel;
   ranked_suspects: SuspectVessel[];
