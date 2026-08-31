@@ -53,6 +53,7 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
       title: 'Sentinel-1A Mumbai High Sector Alpha',
       sceneId: 'S1A_IW_GRDH_1SDV_MUMBAI_HIGH_ALPHA',
       coords: [72.150, 19.050] as [number, number],
+      timestampIst: '2024-10-18 16:14:00 IST',
       timestampUtc: '2024-10-18 10:44:00 UTC',
       desc: 'Offshore Tanker Fairway - Heavy Crude discharge detection'
     },
@@ -61,6 +62,7 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
       title: 'Sentinel-1A JNPT Access Channel Approach',
       sceneId: 'S1A_IW_GRDH_1SDV_JNPT_CHANNEL',
       coords: [72.870, 18.895] as [number, number],
+      timestampIst: '2024-10-18 16:18:00 IST',
       timestampUtc: '2024-10-18 10:48:00 UTC',
       desc: 'Deep Water Approach - Bilge sludge flush'
     },
@@ -69,6 +71,7 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
       title: 'Sentinel-1A Mumbai Outer Anchorage / Prongs Reef',
       sceneId: 'S1A_IW_GRDH_1SDV_PRONGS_REEF',
       coords: [72.795, 18.905] as [number, number],
+      timestampIst: '2024-10-18 16:20:00 IST',
       timestampUtc: '2024-10-18 10:50:00 UTC',
       desc: 'Anchorage Bunkering Zone - Intermediate Fuel Oil breach'
     },
@@ -347,7 +350,7 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
                     </div>
                     <div className="flex justify-between text-[10px] text-slate-400">
                       <span>{preset.desc}</span>
-                      <span className="text-slate-500">{preset.timestampUtc}</span>
+                      <span className="text-cyan-400 font-mono font-bold">{preset.timestampIst}</span>
                     </div>
                   </div>
                 ))}

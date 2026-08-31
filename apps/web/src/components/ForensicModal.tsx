@@ -54,7 +54,7 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
                   1. RAW SENTINEL-1 C-BAND ({currentIncident.name.toUpperCase()})
                 </span>
                 <span className="text-[10px] font-mono text-cyan-300">
-                  {currentIncident.acquisition_timestamp_utc}
+                  {currentIncident.acquisition_timestamp_ist || "2024-10-18 16:14:00 IST"}
                 </span>
               </div>
               <svg className="w-full h-28 opacity-70" viewBox="0 0 200 100">

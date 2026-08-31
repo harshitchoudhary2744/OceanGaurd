@@ -18,6 +18,7 @@ export interface FalsePositiveBreakdown {
 export interface SpillProperties {
   id: string;
   detection_timestamp: string;
+  acquisition_timestamp_ist?: string; // e.g. "2024-10-18 16:14:00 IST"
   acquisition_timestamp_utc?: string; // e.g. "2024-10-18 10:44:00 UTC"
   area_sq_km: number;
   perimeter_km?: number;

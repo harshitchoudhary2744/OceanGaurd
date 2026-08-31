@@ -223,6 +223,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         properties: {
           id: config.id,
           detection_timestamp: new Date().toISOString(),
+          acquisition_timestamp_ist: config.acquisition_timestamp_ist,
           acquisition_timestamp_utc: config.acquisition_timestamp_utc,
           area_sq_km: live.area,
           perimeter_km: live.perimeter,
@@ -326,14 +327,18 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (!shouldShow) {
       return { type: "FeatureCollection" as const, features: [] };
     }
+
+    const breachEvent = currentIncident.events.find((e) => e.type === 'breach') || currentIncident.events[2];
+    const breachTimestamp = breachEvent?.timestamp_ist || "15:48 IST";
+
     return {
       type: "FeatureCollection" as const,
       features: [
         {
           type: "Feature" as const,
           properties: {
-            title: `Reconstructed Discharge Origin (10:18 UTC)`,
-            timestamp_utc: "10:18 UTC",
+            title: `Reconstructed Discharge Origin (${breachTimestamp})`,
+            timestamp_ist: breachTimestamp,
             incident_id: currentIncident.id,
           },
           geometry: { type: "Point" as const, coordinates: baseOrigin },

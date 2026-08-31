@@ -340,8 +340,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
           <strong className="text-white">Sentinel-1 C-SAR</strong>
         </div>
         <div className="flex justify-between">
-          <span>Pass Time (UTC):</span>
-          <strong className="text-cyan-300">{currentIncident.satellite_pass_utc}</strong>
+          <span>Pass Time (IST):</span>
+          <strong className="text-cyan-300">{currentIncident.satellite_pass_ist || "16:14:00 IST"}</strong>
         </div>
         <div className="flex justify-between">
           <span>Polarization:</span>

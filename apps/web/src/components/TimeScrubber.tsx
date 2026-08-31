@@ -63,7 +63,6 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   // Calculate formatted times for active scrubber position
   const activeDate = useMemo(() => new Date(now.getTime() + timeOffsetMinutes * 60 * 1000), [now, timeOffsetMinutes]);
   const activeTimeStr = activeDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
-  const activeUtcStr = activeDate.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour12: false }) + ' UTC';
   
   const absMins = Math.abs(timeOffsetMinutes);
   const tMinusHours = Math.floor(absMins / 60);
@@ -136,11 +135,11 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
     }
   };
 
-  // Dynamically extract top milestone points from active incident events
+  // Dynamically extract top milestone points from active incident events in IST
   const trackMilestones = useMemo(() => {
     return events.map((evt) => ({
       tMinutes: evt.tMinutes,
-      utc: evt.timestamp_utc || (evt.tMinutes === 0 ? '11:00 UTC' : `T${evt.tMinutes}m`),
+      ist: evt.timestamp_ist || (evt.tMinutes === 0 ? '16:30 IST' : `T${evt.tMinutes}m`),
       label: evt.type === 'breach' ? 'BREACH' : evt.type === 'live' ? 'LIVE' : evt.label,
       isBreach: evt.type === 'breach',
       isLive: evt.type === 'live',
@@ -165,7 +164,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
                 {activeEvent.icon} {activeEvent.action_headline || activeEvent.label}
               </span>
               <span className="text-slate-200 font-semibold truncate hidden md:inline">{activeEvent.title}</span>
-              <span className="text-cyan-300 font-mono text-[10px] hidden lg:inline">({activeEvent.timestamp_utc || `${activeEvent.tMinutes}m`})</span>
+              <span className="text-cyan-300 font-mono text-[10px] hidden lg:inline">({activeEvent.timestamp_ist || `${activeEvent.tMinutes}m`})</span>
             </div>
           )}
         </div>
@@ -196,7 +195,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
               {activeTimeStr}
             </div>
             <div className="text-[8.5px] sm:text-[9.5px] text-slate-400 font-medium">
-              <span className="text-slate-300 font-mono">{activeUtcStr}</span> • <span className="text-rose-400 font-bold">{tMinusString}</span>
+              <span className="text-slate-300 font-mono">Indian Standard Time</span> • <span className="text-rose-400 font-bold">{tMinusString}</span>
             </div>
           </div>
         </div>
@@ -245,7 +244,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
 
         {/* Timeline Slider with Dedicated Visible Timestamps Directly Along the Bar */}
         <div className="flex-1 flex flex-col gap-1.5 min-w-0 relative">
-          {/* Top Timestamps Row Directly on the Bar Track - DYNAMICALLY ALIGNED WITH INCIDENT */}
+          {/* Top Timestamps Row Directly on the Bar Track - DYNAMICALLY ALIGNED WITH INCIDENT IN IST */}
           <div className="flex justify-between items-center text-[9.5px] font-mono text-slate-400 font-bold px-1 select-none overflow-x-auto no-scrollbar gap-1">
             {trackMilestones.map((m) => (
               <button
@@ -258,9 +257,9 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
                     ? 'text-cyan-300 bg-cyan-950/90 border-cyan-500/60 font-bold'
                     : 'text-slate-400 bg-slate-900/90 border-slate-800 hover:text-white'
                 }`}
-                title={`Jump to ${m.utc} (${m.label})`}
+                title={`Jump to ${m.ist} (${m.label})`}
               >
-                {m.utc} <span className="text-[8.5px] opacity-80">({m.label})</span>
+                {m.ist} <span className="text-[8.5px] opacity-80">({m.label})</span>
               </button>
             ))}
           </div>
@@ -332,12 +331,12 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
                       ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-400 shadow-md scale-105 ring-1 ring-cyan-400/40'
                       : 'hover:bg-slate-800/80 hover:text-slate-200 text-slate-400 bg-slate-900/60 border border-slate-800'
                   }`}
-                  title={`${evt.title} (${evt.timestamp_utc || `T${evt.tMinutes}m`})`}
+                  title={`${evt.title} (${evt.timestamp_ist || `T${evt.tMinutes}m`})`}
                 >
                   <span>{evt.icon}</span>
                   <span className="font-semibold">{evt.action_headline || evt.label}</span>
                   <span className="text-[8.5px] text-cyan-400 font-mono font-bold">
-                    {evt.timestamp_utc ? evt.timestamp_utc : (evt.tMinutes === 0 ? 'LIVE' : `T${evt.tMinutes}m`)}
+                    {evt.timestamp_ist ? evt.timestamp_ist : (evt.tMinutes === 0 ? 'LIVE' : `T${evt.tMinutes}m`)}
                   </span>
                 </button>
               );
@@ -372,7 +371,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
           <div className="flex items-center justify-between px-1 bg-slate-950/60 p-1.5 rounded-lg border border-slate-800">
             <span className="text-[11px] font-bold text-cyan-300 flex items-center gap-1.5">
               <ListOrdered className="w-3.5 h-3.5 text-cyan-400" />
-              <span>ACTION TIMELINE FLOW • EXACT CHRONOLOGY</span>
+              <span>ACTION TIMELINE FLOW • EXACT CHRONOLOGY (IST)</span>
             </span>
             <button
               onClick={() => setShowTimelineDrawer(false)}
@@ -419,13 +418,10 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
                           )}
                         </div>
 
-                        {/* Exact Timestamps */}
+                        {/* Exact Timestamps in IST */}
                         <div className="flex items-baseline gap-1.5">
                           <span className="font-bold text-white text-xs bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
-                            timeline {evt.timestamp_utc || `${Math.abs(evt.tMinutes)}m ago`}
-                          </span>
-                          <span className="text-[10px] text-cyan-400 font-semibold hidden sm:inline">
-                            ({evt.timestamp_ist})
+                            timeline {evt.timestamp_ist || `${Math.abs(evt.tMinutes)}m ago`}
                           </span>
                         </div>
 
@@ -494,7 +490,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
               <span>{hoveredEvent.action_headline || hoveredEvent.title}</span>
             </span>
             <span className="text-rose-400 font-bold text-[10px]">
-              {hoveredEvent.timestamp_utc || `T${hoveredEvent.tMinutes}m`}
+              {hoveredEvent.timestamp_ist || `T${hoveredEvent.tMinutes}m`}
             </span>
           </div>
           <div className="text-[10px] text-slate-300 leading-tight">

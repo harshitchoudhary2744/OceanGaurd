@@ -216,11 +216,13 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
     });
 
     const nowIso = new Date().toISOString();
+    const nowIst = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + ' ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
     const nowUtc = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
 
     const spillObj = {
       id: mockId,
       detection_timestamp: nowIso,
+      acquisition_timestamp_ist: nowIst,
       acquisition_timestamp_utc: nowUtc,
       area_sq_km: 4.85,
       perimeter_km: 13.2,

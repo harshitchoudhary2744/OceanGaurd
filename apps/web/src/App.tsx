@@ -257,6 +257,7 @@ export function App() {
         properties: {
           id: res.spill.id,
           detection_timestamp: res.spill.detection_timestamp,
+          acquisition_timestamp_ist: res.spill.acquisition_timestamp_ist || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + ' ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
           acquisition_timestamp_utc: res.spill.acquisition_timestamp_utc || new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
           area_sq_km: res.spill.area_sq_km,
           perimeter_km: res.spill.perimeter_km,

@@ -188,7 +188,10 @@ export interface MumbaiIncidentConfig {
   locationName: string;
   originCoords: [number, number]; // [lon, lat]
   centroid: [number, number]; // [lat, lon]
+  acquisition_timestamp_ist: string; // e.g. "2024-10-18 16:14:00 IST"
   acquisition_timestamp_utc: string; // e.g. "2024-10-18 10:44 UTC"
+  satellite_pass_ist: string; // e.g. "16:14:00 IST"
+  discharge_time_ist: string; // e.g. "15:47:00 IST"
   dischargeOffsetMinutes: number;
   trackHeading: number;
   baseAreaSqKm: number;
@@ -230,7 +233,10 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     locationName: "Mumbai High Offshore (19° 02.9' N, 72° 08.7' E)",
     originCoords: [72.145, 19.048],
     centroid: [19.048, 72.145],
+    acquisition_timestamp_ist: "2024-10-18 16:14:00 IST",
     acquisition_timestamp_utc: "2024-10-18 10:44:00 UTC",
+    satellite_pass_ist: "16:14:00 IST",
+    discharge_time_ist: "15:47:00 IST",
     dischargeOffsetMinutes: -43,
     trackHeading: 325,
     baseAreaSqKm: 5.40,
@@ -348,7 +354,10 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     locationName: "JNPT Deep-Water Channel (18° 53.7' N, 72° 52.2' E)",
     originCoords: [72.870, 18.895],
     centroid: [18.895, 72.870],
+    acquisition_timestamp_ist: "2024-10-18 16:18:00 IST",
     acquisition_timestamp_utc: "2024-10-18 10:48:00 UTC",
+    satellite_pass_ist: "16:18:00 IST",
+    discharge_time_ist: "16:00:00 IST",
     dischargeOffsetMinutes: -30,
     trackHeading: 18,
     baseAreaSqKm: 2.85,
@@ -466,7 +475,10 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     locationName: "Mumbai Outer Anchorage (18° 54.3' N, 72° 47.7' E)",
     originCoords: [72.795, 18.905],
     centroid: [18.905, 72.795],
+    acquisition_timestamp_ist: "2024-10-18 16:20:00 IST",
     acquisition_timestamp_utc: "2024-10-18 10:50:00 UTC",
+    satellite_pass_ist: "16:20:00 IST",
+    discharge_time_ist: "16:05:00 IST",
     dischargeOffsetMinutes: -25,
     trackHeading: 72,
     baseAreaSqKm: 1.95,
@@ -584,7 +596,10 @@ export const MUMBAI_INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     locationName: "Neelam Offshore Field (19° 14.7' N, 71° 59.1' E)",
     originCoords: [71.985, 19.245],
     centroid: [19.245, 71.985],
+    acquisition_timestamp_ist: "2024-10-18 16:22:00 IST",
     acquisition_timestamp_utc: "2024-10-18 10:52:00 UTC",
+    satellite_pass_ist: "16:22:00 IST",
+    discharge_time_ist: "16:10:00 IST",
     dischargeOffsetMinutes: -20,
     trackHeading: 155,
     baseAreaSqKm: 3.60,
@@ -965,6 +980,7 @@ export class AutonomousSimulationEngine {
         properties: {
           id: config.id,
           detection_timestamp: new Date(now.getTime() - Math.abs(config.dischargeOffsetMinutes) * 60000).toISOString(),
+          acquisition_timestamp_ist: config.acquisition_timestamp_ist,
           acquisition_timestamp_utc: config.acquisition_timestamp_utc,
           area_sq_km: live.area,
           perimeter_km: live.perimeter,
@@ -1406,7 +1422,10 @@ export function registerCustomSpillIncident(spill: {
     locationName: spill.locationName || `Offshore Sector (${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E)`,
     originCoords: [lon, lat],
     centroid: [lat, lon],
+    acquisition_timestamp_ist: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + ' ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
     acquisition_timestamp_utc: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+    satellite_pass_ist: new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
+    discharge_time_ist: new Date(Date.now() - 42 * 60000).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
     sourceScene: spill.sourceScene || `S1A_IW_GRDH_${id}`,
     dischargeOffsetMinutes: -42,
     trackHeading: 52.0,

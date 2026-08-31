@@ -125,11 +125,12 @@ def generate_forensic_pdf_report(
     # 2. Executive Incident Overview
     elements.append(Paragraph("1. SATELLITE SAR DETECTION & STEP 1 GEOLOCATION OVERVIEW", section_header))
 
-    det_time_str = "2024-10-18 10:44:00 UTC"
+    det_time_str = "2024-10-18 16:14:00 IST"
     spill_info = spill_data or {
         "id": active_spill_id,
         "detection_timestamp": det_time_str,
-        "acquisition_timestamp_utc": det_time_str,
+        "acquisition_timestamp_ist": det_time_str,
+        "acquisition_timestamp_utc": "2024-10-18 10:44:00 UTC",
         "area_sq_km": 5.40,
         "perimeter_km": 14.8,
         "segmentation_dice_score": 0.988,
@@ -146,7 +147,7 @@ def generate_forensic_pdf_report(
             Paragraph("<b>Acquisition Platform:</b>", meta_label), Paragraph("Sentinel-1 SAR C-Band (IW Mode)", meta_val)
         ],
         [
-            Paragraph("<b>Acquisition (UTC):</b>", meta_label), Paragraph(str(spill_info.get("acquisition_timestamp_utc", det_time_str)), meta_val),
+            Paragraph("<b>Acquisition (IST):</b>", meta_label), Paragraph(str(spill_info.get("acquisition_timestamp_ist", det_time_str)), meta_val),
             Paragraph("<b>SAR Scene ID:</b>", meta_label), Paragraph(str(spill_info.get("source_scene", f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912")), meta_val)
         ],
         [
@@ -278,7 +279,7 @@ def generate_forensic_pdf_report(
 
     ais_table_data = [
         [
-            Paragraph("<b>Timestamp (UTC)</b>", meta_label),
+            Paragraph("<b>Timestamp (IST)</b>", meta_label),
             Paragraph("<b>Latitude</b>", meta_label),
             Paragraph("<b>Longitude</b>", meta_label),
             Paragraph("<b>Speed</b>", meta_label),
