@@ -64,7 +64,7 @@ export function generateClientSidePdfDossier(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(180, 200, 220);
-  doc.text(`LAW ENFORCEMENT SENSITIVE // COURT ADMISSIBLE EVIDENCE`, 14, 24);
+  doc.text(`LAW ENFORCEMENT SENSITIVE // CRYPTOGRAPHICALLY HASHED FORENSIC DOSSIER`, 14, 24);
   doc.text(`INCIDENT: ${activeSpillId} | SECTOR: ${sectorName} | TIME: ${dateStr} ${timeStr}`, 14, 29);
 
   // Security Badge

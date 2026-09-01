@@ -87,6 +87,9 @@ class MaritimeAnomalyDetector:
             return {
                 "detected": False,
                 "max_drop_kts": 0.0,
+                "drop_from_kts": 0.0,
+                "drop_to_kts": 0.0,
+                "drop_timestamp": None,
                 "score": 0.0,
                 "details": "Insufficient telemetry points for speed profile analysis"
             }
@@ -147,6 +150,8 @@ class MaritimeAnomalyDetector:
                 "detected": False,
                 "max_gap_minutes": 0.0,
                 "gap_count": 0,
+                "gap_start": None,
+                "gap_end": None,
                 "score": 0.0,
                 "details": "Insufficient telemetry points for AIS gap detection"
             }
@@ -191,9 +196,11 @@ class MaritimeAnomalyDetector:
         if len(points) < 2:
             return {
                 "detected": False,
-                "loitering_score": 0.0,
-                "avg_speed_kts": 14.0,
-                "details": "Nominal track"
+                "score": 0.0,
+                "avg_speed_kts": 0.0,
+                "min_speed_kts": 0.0,
+                "total_turn_deg": 0.0,
+                "details": "Insufficient telemetry points for loitering analysis"
             }
 
         speeds = [float(p.get("speed_knots", 14.0)) for p in points]
@@ -252,6 +259,8 @@ class MaritimeAnomalyDetector:
                 "min_cpa_meters": 50000.0,
                 "min_cpa_km": 50.0,
                 "cpa_timestamp": None,
+                "cpa_lon": None,
+                "cpa_lat": None,
                 "score": 0.0,
                 "details": "No hindcast correlation data available"
             }

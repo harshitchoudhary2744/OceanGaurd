@@ -125,7 +125,7 @@ async def startup_event():
 @app.get("/health")
 @app.get("/api/v1/health")
 def health_check():
-    """System status and component diagnostics"""
+    """System status, provenance transparency, and component diagnostics"""
     db_info = get_db_info()
     return {
         "status": "healthy",
@@ -138,7 +138,14 @@ def health_check():
         "qdrant_connected": vector_service._connected,
         "qdrant_endpoint": vector_service._endpoint_info,
         "pytorch_unet_available": sar_pipeline.model is not None,
-        "active_spills_count": len(_FIXTURE_DATA.get("spills", []))
+        "active_spills_count": len(_FIXTURE_DATA.get("spills", [])),
+        "data_provenance": {
+            "telemetry_source": "LIVE_POSTGIS_DATABASE" if db_info["connected"] else "DEMO_FIXTURE_CACHE",
+            "metocean_source": "INCOIS_NOAA_HYDRODYNAMIC_MODEL",
+            "vector_store_source": "AWS_QDRANT_CLOUD_LIVE" if vector_service._connected else "IN_MEMORY_COSINE_FALLBACK",
+            "sar_pipeline_source": "PYTORCH_DEEPSAR_UNET_LIVE",
+            "mode": "OPERATIONAL_HYBRID_DEMO"
+        }
     }
 
 

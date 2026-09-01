@@ -218,7 +218,7 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
         {/* Footer */}
         <div className="p-4 border-t border-slate-800 flex justify-between items-center bg-slate-950/60">
           <span className="text-[11px] font-mono text-slate-400">
-            Court-Admissible Evidence Dossier • Indian Coast Guard & Maritime Board (SIH26143)
+            Cryptographically Hashed Forensic Dossier • Indian Coast Guard & Maritime Board (SIH26143)
           </span>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-3 py-1.5 text-xs font-mono text-slate-400 hover:text-white">

@@ -29,30 +29,52 @@ logger = logging.getLogger("oceanguard.ml")
 
 def apply_lee_speckle_filter(img_arr: np.ndarray, window_size: int = 5, damping_factor: float = 1.0) -> np.ndarray:
     """
-    Enhanced Lee Filter for Satellite SAR Speckle Reduction.
+    Enhanced Lee Filter for Satellite SAR Speckle Reduction (Vectorized O(1) 2D Integral Image).
     Preserves sharp oil slick edges while smoothing multiplicative radar speckle noise.
     """
-    h, w = img_arr.shape
+    if not isinstance(img_arr, np.ndarray) or img_arr.ndim != 2:
+        return img_arr
+
+    arr_f64 = np.asarray(img_arr, dtype=np.float64)
+    h, w = arr_f64.shape
+    if h < window_size or w < window_size:
+        return np.clip(arr_f64, 0.0, 1.0).astype(img_arr.dtype)
+
     pad = window_size // 2
-    padded = np.pad(img_arr, pad, mode='reflect')
-    
-    local_mean = np.zeros_like(img_arr)
-    local_sq_mean = np.zeros_like(img_arr)
-    
-    for i in range(h):
-        for j in range(w):
-            patch = padded[i:i+window_size, j:j+window_size]
-            local_mean[i, j] = np.mean(patch)
-            local_sq_mean[i, j] = np.mean(patch ** 2)
-            
-    local_var = np.maximum(local_sq_mean - local_mean ** 2, 1e-6)
-    overall_var = np.var(img_arr) + 1e-6
-    
-    k = local_var / (local_var + overall_var / damping_factor)
+    win = window_size
+    win_area = float(win * win)
+
+    padded = np.pad(arr_f64, pad, mode='reflect')
+    padded_sq = padded ** 2
+
+    # 2D Integral images in double precision to eliminate roundoff accumulation
+    integral = np.pad(padded.cumsum(axis=0).cumsum(axis=1), ((1, 0), (1, 0)), mode='constant', constant_values=0)
+    integral_sq = np.pad(padded_sq.cumsum(axis=0).cumsum(axis=1), ((1, 0), (1, 0)), mode='constant', constant_values=0)
+
+    local_sum = (
+        integral[win : win + h, win : win + w]
+        - integral[0 : h, win : win + w]
+        - integral[win : win + h, 0 : w]
+        + integral[0 : h, 0 : w]
+    )
+    local_mean = local_sum / win_area
+
+    local_sq_sum = (
+        integral_sq[win : win + h, win : win + w]
+        - integral_sq[0 : h, win : win + w]
+        - integral_sq[win : win + h, 0 : w]
+        + integral_sq[0 : h, 0 : w]
+    )
+    local_sq_mean = local_sq_sum / win_area
+
+    local_var = np.maximum(local_sq_mean - (local_mean ** 2), 1e-6)
+    overall_var = float(np.var(arr_f64)) + 1e-6
+
+    k = local_var / (local_var + (overall_var / max(damping_factor, 1e-6)))
     k = np.clip(k, 0.0, 1.0)
-    
-    filtered = local_mean + k * (img_arr - local_mean)
-    return np.clip(filtered, 0.0, 1.0)
+
+    filtered = local_mean + k * (arr_f64 - local_mean)
+    return np.clip(filtered, 0.0, 1.0).astype(img_arr.dtype if isinstance(img_arr, np.ndarray) else np.float32)
 
 
 class MetoceanHydrodynamicEngine:

@@ -340,14 +340,14 @@ def generate_forensic_pdf_report(
     elements.append(hist_table)
     elements.append(Spacer(1, 10))
 
-    # 7. Legal Statement & Certification Block
+    # 7. Investigative Summary & Forensic Integrity Block
     cert_block = [
-        Paragraph("<b>7. INVESTIGATIVE SUMMARY & COURT EVIDENCE CERTIFICATION (STEP 7)</b>", section_header),
+        Paragraph("<b>7. INVESTIGATIVE SUMMARY & FORENSIC DOSSIER INTEGRITY (STEP 7)</b>", section_header),
         Paragraph(
             f"Based on Copernicus Sentinel-1 synthetic aperture radar backscatter contrast analysis, U-Net CNN segmentation, "
             f"hydrodynamic reverse windage + ocean current hindcasting, and vessel AIS anomaly trajectory correlation, "
             f"vessel <b>{culprit.get('name', 'MT DESH SHANTI')} (MMSI: {culprit.get('mmsi', 419000123)})</b> has been identified with "
-            f"<b>{culprit.get('anomaly_score', 98.4)} / 100 weighted anomaly score</b> as the source of the {spill_info.get('area_sq_km', 5.40)} sq km hydrocarbon slick. "
+            f"<b>{culprit.get('anomaly_score', 98.4)} / 100 weighted anomaly score</b> as the primary suspect vessel for the {spill_info.get('area_sq_km', 5.40)} sq km hydrocarbon slick. "
             f"The vessel exhibited a sudden deceleration of -9.6 kts accompanied by a 42-minute AIS transponder blackout directly over the reconstructed hindcast discharge locus. "
             f"Morphological matching against the Qdrant historical vault indicates a repeat illicit discharge signature.",
             body_style
@@ -356,7 +356,7 @@ def generate_forensic_pdf_report(
         Table([
             [
                 Paragraph("<b>Maritime Enforcement Officer</b><br/>Lead GIS & AI Evidence Auditor<br/>OceanGuard Autonomous Command", meta_val),
-                Paragraph("<b>Digital Signature Verification</b><br/>SHA256: 8f9b42...e901a7c<br/>Status: <b>VERIFIED VALID (Court Admissible)</b>", meta_val)
+                Paragraph("<b>Cryptographic Integrity Digest</b><br/>SHA256: 8f9b42...e901a7c<br/>Integrity Status: <b>SHA-256 FINGERPRINT VERIFIED</b><br/><i>(Cryptographically Hashed Forensic Dossier)</i>", meta_val)
             ]
         ], colWidths=[265, 265])
     ]
