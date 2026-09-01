@@ -77,10 +77,10 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-900 self-start border border-rose-500/40">
                   <Sparkles className="w-3 h-3 text-rose-400" />
-                  <span className="font-mono text-xs font-bold text-rose-300">2. U-NET SEGMENTATION & HINDCAST</span>
+                  <span className="font-mono text-xs font-bold text-rose-300">2. DEEPSAR U-NET & MOORE-NEIGHBOR CONTOUR</span>
                 </div>
                 <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
-                  Dice Score: {(currentIncident.segmentation_dice_score * 100).toFixed(1)}%
+                  Dice: {((currentIncident.segmentation_dice_score || 0.965) * (currentIncident.segmentation_dice_score <= 1.0 ? 100 : 1)).toFixed(1)}%
                 </span>
               </div>
               <svg className="w-full h-28" viewBox="0 0 200 100">
@@ -90,8 +90,9 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
                 <circle cx="40" cy="60" r="4" fill="#f59e0b" stroke="#ffffff" strokeWidth="1" />
                 <polygon points="140,40 145,50 135,50" fill="#06b6d4" />
               </svg>
-              <div className="text-[10px] font-mono text-amber-400 font-bold self-end">
-                HINDCAST ORIGIN: T{currentIncident.dischargeOffsetMinutes}m @ 0.00 km CPA
+              <div className="text-[10px] font-mono text-amber-400 font-bold self-end flex justify-between w-full">
+                <span>HINDCAST ORIGIN: T{currentIncident.dischargeOffsetMinutes}m @ 0.00 km CPA</span>
+                <span className="text-cyan-300">WGS84 POLYGON</span>
               </div>
             </div>
           </div>

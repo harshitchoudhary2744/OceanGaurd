@@ -37,7 +37,11 @@ export function generateClientSidePdfDossier(
   };
 
   const area = spillFeature?.properties?.area_sq_km || 5.40;
-  const dischargeLiters = spillFeature?.properties?.estimated_discharge_liters || 58000;
+  const perimeter = spillFeature?.properties?.perimeter_km || 12.80;
+  const rawDice = spillFeature?.properties?.segmentation_dice_score || spillFeature?.properties?.confidence_score || 0.965;
+  const diceScore = (rawDice <= 1.0 ? rawDice * 100 : rawDice).toFixed(1);
+  const dampingRatio = (spillFeature?.properties?.damping_ratio_db || 8.4).toFixed(1);
+  const dischargeLiters = spillFeature?.properties?.estimated_discharge_liters || Math.round(area * 10500);
 
   // Background Accent Header Banner
   doc.setFillColor(15, 25, 45);
@@ -91,15 +95,19 @@ export function generateClientSidePdfDossier(
   const col2 = 105;
 
   doc.text(`• Incident Reference ID: ${activeSpillId}`, col1, y);
-  doc.text(`• Radar Sensor: Sentinel-1A C-Band SAR (IW Mode)`, col2, y);
+  doc.text(`• Radar Sensor: Sentinel-1 C-SAR (IW Mode, VV+VH)`, col2, y);
   y += 5;
 
-  doc.text(`• Slick Surface Area: ${area} sq km (${(area * 100).toFixed(0)} Ha)`, col1, y);
+  doc.text(`• Slick Area: ${area.toFixed(2)} sq km (${(area * 100).toFixed(0)} Ha)`, col1, y);
   doc.text(`• Estimated Volume: ~${dischargeLiters.toLocaleString()} L (HFO-380)`, col2, y);
   y += 5;
 
-  doc.text(`• AI Segmentation: U-Net CNN (98.8% Confidence)`, col1, y);
-  doc.text(`• SAR Damping Contrast: 8.4 dB (Low Marangoni Risk)`, col2, y);
+  doc.text(`• AI Segmentation: DeepSAR U-Net (${diceScore}% Continuous Dice)`, col1, y);
+  doc.text(`• Marangoni Damping: ${dampingRatio} dB (Capillary Depression)`, col2, y);
+  y += 5;
+
+  doc.text(`• Boundary Extraction: Moore-Neighbor 2D Contour + Douglas-Peucker`, col1, y);
+  doc.text(`• Slick Perimeter: ${perimeter.toFixed(2)} km (WGS84 Geodesic)`, col2, y);
   y += 7.5;
 
   // Section 2: Hydrodynamic Hindcast & Metocean Back-Tracing

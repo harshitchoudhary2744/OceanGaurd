@@ -25,6 +25,8 @@ export interface SpillProperties {
   confidence_score: number; // Oil Likelihood Score
   segmentation_dice_score?: number; // e.g. 0.988 (98.8% ground truth overlap benchmark)
   oil_likelihood_score?: number; // e.g. 0.940 (94.0% vs lookalike)
+  lookalike_score?: number;
+  damping_ratio_db?: number; // e.g. 8.4 dB
   false_positive_analysis?: FalsePositiveBreakdown;
   source_scene?: string;
   status: 'ACTIVE' | 'CONTAINED' | 'DISPERSED';
