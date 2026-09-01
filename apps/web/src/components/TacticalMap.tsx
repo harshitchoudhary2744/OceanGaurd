@@ -1359,66 +1359,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           </span>
         </div>
       </div>
-
-      {/* ============================================================== */}
-      {/* 5-CATEGORY QUICK LEGEND CHIPS (BOTTOM LEFT ABOVE SCRUBBER) */}
-      {/* ============================================================== */}
-      <div className="absolute bottom-20 left-3 sm:left-4 z-20 hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#070b14]/90 border border-slate-800/80 shadow-2xl backdrop-blur-md font-mono text-[10px]">
-        <button
-          onClick={() => setShowFishingZones(!showFishingZones)}
-          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
-            showFishingZones ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'text-slate-500 hover:text-slate-300'
-          }`}
-          title="Toggle 🟢 Fishing zones"
-        >
-          <span className="w-2 h-2 rounded-sm bg-emerald-500 shadow-sm" />
-          <span>🟢 Fishing zones</span>
-        </button>
-
-        <button
-          onClick={() => setShowFishingHarbours(!showFishingHarbours)}
-          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
-            showFishingHarbours ? 'bg-blue-950/80 text-blue-300 border border-blue-500/40' : 'text-slate-500 hover:text-slate-300'
-          }`}
-          title="Toggle 🔵 Fishing harbours"
-        >
-          <span className="w-2 h-2 rounded-full bg-blue-500 shadow-sm" />
-          <span>🔵 Fishing harbours</span>
-        </button>
-
-        <button
-          onClick={() => setShowAquaculture(!showAquaculture)}
-          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
-            showAquaculture ? 'bg-purple-950/80 text-purple-300 border border-purple-500/40' : 'text-slate-500 hover:text-slate-300'
-          }`}
-          title="Toggle 🟣 Aquaculture"
-        >
-          <span className="w-2 h-2 rounded-sm bg-purple-500 shadow-sm" />
-          <span>🟣 Aquaculture</span>
-        </button>
-
-        <button
-          onClick={() => setShowCoastalCommunities(!showCoastalCommunities)}
-          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
-            showCoastalCommunities ? 'bg-orange-950/80 text-orange-300 border border-orange-500/40' : 'text-slate-500 hover:text-slate-300'
-          }`}
-          title="Toggle 🟠 Coastal communities"
-        >
-          <span className="w-2 h-2 rounded-full bg-orange-500 shadow-sm" />
-          <span>🟠 Coastal communities</span>
-        </button>
-
-        <button
-          onClick={() => setShowOilSpills(!showOilSpills)}
-          className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
-            showOilSpills ? 'bg-red-950/80 text-red-300 border border-red-500/40' : 'text-slate-500 hover:text-slate-300'
-          }`}
-          title="Toggle 🔴 Oil spill"
-        >
-          <span className="w-2 h-2 rounded-sm bg-red-500 shadow-sm animate-pulse" />
-          <span>🔴 Oil spill</span>
-        </button>
-      </div>
     </div>
   );
 };
