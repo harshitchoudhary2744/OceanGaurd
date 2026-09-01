@@ -375,7 +375,7 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
                 <div>Spill ID: <strong className="text-white block">{result.spill?.id}</strong></div>
                 <div>Slick Area: <strong className="text-rose-300 block">{result.spill?.area_sq_km} km²</strong></div>
                 <div>Likely Oil: <strong className="text-emerald-400 block">{((result.metrics?.oil_likelihood_score || 0.940) * 100).toFixed(1)}%</strong></div>
-                <div>Look-alike Risk: <strong className="text-slate-300 block">6.0%</strong></div>
+                <div>Look-alike Risk: <strong className="text-slate-300 block">{((result.metrics?.lookalike_score ?? (1 - (result.metrics?.oil_likelihood_score || 0.94))) * 100).toFixed(1)}%</strong></div>
                 <div>Centroid: <strong className="text-cyan-300 block">{result.spill?.center ? `${result.spill.center[1].toFixed(3)}°N, ${result.spill.center[0].toFixed(3)}°E` : `${centerLat}°N, ${centerLon}°E`}</strong></div>
                 <div>Primary Target: <strong className="text-white block">{result.primary_suspect?.name || 'Correlating...'}</strong></div>
               </div>
@@ -384,12 +384,27 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
               <div className="flex flex-col gap-1 text-[10px] pt-1">
                 <span className="text-cyan-300 font-bold">6-Class SAR Analysis Breakdown:</span>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
-                  <span className="text-rose-300 bg-slate-950 p-1.5 rounded border border-slate-800 font-bold text-center">Oil: 94.0%</span>
-                  <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Calm: 2.1%</span>
-                  <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Film: 1.8%</span>
-                  <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Wake: 1.2%</span>
-                  <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Rain: 0.6%</span>
-                  <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Other: 0.3%</span>
+                  {result.metrics?.class_probabilities ? (
+                    Object.entries(result.metrics.class_probabilities).map(([cName, pVal]) => (
+                      <span
+                        key={cName}
+                        className={`${
+                          cName === 'Oil' ? 'text-rose-300 font-bold border-rose-500/40' : 'text-slate-400'
+                        } bg-slate-950 p-1.5 rounded border border-slate-800 text-center truncate`}
+                      >
+                        {cName.split(' ')[0]}: {typeof pVal === 'number' ? pVal.toFixed(1) : pVal}%
+                      </span>
+                    ))
+                  ) : (
+                    <>
+                      <span className="text-rose-300 bg-slate-950 p-1.5 rounded border border-slate-800 font-bold text-center">Oil: 94.0%</span>
+                      <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Calm: 2.1%</span>
+                      <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Film: 1.8%</span>
+                      <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Wake: 1.2%</span>
+                      <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Rain: 0.6%</span>
+                      <span className="text-slate-400 bg-slate-950 p-1.5 rounded border border-slate-800 text-center">Other: 0.3%</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

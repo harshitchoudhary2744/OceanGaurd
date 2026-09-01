@@ -375,7 +375,10 @@ interface SarPhysicsTabProps {
   spill?: SpillProperties;
 }
 
-const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ falsePositive }) => {
+const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ currentIncident, falsePositive, spill }) => {
+  const dampingRatio = (falsePositive?.marangoni_damping_db || 8.4).toFixed(1);
+  const diceScorePct = (((spill?.segmentation_dice_score || currentIncident?.segmentation_dice_score || 0.988) * 100)).toFixed(1);
+
   return (
     <div className="flex flex-col gap-3 font-mono text-xs">
       {/* 6-Class False Positive Header Card */}
@@ -432,7 +435,7 @@ const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ falsePositive }) => {
         <div className="grid grid-cols-2 gap-2 text-[10px]">
           <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400 block">Damping Contrast:</span>
-            <strong className="text-cyan-300 text-xs">8.4 dB Ratio</strong>
+            <strong className="text-cyan-300 text-xs">{dampingRatio} dB Ratio</strong>
           </div>
           <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400 block">Speckle Variance:</span>
@@ -444,7 +447,7 @@ const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ falsePositive }) => {
           </div>
           <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400 block">Segmentation Dice:</span>
-            <strong className="text-emerald-400 text-xs">98.8% Overlap</strong>
+            <strong className="text-emerald-400 text-xs">{diceScorePct}% Overlap</strong>
           </div>
         </div>
 

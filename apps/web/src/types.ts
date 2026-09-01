@@ -251,6 +251,7 @@ export interface SARInferenceResponse {
     segmentation_dice_score?: number;
     oil_likelihood_score?: number;
     lookalike_score?: number;
+    damping_ratio_db?: number;
     class_probabilities?: Record<string, number>;
     false_positive_analysis?: FalsePositiveBreakdown;
   };

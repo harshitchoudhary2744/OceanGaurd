@@ -207,9 +207,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   onSelectSpillRef.current = onSelectSpill;
 
   const [mapLoaded, setMapLoaded] = useState(false);
-  
-  // Tactical Operational Mode State (Top Tabs)
-  const [operationalMode, setOperationalMode] = useState<MapOperationalMode>('surveillance');
   const [showLayerDrawer, setShowLayerDrawer] = useState(false);
 
   // 5 Color-Coded Maritime Asset Categories Layer Toggles
@@ -291,7 +288,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   // Hydrodynamic Hindcast Back-Tracing
   const hindcastFeatures = useMemo(() => {
-    const shouldShow = showHindcast && (operationalMode === 'hindcast' || operationalMode === 'surveillance');
+    const shouldShow = showHindcast;
     if (!shouldShow || !isPostDischarge) {
       return { type: "FeatureCollection" as const, features: [] };
     }
@@ -326,11 +323,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       ],
     };
-  }, [showHindcast, operationalMode, isPostDischarge, slickCentroid, baseOrigin]);
+  }, [showHindcast, isPostDischarge, slickCentroid, baseOrigin]);
 
   // Hydrodynamic +6h Drift Forecast Fan
   const forecastFeatures = useMemo(() => {
-    const shouldShow = showForecast && (operationalMode === 'forecast' || operationalMode === 'surveillance');
+    const shouldShow = showForecast;
     if (!shouldShow || !isPostDischarge) {
       return { type: "FeatureCollection" as const, features: [] };
     }
@@ -349,11 +346,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       ],
     };
-  }, [showForecast, operationalMode, isPostDischarge, slickCentroid, metocean]);
+  }, [showForecast, isPostDischarge, slickCentroid, metocean]);
 
   // Dump Origin GPS Point Marker
   const dumpOriginFeature = useMemo(() => {
-    const shouldShow = isPostDischarge && (operationalMode === 'hindcast' || operationalMode === 'surveillance');
+    const shouldShow = isPostDischarge;
     if (!shouldShow) {
       return { type: "FeatureCollection" as const, features: [] };
     }
@@ -375,7 +372,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       ],
     };
-  }, [isPostDischarge, operationalMode, currentIncident, baseOrigin]);
+  }, [isPostDischarge, currentIncident, baseOrigin]);
 
   // Initialize MapLibre Engine
   useEffect(() => {
@@ -854,7 +851,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
     // 6. Update Background Trajectories for all vessels
     const allTrajSrc = map.getSource('all-trajectories') as maplibregl.GeoJSONSource;
-    const shouldShowTrails = showTrails && (operationalMode === 'hindcast' || operationalMode === 'surveillance');
+    const shouldShowTrails = showTrails;
     if (allTrajSrc && shouldShowTrails) {
       const bgFeatures = MUMBAI_VESSEL_WAYPOINTS.map((vw) => ({
         type: 'Feature' as const,
@@ -910,8 +907,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     showFishingHarbours,
     showAquaculture,
     showCoastalCommunities,
-    showOilSpills,
-    operationalMode
+    showOilSpills
   ]);
 
   // Dynamic Target Locator Beacon & Camera Fly-To Hook
@@ -1155,79 +1151,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* ============================================================== */}
-      {/* MAP OPERATIONAL MODE TABS (TOP CENTER) - REORGANIZED & CLEAN */}
-      {/* ============================================================== */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center bg-[#111622]/95 border border-cyan-500/40 p-1 rounded-xl shadow-2xl backdrop-blur-md font-mono text-[10.5px] max-w-[95vw] overflow-x-auto no-scrollbar gap-1 ring-1 ring-cyan-500/20">
-        <button
-          onClick={() => setOperationalMode('surveillance')}
-          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-            operationalMode === 'surveillance'
-              ? 'bg-cyan-500 text-slate-950 shadow-md scale-105'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
-          title="Default clean tactical view"
-        >
-          <Crosshair className="w-3.5 h-3.5" />
-          <span>Surveillance</span>
-        </button>
-
-        <button
-          onClick={() => setOperationalMode('hindcast')}
-          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-            operationalMode === 'hindcast'
-              ? 'bg-amber-500 text-slate-950 shadow-md scale-105'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
-          title="Reverse drift cone and AIS kinematics"
-        >
-          <History className="w-3.5 h-3.5" />
-          <span>-6h Hindcast</span>
-        </button>
-
-        <button
-          onClick={() => setOperationalMode('forecast')}
-          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-            operationalMode === 'forecast'
-              ? 'bg-cyan-400 text-slate-950 shadow-md scale-105'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
-          title="+6h Fay forward drift dispersion"
-        >
-          <Navigation className="w-3.5 h-3.5" />
-          <span>+6h Landfall</span>
-        </button>
-
-        <button
-          onClick={() => setOperationalMode('ecology')}
-          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-            operationalMode === 'ecology'
-              ? 'bg-emerald-500 text-slate-950 shadow-md scale-105'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
-          title="MPAs, Coral Reefs & Commercial Fishery sectors"
-        >
-          <Fish className="w-3.5 h-3.5" />
-          <span>Ecology & Habitats</span>
-        </button>
-
-        <button
-          onClick={() => setOperationalMode('sar')}
-          className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 whitespace-nowrap ${
-            operationalMode === 'sar'
-              ? 'bg-rose-500 text-white shadow-md scale-105'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-          }`}
-          title="Sentinel-1 SAR radar backscatter & 6-class breakdown"
-        >
-          <Satellite className="w-3.5 h-3.5" />
-          <span>SAR Radar</span>
-        </button>
-      </div>
-
-      {/* ============================================================== */}
       {/* 5-CATEGORY TACTICAL LAYER SELECTOR & LEGEND (TOP LEFT) */}
       {/* ============================================================== */}
-      <div className="absolute top-16 left-3 sm:left-4 z-20 flex flex-col font-mono text-xs select-none max-w-xs">
+      <div className="absolute top-3.5 left-3 sm:left-4 z-20 flex flex-col font-mono text-xs select-none max-w-xs">
         <button
           onClick={() => setShowLayerDrawer(!showLayerDrawer)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b0f19]/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-800/90 shadow-xl backdrop-blur-md transition-all active:scale-95"
@@ -1374,7 +1300,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {/* ============================================================== */}
       {/* MAP ZOOM & CENTER CONTROLS (TOP RIGHT) */}
       {/* ============================================================== */}
-      <div className="absolute top-16 right-3 sm:right-4 flex flex-col gap-1.5 z-20 select-none">
+      <div className="absolute top-3.5 right-3 sm:right-4 flex flex-col gap-1.5 z-20 select-none">
         <button
           onClick={() => mapRef.current?.zoomIn()}
           className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
@@ -1405,7 +1331,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {/* ============================================================== */}
       {/* TOP-RIGHT DOCKED TELEMETRY CAPSULE (NON-OVERLAPPING) */}
       {/* ============================================================== */}
-      <div className="absolute top-32 right-3 sm:right-4 z-10 hidden md:flex flex-col gap-1 p-2.5 bg-[#111622]/95 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-2xl max-w-[240px] ring-1 ring-slate-800/80">
+      <div className="absolute top-28 right-3 sm:right-4 z-10 hidden md:flex flex-col gap-1 p-2.5 bg-[#111622]/95 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-2xl max-w-[240px] ring-1 ring-slate-800/80">
         <div className="flex items-center justify-between font-bold text-white border-b border-slate-800 pb-1">
           <span className="flex items-center gap-1.5 text-cyan-400">
             <Compass className="w-3.5 h-3.5" />

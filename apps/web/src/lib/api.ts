@@ -200,8 +200,9 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
     const sceneId = sceneIdRaw ? String(sceneIdRaw) : `S1A_IW_GRDH_CUSTOM_${Date.now().toString().slice(-4)}`;
     const mockId = `INC-CUST-${Date.now().toString().slice(-4)}`;
 
-    const { generateRealisticSpillPolygon, registerCustomSpillIncident } = await import('./simulationEngine');
+    const { generateRealisticSpillPolygon, registerCustomSpillIncident, calculatePolygonMetrics } = await import('./simulationEngine');
     const polygon = generateRealisticSpillPolygon(centerLon, centerLat, 52.0, 4.6, 1.3);
+    const polyMetrics = calculatePolygonMetrics(polygon, 16.2);
 
     // Register into the incident engine so all tabs, threat models, and scrubbing works immediately
     registerCustomSpillIncident({
@@ -209,10 +210,12 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       name: `Custom Uploaded Scene: ${sceneId}`,
       locationName: `Offshore Target (${centerLat.toFixed(3)}°N, ${centerLon.toFixed(3)}°E)`,
       originCoords: [centerLon, centerLat],
-      areaSqKm: 4.85,
+      areaSqKm: polyMetrics.area_sq_km,
       sourceScene: sceneId,
       slickType: "Heavy Crude Oil (Marine Heavy Residue)",
-      confidence: 0.940
+      confidence: polyMetrics.oil_likelihood_score,
+      polygonCoordinates: polygon,
+      windSpeedKts: 16.2,
     });
 
     const nowIso = new Date().toISOString();
@@ -224,18 +227,18 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       detection_timestamp: nowIso,
       acquisition_timestamp_ist: nowIst,
       acquisition_timestamp_utc: nowUtc,
-      area_sq_km: 4.85,
-      perimeter_km: 13.2,
-      confidence_score: 0.940,
-      segmentation_dice_score: 0.988,
-      oil_likelihood_score: 0.940,
-      lookalike_score: 0.060,
+      area_sq_km: polyMetrics.area_sq_km,
+      perimeter_km: polyMetrics.perimeter_km,
+      confidence_score: polyMetrics.oil_likelihood_score,
+      segmentation_dice_score: polyMetrics.segmentation_dice_score,
+      oil_likelihood_score: polyMetrics.oil_likelihood_score,
+      lookalike_score: polyMetrics.lookalike_score,
       source_scene: sceneId,
       status: "ACTIVE" as const,
       center: [centerLon, centerLat] as [number, number],
       centroid: [centerLat, centerLon] as [number, number],
       polygon_coordinates: polygon,
-      estimated_discharge_liters: 51000,
+      estimated_discharge_liters: Math.round(polyMetrics.area_sq_km * 10500),
       slick_type: "Heavy Crude Oil (Marine Heavy Residue)"
     };
 
@@ -255,21 +258,15 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       spill: spillObj,
       geojson_feature: geojsonFeature,
       metrics: {
-        area_sq_km: 4.85,
-        perimeter_km: 13.2,
-        eccentricity: 0.86,
-        confidence: 0.988,
-        segmentation_dice_score: 0.988,
-        oil_likelihood_score: 0.940,
-        lookalike_score: 0.060,
-        class_probabilities: {
-          "Oil": 94.0,
-          "Calm water": 2.1,
-          "Natural film": 1.8,
-          "Wake": 1.2,
-          "Rain-related artifact": 0.6,
-          "Unknown": 0.3
-        }
+        area_sq_km: polyMetrics.area_sq_km,
+        perimeter_km: polyMetrics.perimeter_km,
+        eccentricity: polyMetrics.eccentricity,
+        confidence: polyMetrics.segmentation_dice_score,
+        segmentation_dice_score: polyMetrics.segmentation_dice_score,
+        oil_likelihood_score: polyMetrics.oil_likelihood_score,
+        lookalike_score: polyMetrics.lookalike_score,
+        damping_ratio_db: polyMetrics.damping_ratio_db,
+        class_probabilities: polyMetrics.false_positive_analysis.classes
       },
       primary_suspect: INITIAL_SUSPECTS[0],
       ranked_suspects: INITIAL_SUSPECTS

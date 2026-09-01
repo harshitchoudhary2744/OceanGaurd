@@ -1,7 +1,9 @@
 import React from 'react';
 import { X, Sparkles, FileText, History, ShieldAlert, Gauge, ZapOff, Navigation, MapPin } from 'lucide-react';
 import { downloadPdfReportUrl } from '../lib/api';
-import { MUMBAI_INCIDENTS } from '../lib/simulationEngine';
+import { INITIAL_SUSPECTS } from '../lib/mockData';
+import { MUMBAI_INCIDENTS, calculateVesselKinematicAnomaly } from '../lib/simulationEngine';
+import { SuspectVessel } from '../types';
 
 interface ForensicModalProps {
   isOpen: boolean;
@@ -14,6 +16,8 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
 
   const currentIncident = MUMBAI_INCIDENTS[spillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
   const falsePositive = currentIncident.false_positive_analysis;
+  const culprit: SuspectVessel = INITIAL_SUSPECTS.find((s: SuspectVessel) => s.mmsi === currentIncident.culpritMmsi) || INITIAL_SUSPECTS[0];
+  const anomalyBreakdown = culprit?.anomaly_breakdown || calculateVesselKinematicAnomaly(culprit, currentIncident.originCoords, currentIncident.dischargeOffsetMinutes);
 
   const handleDownload = async () => {
     const url = await downloadPdfReportUrl(spillId);
@@ -134,7 +138,7 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
                 VESSEL KINEMATIC ANOMALY BREAKDOWN
               </span>
               <span className="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">
-                Weighted Anomaly Score: 98.4 / 100
+                Weighted Anomaly Score: {anomalyBreakdown.composite_score.toFixed(1)} / 100
               </span>
             </div>
 
@@ -144,7 +148,9 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
                   <Gauge className="w-3 h-3 text-amber-400" />
                   Speed Drop
                 </span>
-                <span className="text-rose-300 font-bold text-xs">-9.6 kts</span>
+                <span className="text-rose-300 font-bold text-xs">
+                  -{anomalyBreakdown.speed_drop_delta_kts.toFixed(1)} kts
+                </span>
                 <span className="text-[9px] text-slate-500">Transit deceleration</span>
               </div>
               <div className="p-2 bg-[#0a0e18] rounded border border-slate-800">
@@ -152,7 +158,9 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
                   <ZapOff className="w-3 h-3 text-rose-400" />
                   AIS Blackout
                 </span>
-                <span className="text-rose-300 font-bold text-xs">42.0 min</span>
+                <span className="text-rose-300 font-bold text-xs">
+                  {anomalyBreakdown.max_ais_gap_minutes.toFixed(1)} min
+                </span>
                 <span className="text-[9px] text-slate-500">Dark transponder</span>
               </div>
               <div className="p-2 bg-[#0a0e18] rounded border border-slate-800">
@@ -160,8 +168,10 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
                   <Navigation className="w-3 h-3 text-cyan-400" />
                   Hindcast CPA
                 </span>
-                <span className="text-emerald-400 font-bold text-xs">0.00 km</span>
-                <span className="text-[9px] text-slate-500">Exact intercept</span>
+                <span className="text-emerald-400 font-bold text-xs">
+                  {(anomalyBreakdown.hindcast_cpa_distance_km ?? 0.00).toFixed(2)} km
+                </span>
+                <span className="text-[9px] text-slate-500">Spatial intercept</span>
               </div>
               <div className="p-2 bg-[#0a0e18] rounded border border-slate-800">
                 <span className="text-slate-400 block flex items-center gap-1">
