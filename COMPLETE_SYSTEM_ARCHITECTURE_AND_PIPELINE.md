@@ -61,6 +61,10 @@ OceanGuard bridges this critical enforcement gap by combining:
 
 ### 1. Spaceborne SAR Imagery (Copernicus Sentinel-1)
 - **Data Provider**: European Space Agency (ESA) & European Union Copernicus Programme
+- **Official Access Portals**:
+  - [Copernicus Data Space Ecosystem (dataspace.copernicus.eu)](https://dataspace.copernicus.eu/)
+  - [ESA Sentinel-1 SAR Technical Guide (sentinels.copernicus.esa.int)](https://sentinels.copernicus.esa.int/web/sentinel/user-guides/sentinel-1-sar)
+  - [NASA Alaska Satellite Facility (ASF DAAC) Sentinel-1 Portal (asf.alaska.edu)](https://asf.alaska.edu/data-sets/sar-data-sets/sentinel-1/)
 - **Sensor Details**: C-Band Synthetic Aperture Radar (radar frequency: 5.405 GHz, wavelength: 5.6 cm).
 - **Mode & Polarization**: Interferometric Wide Swath (IW) Level-1 Ground Range Detected High Resolution (GRDH) in dual polarization (VV + VH).
 - **Spatial Resolution**: 10 meters by 10 meters spatial resolution with a 250 km swath width.
@@ -68,28 +72,54 @@ OceanGuard bridges this critical enforcement gap by combining:
 
 ### 2. Deep-SAR Oil Spill Segmentation Benchmark Dataset
 - **Origin**: Multi-sensor SAR dataset combining Sentinel-1 C-Band and ALOS PALSAR L-Band scenes with pixel-level binary annotations.
+- **Official Repositories**:
+  - [Samarth6840 / Deep-SAR-Oil-Spill-Segmentation- (github.com/Samarth6840/Deep-SAR-Oil-Spill-Segmentation-)](https://github.com/Samarth6840/Deep-SAR-Oil-Spill-Segmentation-)
+  - [M4D CERTH Copernicus Sentinel-1 Oil Spill Dataset (m4d.iti.gr)](https://m4d.iti.gr/oil-spill-detection-dataset/)
 - **Role in OceanGuard**: Used to train and calibrate the `DeepSARUNet` neural weights (`apps/api/ml/weights/deep_sar_unet.pth`), establishing a verified validation Dice coefficient of 96.18% and IoU of 92.64%.
 
 ### 3. Oil Spill Detection SAR 6-Class Dataset (Kaggle / Mendeley / CERTH)
+- **Official Repositories**:
+  - [Oil Spill Detection Dataset on Kaggle (kaggle.com/datasets/kashyapdesai/oil-spill-detection)](https://www.kaggle.com/datasets/kashyapdesai/oil-spill-detection)
+  - [Mendeley Data SAR Marine Oil Spill Benchmark (data.mendeley.com)](https://data.mendeley.com/datasets/5y9w58vs7r/1)
 - **Dataset Contents**: Over 1,100 calibrated Sentinel-1 SAR scenes classified across 6 distinct marine surface phenomena: Confirmed Petroleum Oil Slicks, Low-Wind Calm Sea Patches, Natural Organic Biogenic Films, Ship Wakes, Rain Squall Attenuation Artifacts, and Unknown Oceanographic Features.
 - **Role in OceanGuard**: Provides ground-truth feature weights for the 6-class Bayesian look-alike disambiguation model.
 
 ### 4. INCOIS (Indian National Centre for Ocean Information Services)
 - **Data Provider**: Ministry of Earth Sciences, Government of India.
+- **Official Portals**:
+  - [INCOIS Institutional Portal (incois.gov.in)](https://incois.gov.in/)
+  - [INCOIS Ocean State Forecast Services (incois.gov.in/portal/osf)](https://incois.gov.in/portal/osf/osf.jsp)
+  - [INCOIS SAMUDRA Ocean GIS Platform (incois.gov.in/Samudra)](https://incois.gov.in/Samudra/)
 - **Parameters**: Real-time ocean state forecasting, Eulerian ocean surface current vectors (speed in knots and direction in degrees), sea surface temperature (SST), and Potential Fishing Zone (PFZ) advisories.
 - **Role in OceanGuard**: Powers the real-time hydrodynamic forward dispersion and reverse hindcast trajectory drift calculation.
 
 ### 5. NOAA GFS & ECMWF ERA5 Atmospheric Wind Fields
-- **Data Provider**: NOAA Global Forecast System & European Centre for Medium-Range Weather Forecasts.
+- **Data Providers**: NOAA National Centers for Environmental Information & European Centre for Medium-Range Weather Forecasts.
+- **Official Portals**:
+  - [NOAA CoastWatch / ERDDAP Oceanographic Server (coastwatch.pfeg.noaa.gov/erddap)](https://coastwatch.pfeg.noaa.gov/erddap/index.html)
+  - [ECMWF ERA5 Atmospheric Reanalysis Portal (ecmwf.int)](https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5)
+  - [NOAA NCEP Global Forecast System GFS (ncei.noaa.gov)](https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast)
 - **Parameters**: 10-meter surface atmospheric wind vectors (U10, V10 components, wind speed in knots, and wind direction in degrees).
 - **Role in OceanGuard**: Computes surface windage advection, Coriolis deflection, and radar sea-clutter roughness parameters.
 
 ### 6. Live AIS Marine Telemetry (Spire Global / exactEarth / DGLL India)
-- **Parameters**: MMSI (vessel identifier), IMO number, Vessel Name, Call Sign, Vessel Class (Crude Tanker, Bulk Carrier, Container Ship, Fishing Trawler), Dimensions (Length, Beam, Draft), Instantaneous GPS Coordinates, Speed Over Ground (knots), and Course Over Ground (degrees).
+- **Official Portals & Networks**:
+  - [Spire Global Maritime AIS Data API (spire.com/maritime)](https://spire.com/maritime/)
+  - [MarineTraffic Global Vessel Tracking Intelligence (marinetraffic.com)](https://www.marinetraffic.com/)
+  - [Directorate General of Lighthouses and Lightships India (dgll.gov.in)](https://dgll.gov.in/)
+  - [AISHub Free Open AIS Network (aishub.net)](https://www.aishub.net/)
+- **Parameters Ingested**: MMSI (vessel identifier), IMO number, Vessel Name, Call Sign, Vessel Class (Crude Tanker, Bulk Carrier, Container Ship, Fishing Trawler), Dimensions (Length, Beam, Draft), Instantaneous GPS Coordinates, Speed Over Ground (knots), and Course Over Ground (degrees).
 - **Role in OceanGuard**: Ingests real-time fleet positions and 6-hour historical tracks for kinematic anomaly detection.
 
 ### 7. Maritime & Coastal Asset GIS Datasets (MoFAHD, CZMA & ICAR-CMFRI)
-- **Data Providers**: Ministry of Fisheries, Animal Husbandry & Dairying, Maharashtra Maritime Board (MMB), and ICAR-CMFRI.
+- **Data Providers & Official Portals**:
+  - [Department of Fisheries, Ministry of Fisheries, Animal Husbandry & Dairying (dof.gov.in)](https://dof.gov.in/)
+  - [ICAR-CMFRI Marine Fisheries Spatial Atlas (cmfri.org.in)](https://www.cmfri.org.in/)
+  - [Maharashtra Maritime Board Port Limits & Wharves (maritimeboard.maharashtra.gov.in)](https://maritimeboard.maharashtra.gov.in/)
+  - [National Centre for Sustainable Coastal Management CZMA Portals (ncscm.res.in)](https://ncscm.res.in/)
+  - [GEBCO World Seafloor Bathymetry Chart (gebco.net)](https://www.gebco.net/)
+  - [Directorate General of Shipping India (dgshipping.gov.in)](https://dgshipping.gov.in/)
+  - [IMO Global Integrated Shipping Information System (gisis.imo.org)](https://gisis.imo.org/)
 - **Asset Categories**:
   - Green Layer: Commercial Pelagic Fishing Fairways and Artisanal Fishing Grounds.
   - Blue Layer: Major Fishing Harbours and Fish Landing Wharves.
