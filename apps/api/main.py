@@ -121,6 +121,8 @@ async def startup_event():
 # REST ENDPOINTS
 # -------------------------------------------------------------
 
+@app.get("/")
+@app.get("/health")
 @app.get("/api/v1/health")
 def health_check():
     """System status and component diagnostics"""

@@ -305,13 +305,13 @@ export function calculatePolygonMetrics(
   const sumExp = expLogits.reduce((a, b) => a + b, 0);
   const probs = expLogits.map((e) => (e / sumExp) * 100.0);
 
-  const likely_oil_pct = Number(probs[0].toFixed(1));
   const calm_water = Number(probs[1].toFixed(1));
   const natural_film = Number(probs[2].toFixed(1));
   const wake = Number(probs[3].toFixed(1));
   const rain = Number(probs[4].toFixed(1));
-  const used = likely_oil_pct + calm_water + natural_film + wake + rain;
-  const unknown = Number(Math.max(0.1, 100.0 - used).toFixed(1));
+  const unknown = Number(Math.max(0.1, probs[5]).toFixed(1));
+  const non_oil_sum = calm_water + natural_film + wake + rain + unknown;
+  const likely_oil_pct = Number((100.0 - non_oil_sum).toFixed(1));
   const lookalike_pct = Number((100.0 - likely_oil_pct).toFixed(1));
 
   const oil_likelihood_score = Number((likely_oil_pct / 100.0).toFixed(3));

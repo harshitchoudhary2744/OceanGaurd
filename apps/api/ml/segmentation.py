@@ -424,8 +424,8 @@ def douglas_peucker_simplify(points: List[Tuple[float, float]], epsilon: float =
     if len(points) < 3:
         return points
         
-    start = np.array(points[0])
-    end = np.array(points[-1])
+    start = np.array(points[0], dtype=np.float64)
+    end = np.array(points[-1], dtype=np.float64)
     line_vec = end - start
     line_len = float(np.linalg.norm(line_vec))
     
@@ -433,11 +433,12 @@ def douglas_peucker_simplify(points: List[Tuple[float, float]], epsilon: float =
     index = 0
     
     for i in range(1, len(points) - 1):
-        pt = np.array(points[i])
+        pt = np.array(points[i], dtype=np.float64)
         if line_len == 0.0:
             dist = float(np.linalg.norm(pt - start))
         else:
-            dist = float(np.abs(np.cross(line_vec, start - pt)) / line_len)
+            # Robust 2D perpendicular point-to-line distance formula
+            dist = float(abs(line_vec[0] * (start[1] - pt[1]) - line_vec[1] * (start[0] - pt[0])) / line_len)
         if dist > dmax:
             dmax = dist
             index = i
@@ -682,14 +683,15 @@ class SARSegmentationPipeline:
         logits = np.array([oil_logit, calm_logit, film_logit, wake_logit, rain_logit, unknown_logit], dtype=np.float64)
         exp_logits = np.exp(logits - np.max(logits))
         probs = (exp_logits / np.sum(exp_logits)) * 100.0
-
         oil_pct = round(float(probs[0]), 1)
         calm_pct = round(float(probs[1]), 1)
         film_pct = round(float(probs[2]), 1)
         wake_pct = round(float(probs[3]), 1)
         rain_pct = round(float(probs[4]), 1)
-        used = oil_pct + calm_pct + film_pct + wake_pct + rain_pct
-        unknown_pct = round(max(0.1, 100.0 - used), 1)
+        used_non_oil = calm_pct + film_pct + wake_pct + rain_pct
+        unknown_pct = round(max(0.1, float(probs[5])), 1)
+        # Ensure exact 100.0% sum constraint
+        oil_pct = round(100.0 - (used_non_oil + unknown_pct), 1)
 
         oil_likelihood = round(oil_pct / 100.0, 3)
         lookalike_score = round(1.0 - oil_likelihood, 3)
