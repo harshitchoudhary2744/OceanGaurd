@@ -10,6 +10,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+from services.synthetic_ais import generate_synthetic_ais
 
 from fastapi import (
     FastAPI,
@@ -84,8 +85,8 @@ def _refresh_fixture_timestamps(data: dict):
         s["detection_timestamp"] = (now - timedelta(minutes=offset)).isoformat() + "Z"
 
     # Refresh telemetry timestamps relative to now
-    for t in data.get("telemetry", []):
-        t["timestamp"] = (now - timedelta(minutes=15)).isoformat() + "Z"
+    #for t in data.get("telemetry", []):
+    #    t["timestamp"] = (now - timedelta(minutes=15)).isoformat() + "Z"
 
 def load_fixtures():
     global _FIXTURE_DATA
@@ -109,6 +110,7 @@ def load_fixtures():
             logger.warning(f"Error seeding fixture: {e}")
 
 load_fixtures()
+SYNTHETIC_AIS = generate_synthetic_ais()
 
 
 @app.on_event("startup")
@@ -311,8 +313,8 @@ def correlate_spill_vessels(spill_id: str, db: Optional[Session] = Depends(get_d
         spill_id=spill["id"],
         spill_center=spill["center"],
         spill_timestamp=spill["detection_timestamp"],
-        vessels_list=_FIXTURE_DATA.get("vessels", []),
-        telemetry_records=_FIXTURE_DATA.get("telemetry", [])
+        vessels_list=SYNTHETIC_AIS["vessels"],
+	telemetry_records=SYNTHETIC_AIS["telemetry"]
     )
 
     return {
@@ -380,37 +382,53 @@ async def detect_spill_from_sar_image(
     feature = pipeline_result["feature"]
     metrics = pipeline_result["metrics"]
     new_spill_id = feature["properties"]["id"]
+    
+    is_dartis = scene_id and scene_id.startswith("DARTIS")
+
+    detection_time = (
+    "2019-01-01T03:42:35+00:00"
+    if is_dartis
+    else datetime.utcnow().isoformat() + "Z"
+    )
 
     new_spill_obj = {
-        "id": new_spill_id,
-        "detection_timestamp": datetime.utcnow().isoformat() + "Z",
-        "acquisition_timestamp_utc": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
-        "area_sq_km": metrics["area_sq_km"],
-        "perimeter_km": metrics["perimeter_km"],
-        "confidence_score": metrics["confidence"],
-        "segmentation_dice_score": metrics["segmentation_dice_score"],
-        "oil_likelihood_score": metrics["oil_likelihood_score"],
-        "lookalike_score": metrics["lookalike_score"],
-        "damping_ratio_db": metrics["damping_ratio_db"],
-        "source_scene": scene_id or "S1A_IW_GRDH_1SDV_UPLOADED",
-        "status": "ACTIVE",
-        "center": [center_lon, center_lat],
-        "centroid": [center_lat, center_lon],
-        "polygon_coordinates": feature["geometry"]["coordinates"][0],
-        "estimated_discharge_liters": int(metrics["area_sq_km"] * 10500),
-        "slick_type": "Synthetic SAR Dark-Spot Detection"
+    "id": new_spill_id,
+    "detection_timestamp": detection_time,
+    "acquisition_timestamp_utc": (
+        "2019-01-01 03:42:35 UTC"
+        if is_dartis
+        else datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    ),
+    "area_sq_km": metrics["area_sq_km"],
+    "perimeter_km": metrics["perimeter_km"],
+    "confidence_score": metrics["confidence"],
+    "segmentation_dice_score": metrics["segmentation_dice_score"],
+    "oil_likelihood_score": metrics["oil_likelihood_score"],
+    "lookalike_score": metrics["lookalike_score"],
+    "damping_ratio_db": metrics["damping_ratio_db"],
+    "source_scene": scene_id or "S1A_IW_GRDH_1SDV_UPLOADED",
+    "status": "ACTIVE",
+    "center": [center_lon, center_lat],
+    "centroid": [center_lat, center_lon],
+    "polygon_coordinates": feature["geometry"]["coordinates"][0],
+    "estimated_discharge_liters": int(metrics["area_sq_km"] * 10500),
+    "slick_type": "Synthetic SAR Dark-Spot Detection"
     }
-
     # Prepend to in-memory fixture so UI updates immediately
     _FIXTURE_DATA["spills"].insert(0, new_spill_obj)
 
     # Auto-correlate with vessels
+    synthetic_ais = generate_synthetic_ais(
+    center_lat=center_lat,
+    center_lon=center_lon,
+    )
+
     suspects = correlation_engine.correlate_standalone(
-        spill_id=new_spill_id,
-        spill_center=[center_lon, center_lat],
-        spill_timestamp=new_spill_obj["detection_timestamp"],
-        vessels_list=_FIXTURE_DATA.get("vessels", []),
-        telemetry_records=_FIXTURE_DATA.get("telemetry", [])
+    spill_id=new_spill_id,
+    spill_center=[center_lon, center_lat],
+    spill_timestamp=new_spill_obj["detection_timestamp"],
+    vessels_list=synthetic_ais["vessels"],
+    telemetry_records=synthetic_ais["telemetry"]
     )
 
     return {
@@ -443,8 +461,8 @@ def download_forensic_audit_pdf(spill_id: str):
         spill_id=spill_id,
         spill_center=spill["center"] if spill else [72.150, 19.050],
         spill_timestamp=spill["detection_timestamp"] if spill else datetime.utcnow().isoformat(),
-        vessels_list=_FIXTURE_DATA.get("vessels", []),
-        telemetry_records=_FIXTURE_DATA.get("telemetry", [])
+        vessels_list=SYNTHETIC_AIS["vessels"],
+	telemetry_records=SYNTHETIC_AIS["telemetry"]
     )
     culprit = suspects[0] if suspects else None
 
@@ -552,7 +570,10 @@ def get_spill_hindcast_backtrace(
     if not target_spill:
         raise HTTPException(status_code=404, detail="Spill incident not found")
 
-    sector = "arabian_sea" if "01" in spill_id else "bay_of_bengal"
+    if "DARTIS" in spill_id or "ow-" in spill_id:
+    	sector = "mediterranean_dartis"	
+    else:
+    	sector = "arabian_sea" if "01" in spill_id else "bay_of_bengal"
     metocean = metocean_engine.get_metocean_conditions(sector)
     
     hindcast_points = metocean_engine.calculate_hindcast_track(

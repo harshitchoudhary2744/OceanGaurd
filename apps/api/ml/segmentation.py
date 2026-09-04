@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 from PIL import Image
+import os
 
 try:
     import torch
@@ -95,28 +96,61 @@ class MetoceanHydrodynamicEngine:
     def __init__(self):
         # Default Indian Maritime EEZ Metocean Baseline (Arabian Sea / Mumbai High)
         self.default_metocean = {
-            "arabian_sea": {
-                "wind_speed_kts": 16.2,
-                "wind_direction_deg": 245.0, # From South-West
-                "current_speed_kts": 1.4,
-                "current_direction_deg": 65.0, # Heading North-East
-                "sea_surface_temp_c": 28.4,
-                "significant_wave_height_m": 1.8,
-                "weathering_evaporation_pct": 22.5,
-                "weathering_emulsification_pct": 34.0,
-            },
-            "bay_of_bengal": {
-                "wind_speed_kts": 12.8,
-                "wind_direction_deg": 190.0, # From South
-                "current_speed_kts": 1.1,
-                "current_direction_deg": 40.0, # Heading North-East
-                "sea_surface_temp_c": 29.1,
-                "significant_wave_height_m": 1.4,
-                "weathering_evaporation_pct": 26.0,
-                "weathering_emulsification_pct": 31.5,
-            }
-        }
+        "arabian_sea": {
+        "wind_speed_kts": 16.2,
+        "wind_direction_deg": 245.0,
+        "current_speed_kts": 1.4,
+        "current_direction_deg": 65.0,
+        "sea_surface_temp_c": 28.4,
+        "significant_wave_height_m": 1.8,
+        "weathering_evaporation_pct": 22.5,
+        "weathering_emulsification_pct": 34.0,
+        "source": "DEMO_REGIONAL_BASELINE",
+        "is_fallback": True,
+         },
 
+        "bay_of_bengal": {
+        "wind_speed_kts": 12.8,
+        "wind_direction_deg": 190.0,
+        "current_speed_kts": 1.1,
+        "current_direction_deg": 40.0,
+        "sea_surface_temp_c": 29.1,
+        "significant_wave_height_m": 1.4,
+        "weathering_evaporation_pct": 26.0,
+        "weathering_emulsification_pct": 31.5,
+        "source": "DEMO_REGIONAL_BASELINE",
+        "is_fallback": True,
+        },
+
+        # DARTIS ow-0001 / Eastern Mediterranean
+        # Current values: actual Copernicus Marine reanalysis
+        # Wind: fallback because local SAR-wind pixel was missing
+        "mediterranean_dartis": {
+        "wind_speed_kts": 15.55,
+        "wind_direction_deg": 55.0,
+        "current_speed_kts": 0.305,
+        "current_direction_deg": 92.57,
+        "sea_surface_temp_c": 17.0,
+        "significant_wave_height_m": 1.5,
+        "weathering_evaporation_pct": 18.0,
+        "weathering_emulsification_pct": 28.0,
+
+        "source": "COPERNICUS_MED_REANALYSIS_PLUS_DEMO_WIND_FALLBACK",
+        "is_fallback": True,
+
+        "current_source": "Copernicus Marine Mediterranean Physics Reanalysis",
+        "current_observation": {
+            "latitude": 33.270832,
+            "longitude": 33.041668,
+            "timestamp": "2019-01-01T03:30:00Z",
+            "uo_ms": 0.156706,
+            "vo_ms": -0.007029,
+        },
+
+        "wind_source": "COPERNICUS_S1B_SAR_WIND",
+        "wind_note": "Local wind pixel unavailable; representative demo fallback used.",
+    },
+}
     def compute_drift_velocity_kmh(
         self,
         wind_speed_kts: float = 16.2,
@@ -297,35 +331,40 @@ class MetoceanHydrodynamicEngine:
         return track
 
     def get_metocean_conditions(self, sector: str = "arabian_sea") -> Dict[str, Any]:
-        """Return metocean parameters, forward drift vector and reverse hindcast vector"""
-        params = self.default_metocean.get(sector, self.default_metocean["arabian_sea"])
-        net_u, net_v, speed_kmh, dir_deg = self.compute_drift_velocity_kmh(
-            params["wind_speed_kts"],
-            params["wind_direction_deg"],
-            params["current_speed_kts"],
-            params["current_direction_deg"]
-        )
-        hind_u, hind_v, _, hind_dir_deg = self.compute_hindcast_velocity_kmh(
-            params["wind_speed_kts"],
-            params["wind_direction_deg"],
-            params["current_speed_kts"],
-            params["current_direction_deg"]
-        )
+    	"""Return metocean parameters, forward drift vector and reverse hindcast vector."""
 
-        return {
-            **params,
-            "net_drift_speed_kmh": speed_kmh,
-            "net_drift_speed_kts": round(speed_kmh / 1.852, 2),
-            "net_drift_direction_deg": dir_deg,
-            "drift_vector": [round(net_u, 4), round(net_v, 4)],
-            "hindcast_direction_deg": hind_dir_deg,
-            "hindcast_vector": [round(hind_u, 4), round(hind_v, 4)],
-            "wind_cardinal": "WSW",
-            "current_cardinal": "ENE",
-            "sar_backscatter_quality": "OPTIMAL (High Radar Contrast)",
-            "sea_state": "Slight to Moderate (Beaufort 4)"
-        }
+    	params = self.default_metocean.get(
+        sector,
+        self.default_metocean["arabian_sea"]
+    	)
 
+    	net_u, net_v, speed_kmh, dir_deg = self.compute_drift_velocity_kmh(
+        params["wind_speed_kts"],
+        params["wind_direction_deg"],
+        params["current_speed_kts"],
+        params["current_direction_deg"]
+    	)
+
+    	hind_u, hind_v, _, hind_dir_deg = self.compute_hindcast_velocity_kmh(
+        params["wind_speed_kts"],
+        params["wind_direction_deg"],
+        params["current_speed_kts"],
+        params["current_direction_deg"]
+    	)
+
+    	return {
+        **params,
+        "net_drift_speed_kmh": speed_kmh,
+        "net_drift_speed_kts": round(speed_kmh / 1.852, 2),
+        "net_drift_direction_deg": dir_deg,
+        "drift_vector": [round(net_u, 4), round(net_v, 4)],
+        "hindcast_direction_deg": hind_dir_deg,
+        "hindcast_vector": [round(hind_u, 4), round(hind_v, 4)],
+        "wind_cardinal": "NE",
+        "current_cardinal": "E",
+        "sar_backscatter_quality": "DARTIS Sentinel-1B",
+        "sea_state": "Mediterranean Sea",
+    	}
 
 metocean_engine = MetoceanHydrodynamicEngine()
 
@@ -519,10 +558,13 @@ class SARSegmentationPipeline:
             #
             # model is:
             # apps/api/models/unet_oilspill.h5
+        
+            model_name = os.getenv("SAR_MODEL","unet_oilspill.h5")
+
             model_path = (
-                Path(__file__).resolve().parent.parent
-                / "models"
-                / "unet_oilspill.h5"
+               Path(__file__).resolve().parent.parent
+               / "models"
+               / model_name
             )
 
             if not model_path.exists():
