@@ -371,34 +371,37 @@ async def detect_spill_from_sar_image(
         # Default mock 256x256 byte payload
         content = bytes([128] * (256 * 256))
 
+    is_dartis = scene_id and scene_id.startswith("DARTIS")
+
+    detection_time = (
+        "2019-01-01T03:42:35+00:00"
+        if is_dartis
+        else datetime.utcnow().isoformat() + "Z"
+    )
+
+    acquisition_time = (
+        "2019-01-01 03:42:35 UTC"
+        if is_dartis
+        else datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    )
+
     # Run ML Pipeline
     pipeline_result = sar_pipeline.process_sar_payload(
         image_bytes=content,
         center_lon=center_lon,
         center_lat=center_lat,
-        scene_id=scene_id or "S1A_IW_GRDH_1SDV_UPLOADED"
+        scene_id=scene_id or "S1A_IW_GRDH_1SDV_UPLOADED",
+        acquisition_timestamp_utc=acquisition_time
     )
 
     feature = pipeline_result["feature"]
     metrics = pipeline_result["metrics"]
     new_spill_id = feature["properties"]["id"]
-    
-    is_dartis = scene_id and scene_id.startswith("DARTIS")
-
-    detection_time = (
-    "2019-01-01T03:42:35+00:00"
-    if is_dartis
-    else datetime.utcnow().isoformat() + "Z"
-    )
 
     new_spill_obj = {
     "id": new_spill_id,
     "detection_timestamp": detection_time,
-    "acquisition_timestamp_utc": (
-        "2019-01-01 03:42:35 UTC"
-        if is_dartis
-        else datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    ),
+    "acquisition_timestamp_utc": acquisition_time,
     "area_sq_km": metrics["area_sq_km"],
     "perimeter_km": metrics["perimeter_km"],
     "confidence_score": metrics["confidence"],

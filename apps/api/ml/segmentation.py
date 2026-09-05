@@ -942,12 +942,13 @@ class SARSegmentationPipeline:
         }
 
     def process_sar_payload(
-        self,
-        image_bytes: bytes,
-        center_lon: float = 72.150,
-        center_lat: float = 19.050,
-        scene_id: str = "S1A_IW_GRDH_ARABIAN_SEA_01",
-        wind_speed_kts: float = 16.2
+           self,
+           image_bytes: bytes,
+           center_lon: float = 72.150,
+           center_lat: float = 19.050,
+           scene_id: str = "S1A_IW_GRDH_ARABIAN_SEA_01",
+           wind_speed_kts: float = 16.2,
+           acquisition_timestamp_utc: str = None
     ) -> Dict[str, Any]:
         """
         Full pipeline:
@@ -1009,8 +1010,8 @@ class SARSegmentationPipeline:
                     metrics["damping_ratio_db"],
 
                 "acquisition_timestamp_utc":
-                    datetime.utcnow().strftime(
-                        "%Y-%m-%d %H:%M:%S UTC"
+                    acquisition_timestamp_utc or datetime.utcnow().strftime(
+                    "%Y-%m-%d %H:%M:%S UTC"
                     ),
 
                 "status":
