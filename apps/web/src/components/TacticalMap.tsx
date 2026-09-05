@@ -164,6 +164,173 @@ const COASTAL_COMMUNITIES_GEOJSON = {
   })),
 };
 
+// ============================================================================
+// REALISTIC MARITIME SHIP SILHOUETTES & CULPRIT HIGHLIGHTING
+// ============================================================================
+function getShipMarkerHtml(
+  type: 'culprit' | 'patrol' | 'commercial',
+  isSelected: boolean,
+  isAisDark: boolean,
+  name: string,
+  speed: number,
+  heading: number
+): string {
+  const displayShortName = name.length > 15 ? name.split(' ').slice(0, 2).join(' ') : name;
+  const speedStr = (speed || 0).toFixed(1);
+
+  if (type === 'culprit') {
+    const labelTitle = isAisDark
+      ? '📡 AIS DARK • DISCHARGE'
+      : isSelected
+      ? '🎯 PRIMARY SUSPECT'
+      : '🎯 CULPRIT VESSEL';
+
+    const labelClass = isAisDark
+      ? 'marker-label absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-amber-950/95 border-2 border-amber-400 text-[10px] font-mono font-bold text-amber-200 whitespace-nowrap shadow-[0_0_25px_rgba(245,158,11,0.9)] z-40 flex items-center gap-1.5 backdrop-blur-md animate-bounce'
+      : isSelected
+      ? 'marker-label absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-rose-950/95 border-2 border-rose-400 text-[10px] font-mono font-bold text-white whitespace-nowrap shadow-[0_0_25px_rgba(244,63,94,0.95)] z-40 flex items-center gap-1.5 backdrop-blur-md ring-2 ring-rose-500/50'
+      : 'marker-label absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-rose-950/90 border-2 border-rose-500 text-[10px] font-mono font-bold text-rose-200 whitespace-nowrap shadow-[0_0_18px_rgba(244,63,94,0.85)] z-40 flex items-center gap-1.5 backdrop-blur-md';
+
+    return `
+      <!-- Double Radar Threat Rings -->
+      <div class="marker-ring absolute -inset-3 rounded-full border-2 border-rose-500/70 bg-rose-500/15 animate-ping pointer-events-none"></div>
+      <div class="absolute -inset-1 rounded-full border border-rose-400/60 bg-rose-950/30 animate-pulse pointer-events-none"></div>
+
+      <!-- Tactical Reticle Brackets (Target Lock) -->
+      <div class="marker-reticle absolute -inset-1.5 pointer-events-none flex flex-col justify-between p-0.5 z-20">
+        <div class="flex justify-between">
+          <div class="w-3 h-3 border-t-2 border-l-2 border-rose-400 shadow-[0_0_8px_rgba(244,63,94,1)]"></div>
+          <div class="w-3 h-3 border-t-2 border-r-2 border-rose-400 shadow-[0_0_8px_rgba(244,63,94,1)]"></div>
+        </div>
+        <div class="flex justify-between">
+          <div class="w-3 h-3 border-b-2 border-l-2 border-rose-400 shadow-[0_0_8px_rgba(244,63,94,1)]"></div>
+          <div class="w-3 h-3 border-b-2 border-r-2 border-rose-400 shadow-[0_0_8px_rgba(244,63,94,1)]"></div>
+        </div>
+      </div>
+
+      <!-- Rotated VLCC Supertanker Silhouette -->
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 36px; height: 72px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 36 72" width="34" height="68" class="drop-shadow-[0_0_12px_rgba(244,63,94,0.95)]" xmlns="http://www.w3.org/2000/svg">
+          <!-- Outer Hull -->
+          <path d="M18 4 C13 4 8 12 8 22 L8 58 C8 65 12 68 18 68 C24 68 28 65 28 58 L28 22 C28 12 23 4 18 4 Z" fill="#e11d48" stroke="#ffffff" stroke-width="1.8" />
+          <!-- Inner Deck -->
+          <path d="M18 7 C14 7 10 14 10 23 L10 56 C10 61 13 64 18 64 C23 64 26 61 26 56 L26 23 C26 14 22 7 18 7 Z" fill="#9f1239" />
+          <!-- Bulbous Bow Arc -->
+          <path d="M14 7 Q18 4.5 22 7" stroke="#ffffff" stroke-width="1.4" fill="none" />
+          <!-- Crude Oil Pipe Manifold Spine -->
+          <line x1="18" y1="16" x2="18" y2="50" stroke="#fde047" stroke-width="2.2" stroke-linecap="round" />
+          <!-- Lateral Manifold Headers -->
+          <line x1="11" y1="24" x2="25" y2="24" stroke="#fde047" stroke-width="1.6" stroke-linecap="round" />
+          <line x1="11" y1="33" x2="25" y2="33" stroke="#fde047" stroke-width="1.6" stroke-linecap="round" />
+          <line x1="11" y1="42" x2="25" y2="42" stroke="#fde047" stroke-width="1.6" stroke-linecap="round" />
+          <!-- Cargo Tank Domes -->
+          <circle cx="14" cy="20" r="1.3" fill="#ffffff" />
+          <circle cx="22" cy="20" r="1.3" fill="#ffffff" />
+          <circle cx="14" cy="28.5" r="1.3" fill="#ffffff" />
+          <circle cx="22" cy="28.5" r="1.3" fill="#ffffff" />
+          <circle cx="14" cy="37.5" r="1.3" fill="#ffffff" />
+          <circle cx="22" cy="37.5" r="1.3" fill="#ffffff" />
+          <circle cx="14" cy="46" r="1.3" fill="#ffffff" />
+          <circle cx="22" cy="46" r="1.3" fill="#ffffff" />
+          <!-- Aft Superstructure (Bridge Block) -->
+          <rect x="10" y="52" width="16" height="8" rx="1.5" fill="#0f172a" stroke="#ffffff" stroke-width="1.2" />
+          <!-- Bridge Wings -->
+          <line x1="7" y1="54" x2="29" y2="54" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />
+          <!-- Bridge Window Glass (Glowing Cyan) -->
+          <rect x="12" y="53" width="12" height="2" rx="0.5" fill="#38bdf8" />
+          <!-- Exhaust Funnel (Hazard Crimson/Dark) -->
+          <rect x="15" y="60.5" width="6" height="3" rx="0.8" fill="#e11d48" stroke="#ffffff" stroke-width="0.8" />
+          <circle cx="18" cy="62" r="0.8" fill="#020617" />
+        </svg>
+      </div>
+
+      <!-- Prominent Culprit Label -->
+      <div class="${labelClass}">
+        <span class="w-2 h-2 rounded-full ${isAisDark ? 'bg-amber-400' : 'bg-rose-500'} animate-ping"></span>
+        <span>${labelTitle}: ${name}</span>
+        <span class="text-white font-mono font-semibold marker-speed-val">(${speedStr} kts)</span>
+      </div>
+    `;
+  }
+
+  if (type === 'patrol') {
+    return `
+      <div class="marker-ring absolute -inset-1 rounded-full border border-cyan-500/50 bg-cyan-500/10 pointer-events-none"></div>
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 22px; height: 44px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 24 48" width="20" height="40" class="drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3 L6 15 L6 41 C6 44 8.5 46 12 46 C15.5 46 18 44 18 41 L18 15 Z" fill="#06b6d4" stroke="#ffffff" stroke-width="1.4" />
+          <path d="M12 6 L8 16 L8 39 C8 41 9.5 43 12 43 C14.5 43 16 41 16 39 L16 16 Z" fill="#0891b2" />
+          <circle cx="12" cy="12" r="1.5" fill="#ffffff" />
+          <rect x="8.5" y="18" width="7" height="13" rx="1.8" fill="#0f172a" stroke="#ffffff" stroke-width="0.9" />
+          <rect x="9.5" y="19.5" width="5" height="2.5" rx="0.5" fill="#67e8f9" />
+          <line x1="9" y1="25" x2="11.5" y2="25" stroke="#38bdf8" stroke-width="1.2" />
+          <line x1="12.5" y1="25" x2="15" y2="25" stroke="#f43f5e" stroke-width="1.2" />
+          <rect x="9.5" y="34" width="5" height="4" rx="0.5" fill="#0e7490" stroke="#083344" stroke-width="0.5" />
+        </svg>
+      </div>
+      <div class="marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-cyan-700/70 text-[9px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-1">
+        🛡️ CYPRUS CG PATROL <span class="marker-speed-val font-semibold">(${speedStr} kts)</span>
+      </div>
+    `;
+  }
+
+  // Standard Commercial Vessel (Cargo / Bulker / Container)
+  let hullFill = '#475569';
+  let hullStroke = '#0f172a';
+  let deckFill = '#334155';
+  let hatchFill = '#1e293b';
+  let hatchStroke = '#64748b';
+  let bridgeFill = '#64748b';
+  let windowFill = '#38bdf8';
+  let ringHtml = '';
+  let labelClass = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-400 whitespace-nowrap pointer-events-none z-30 group-hover:text-white group-hover:border-slate-600 transition-colors flex items-center gap-1';
+  let labelPrefix = '';
+
+  if (isSelected) {
+    hullFill = '#0284c7';
+    hullStroke = '#ffffff';
+    deckFill = '#0369a1';
+    hatchFill = '#0c4a6e';
+    hatchStroke = '#38bdf8';
+    bridgeFill = '#38bdf8';
+    windowFill = '#e0f2fe';
+    ringHtml = '<div class="marker-ring absolute -inset-2 rounded-full border-2 border-sky-400 bg-sky-500/20 animate-ping pointer-events-none"></div>';
+    labelClass = 'marker-label absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-slate-950/95 border-2 border-sky-500 text-[10px] font-mono font-bold text-sky-300 whitespace-nowrap shadow-xl z-30 flex items-center gap-1 backdrop-blur-sm';
+    labelPrefix = '🔍 ';
+  } else if (isAisDark) {
+    hullFill = '#d97706';
+    hullStroke = '#fef3c7';
+    deckFill = '#b45309';
+    hatchFill = '#78350f';
+    hatchStroke = '#f59e0b';
+    bridgeFill = '#f59e0b';
+    ringHtml = '<div class="marker-ring absolute -inset-2 rounded-full border border-amber-500/70 bg-amber-500/20 animate-pulse pointer-events-none"></div>';
+    labelClass = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/80 text-[9px] font-mono text-amber-300 whitespace-nowrap pointer-events-none z-30 animate-pulse flex items-center gap-1';
+    labelPrefix = '⚠️ AIS DARK ';
+  }
+
+  return `
+    ${ringHtml}
+    <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 24px; height: 48px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+      <svg viewBox="0 0 28 56" width="22" height="44" class="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 4 C11 4 7 11 7 19 L7 45 C7 51 10 54 14 54 C18 54 21 51 21 45 L21 19 C21 11 17 4 14 4 Z" fill="${hullFill}" stroke="${hullStroke}" stroke-width="1.4" />
+        <path d="M14 6 C12 6 9 12 9 19 L9 44 C9 48 11 51 14 51 C17 51 19 48 19 44 L19 19 C19 12 16 6 14 6 Z" fill="${deckFill}" />
+        <rect x="10" y="14" width="8" height="6" rx="0.8" fill="${hatchFill}" stroke="${hatchStroke}" stroke-width="0.8" />
+        <rect x="10" y="22" width="8" height="6" rx="0.8" fill="${hatchFill}" stroke="${hatchStroke}" stroke-width="0.8" />
+        <rect x="10" y="30" width="8" height="6" rx="0.8" fill="${hatchFill}" stroke="${hatchStroke}" stroke-width="0.8" />
+        <rect x="9" y="38" width="10" height="7" rx="1.2" fill="${bridgeFill}" stroke="${hullStroke}" stroke-width="1" />
+        <rect x="10.5" y="39.5" width="7" height="1.5" rx="0.4" fill="${windowFill}" />
+        <line x1="7" y1="41" x2="21" y2="41" stroke="${hullStroke}" stroke-width="1" />
+        <rect x="12" y="46" width="4" height="2.5" rx="0.5" fill="#0f172a" />
+      </svg>
+    </div>
+    <div class="${labelClass}">
+      <span>${labelPrefix}${displayShortName}</span>
+      <span class="marker-speed-val text-slate-300 font-mono">(${speedStr} kts)</span>
+    </div>
+  `;
+}
+
 interface TacticalMapProps {
   spills: SpillFeatureCollection;
   vessels: Vessel[];
@@ -1279,55 +1446,45 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
     displayVessels.forEach((v) => {
       const isSelected = activeSuspect?.mmsi === v.mmsi;
-      const isIncidentCulprit = currentIncident.culpritMmsi === v.mmsi;
+      const isIncidentCulprit = currentIncident.culpritMmsi === v.mmsi || v.mmsi === 212000001;
       const isCoastGuard = v.mmsi === 419000999;
       const fullVessel = vessels.find((item) => item.mmsi === v.mmsi);
       const name = fullVessel?.name || `MMSI ${v.mmsi}`;
       const markerKey = `vessel-${v.mmsi}`;
+      const isAisDark = !!(v as any).isAisDark;
 
+      const shipType: 'culprit' | 'patrol' | 'commercial' = isIncidentCulprit
+        ? 'culprit'
+        : (isCoastGuard || v.mmsi === 212000005)
+        ? 'patrol'
+        : 'commercial';
+
+      const stateKey = `${shipType}-${isSelected}-${isAisDark}`;
       let marker = markersRef.current[markerKey];
 
       if (!marker) {
         const el = document.createElement('div');
         el.className = 'vessel-marker group cursor-pointer';
-        el.style.width = '42px';
-        el.style.height = '42px';
         el.style.display = 'flex';
         el.style.alignItems = 'center';
         el.style.justifyContent = 'center';
+        el.dataset.renderedState = stateKey;
 
-        const ring = document.createElement('div');
-        ring.className = 'marker-ring absolute inset-0 rounded-full transition-all pointer-events-none';
-        el.appendChild(ring);
+        if (shipType === 'culprit') {
+          el.style.width = '64px';
+          el.style.height = '92px';
+          el.style.zIndex = isSelected ? '55' : '50';
+        } else if (shipType === 'patrol') {
+          el.style.width = '36px';
+          el.style.height = '54px';
+          el.style.zIndex = '35';
+        } else {
+          el.style.width = '38px';
+          el.style.height = '56px';
+          el.style.zIndex = isSelected ? '45' : '20';
+        }
 
-        const svgContainer = document.createElement('div');
-        svgContainer.className = 'marker-icon-container relative z-10 flex items-center justify-center pointer-events-none';
-        svgContainer.style.width = '26px';
-        svgContainer.style.height = '26px';
-        svgContainer.style.transformOrigin = 'center center';
-        svgContainer.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
-        svgContainer.style.transform = `rotate(${v.heading}deg)`;
-
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('width', '24');
-        svg.setAttribute('height', '24');
-
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', 'M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z');
-        path.setAttribute('stroke', '#020617');
-        path.setAttribute('stroke-width', '1.5');
-        path.setAttribute('class', 'marker-arrow-path');
-
-        svg.appendChild(path);
-        svgContainer.appendChild(svg);
-        el.appendChild(svgContainer);
-
-        const displayShortName = name.length > 15 ? name.split(' ').slice(0, 2).join(' ') : name;
-        const label = document.createElement('div');
-        label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-slate-700 text-[9px] font-mono text-white whitespace-nowrap pointer-events-none transition-all shadow-md z-30 flex items-center gap-1';
-        label.innerText = displayShortName;
-        el.appendChild(label);
+        el.innerHTML = getShipMarkerHtml(shipType, isSelected, isAisDark, name, v.speed || 0, v.heading);
 
         el.addEventListener('click', (ev) => {
           ev.stopPropagation();
@@ -1341,59 +1498,33 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         markersRef.current[markerKey] = marker;
       } else {
         marker.setLngLat([v.lon, v.lat]);
-      }
+        const el = marker.getElement();
 
-      const el = marker.getElement();
-      const ring = el.querySelector('.marker-ring') as HTMLElement;
-      const svgContainer = el.querySelector('.marker-icon-container') as HTMLElement;
-      const path = el.querySelector('.marker-arrow-path') as SVGPathElement;
-      const label = el.querySelector('.marker-label') as HTMLElement;
-
-      if (svgContainer) {
-        svgContainer.style.transform = `rotate(${v.heading}deg)`;
-      }
-
-      if (ring && path && label) {
-        const displayShortName = name.length > 15 ? name.split(' ').slice(0, 2).join(' ') : name;
-        const isAisDark = !!(v as any).isAisDark;
-
-        if (isSelected) {
-          if (isAisDark) {
-            ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-amber-500 bg-amber-500/30 animate-ping pointer-events-none';
-            path.setAttribute('fill', '#f59e0b');
-            path.setAttribute('stroke', '#ffffff');
-            path.setAttribute('stroke-width', '2');
-            label.className = 'marker-label absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-md bg-amber-950/95 border-2 border-amber-500 text-[10px] font-mono font-bold text-amber-300 whitespace-nowrap shadow-2xl z-30 flex items-center gap-1.5 backdrop-blur-sm animate-pulse';
-            label.innerText = `📡 AIS DARK: ${name} (${v.speed ? v.speed.toFixed(1) : '5.4'} kts)`;
+        if (el.dataset.renderedState !== stateKey) {
+          el.dataset.renderedState = stateKey;
+          if (shipType === 'culprit') {
+            el.style.width = '64px';
+            el.style.height = '92px';
+            el.style.zIndex = isSelected ? '55' : '50';
+          } else if (shipType === 'patrol') {
+            el.style.width = '36px';
+            el.style.height = '54px';
+            el.style.zIndex = '35';
           } else {
-            ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-rose-500 bg-rose-500/20 animate-ping pointer-events-none';
-            path.setAttribute('fill', '#f43f5e');
-            path.setAttribute('stroke', '#ffffff');
-            path.setAttribute('stroke-width', '2');
-            label.className = 'marker-label absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-md bg-slate-950/95 border-2 border-rose-500 text-[10px] font-mono font-bold text-rose-300 whitespace-nowrap shadow-2xl z-30 flex items-center gap-1.5 backdrop-blur-sm';
-            label.innerText = `🎯 ${name} (${v.speed ? v.speed.toFixed(1) : '14.8'} kts)`;
+            el.style.width = '38px';
+            el.style.height = '56px';
+            el.style.zIndex = isSelected ? '45' : '20';
           }
-        } else if (isAisDark) {
-          ring.className = 'marker-ring absolute inset-0 rounded-full border border-amber-500/60 bg-amber-500/20 animate-pulse pointer-events-none';
-          path.setAttribute('fill', '#d97706');
-          path.setAttribute('stroke', '#0f172a');
-          path.setAttribute('stroke-width', '1.5');
-          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/70 text-[9px] font-mono text-amber-300 whitespace-nowrap pointer-events-none z-30 animate-pulse';
-          label.innerText = `⚠️ AIS DARK (${v.speed ? v.speed.toFixed(1) : '5.4'} kts)`;
-        } else if (isCoastGuard || v.mmsi === 212000005) {
-          ring.className = 'marker-ring absolute inset-1 rounded-full border border-cyan-500/40 pointer-events-none';
-          path.setAttribute('fill', '#06b6d4');
-          path.setAttribute('stroke', '#020617');
-          path.setAttribute('stroke-width', '1.5');
-          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-cyan-700/70 text-[9px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-1';
-          label.innerText = `🛡️ CYPRUS CG PATROL (${v.speed ? v.speed.toFixed(1) : '22.0'} kts)`;
+          el.innerHTML = getShipMarkerHtml(shipType, isSelected, isAisDark, name, v.speed || 0, v.heading);
         } else {
-          ring.className = 'marker-ring hidden';
-          path.setAttribute('fill', '#64748b');
-          path.setAttribute('stroke', '#0f172a');
-          path.setAttribute('stroke-width', '1.5');
-          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-400 whitespace-nowrap pointer-events-none z-30';
-          label.innerText = `${displayShortName} (${v.speed ? v.speed.toFixed(1) : '14.0'} kts)`;
+          const svgContainer = el.querySelector('.marker-icon-container') as HTMLElement;
+          if (svgContainer) {
+            svgContainer.style.transform = `rotate(${v.heading}deg)`;
+          }
+          const speedEl = el.querySelector('.marker-speed-val') as HTMLElement;
+          if (speedEl) {
+            speedEl.textContent = `(${(v.speed || 0).toFixed(1)} kts)`;
+          }
         }
       }
     });
@@ -1578,6 +1709,25 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                 </div>
                 <span className="text-[9px] font-mono">{showCpaVector ? 'ON' : 'OFF'}</span>
               </button>
+            </div>
+
+            {/* Fleet & Target Vessels Legend */}
+            <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
+              <span className="text-[9px] text-cyan-400 font-extrabold uppercase tracking-wider px-1">
+                Fleet & Target Vessels
+              </span>
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-rose-950/40 border border-rose-500/50 text-[10px] text-rose-200 shadow-sm shadow-rose-950/50">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+                <span className="font-semibold">🎯 Culprit: Mediterranean Trader (VLCC)</span>
+              </div>
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-cyan-950/30 border border-cyan-500/40 text-[10px] text-cyan-300">
+                <span className="w-2 h-2 rounded bg-cyan-400 shrink-0" />
+                <span>🛡️ Cyprus Coast Guard Patrol</span>
+              </div>
+              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-900/50 border border-slate-800 text-[10px] text-slate-400">
+                <span className="w-2 h-2 rounded bg-slate-500 shrink-0" />
+                <span>🚢 Commercial Cargo & Bulkers (28 Ships)</span>
+              </div>
             </div>
           </div>
         )}
