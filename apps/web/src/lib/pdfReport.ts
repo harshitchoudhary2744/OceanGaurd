@@ -37,7 +37,7 @@ export function generateClientSidePdfDossier(
 
   const area = spillFeature?.properties?.area_sq_km || 7.24;
   const perimeter = spillFeature?.properties?.perimeter_km || 19.30;
-  const rawDice = spillFeature?.properties?.segmentation_dice_score || spillFeature?.properties?.confidence_score || 0.965;
+  const rawDice = spillFeature?.properties?.segmentation_dice_score || spillFeature?.properties?.confidence_score || 0.7130;
   const diceScore = (rawDice <= 1.0 ? rawDice * 100 : rawDice).toFixed(1);
   const dampingRatio = (spillFeature?.properties?.damping_ratio_db || 8.4).toFixed(1);
   const dischargeLiters = spillFeature?.properties?.estimated_discharge_liters || Math.round(area * 10500);

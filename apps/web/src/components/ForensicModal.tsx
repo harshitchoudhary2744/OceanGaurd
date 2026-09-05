@@ -80,7 +80,7 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
                   <span className="font-mono text-xs font-bold text-rose-300">2. DEEPSAR U-NET & MOORE-NEIGHBOR CONTOUR</span>
                 </div>
                 <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
-                  Dice: {((currentIncident.segmentation_dice_score || 0.965) * (currentIncident.segmentation_dice_score <= 1.0 ? 100 : 1)).toFixed(1)}%
+                  Dice: {((currentIncident.segmentation_dice_score || 0.7130) * (currentIncident.segmentation_dice_score <= 1.0 ? 100 : 1)).toFixed(1)}%
                 </span>
               </div>
               <svg className="w-full h-28" viewBox="0 0 200 100">

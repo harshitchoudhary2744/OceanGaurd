@@ -23,8 +23,10 @@ export interface SpillProperties {
   area_sq_km: number;
   perimeter_km?: number;
   confidence_score: number; // Oil Likelihood Score
-  segmentation_dice_score?: number; // e.g. 0.962 (96.2% ground truth overlap benchmark)
-  oil_likelihood_score?: number; // e.g. 0.940 (94.0% vs lookalike)
+  segmentation_dice_score?: number; // e.g. 0.7130 (71.30% ground truth overlap benchmark)
+  segmentation_iou_score?: number; // e.g. 0.5540 (55.40% Jaccard index)
+  max_probability?: number; // e.g. 0.982257 (98.23% maximum pixel sigmoid output)
+  oil_likelihood_score?: number; // e.g. 0.982257 vs lookalike
   lookalike_score?: number;
   damping_ratio_db?: number; // e.g. 8.4 dB
   false_positive_analysis?: FalsePositiveBreakdown;
@@ -58,6 +60,8 @@ export interface LinkedSpillInfo {
   volume_liters: number;
   confidence_score: number;
   segmentation_dice_score?: number;
+  segmentation_iou_score?: number;
+  max_probability?: number;
   slick_type: string;
   distance_km: number;
 }
@@ -264,6 +268,7 @@ export interface SuspectVessel {
   draught_meters?: number;
   call_sign?: string;
   destination?: string;
+  cargo_type?: string;
   distance_meters: number;
   distance_km?: number;
   probability_score: number; // Weighted Anomaly Score (0 - 100)
@@ -306,6 +311,8 @@ export interface SARInferenceResponse {
     eccentricity: number;
     confidence: number;
     segmentation_dice_score?: number;
+    segmentation_iou_score?: number;
+    max_probability?: number;
     oil_likelihood_score?: number;
     lookalike_score?: number;
     damping_ratio_db?: number;
