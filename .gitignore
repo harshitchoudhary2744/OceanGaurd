@@ -24,3 +24,4 @@ ENV/
 postgis_data/
 qdrant_storage/
 scratch/
+apps/api/ml/data/

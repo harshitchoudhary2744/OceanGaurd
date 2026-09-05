@@ -4,15 +4,26 @@ import {
   SuspectVessel,
   VectorMatch,
   Vessel,
-  SARInferenceResponse
+  SARInferenceResponse,
+  MetoceanData,
+  HindcastData,
+  AnomalyBreakdown
 } from '../types';
 import {
   INITIAL_SPILLS,
   INITIAL_VESSELS,
   INITIAL_SUSPECTS,
-  INITIAL_VECTOR_MATCHES
+  INITIAL_VECTOR_MATCHES,
+  DEFAULT_METOCEAN
 } from './mockData';
-import { globalSimulation } from './simulationEngine';
+import {
+  globalSimulation,
+  MUMBAI_INCIDENTS,
+  generateHindcastTrack,
+  generateRealisticSpillPolygon,
+  registerCustomSpillIncident,
+  calculatePolygonMetrics
+} from './simulationEngine';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -51,8 +62,6 @@ export async function fetchVectorMatches(spillId: string): Promise<VectorMatch[]
   }
 }
 
-import { DEFAULT_METOCEAN } from './mockData';
-import { MetoceanData, HindcastData, AnomalyBreakdown } from '../types';
 
 export async function fetchMetoceanData(sector: string = 'mumbai'): Promise<MetoceanData> {
   try {
@@ -75,7 +84,6 @@ export async function fetchHindcastData(
     return await res.json();
   } catch (err) {
     // Generate fallback hindcast data based on Mumbai incident
-    const { MUMBAI_INCIDENTS, generateHindcastTrack } = await import('./simulationEngine');
     const config = MUMBAI_INCIDENTS[spillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
     const centerLon = config.originCoords[0];
     const centerLat = config.originCoords[1];
@@ -200,7 +208,6 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
     const sceneId = sceneIdRaw ? String(sceneIdRaw) : `S1A_IW_GRDH_CUSTOM_${Date.now().toString().slice(-4)}`;
     const mockId = `INC-CUST-${Date.now().toString().slice(-4)}`;
 
-    const { generateRealisticSpillPolygon, registerCustomSpillIncident, calculatePolygonMetrics } = await import('./simulationEngine');
     const polygon = generateRealisticSpillPolygon(centerLon, centerLat, 52.0, 4.6, 1.3);
     const polyMetrics = calculatePolygonMetrics(polygon, 16.2);
 

@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { SuspectVessel, VectorMatch, SpillProperties, SpillGeoFeature, MetoceanData } from '../types';
 import { downloadPdfReportUrl } from '../lib/api';
-import { MUMBAI_INCIDENTS, calculateEnvironmentalThreat } from '../lib/simulationEngine';
+import { MUMBAI_INCIDENTS, calculateEnvironmentalThreat, calculateVesselKinematicAnomaly } from '../lib/simulationEngine';
 
 export type InspectorTabType = 'overview' | 'sar_physics' | 'culprit' | 'metocean' | 'threats';
 
@@ -98,7 +98,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   const tabs: { id: InspectorTabType; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'overview', label: 'Overview', icon: <Target className="w-3.5 h-3.5" /> },
     { id: 'sar_physics', label: 'SAR AI', icon: <Sparkles className="w-3.5 h-3.5" />, badge: `${falsePositive.likely_oil_pct}%` },
-    { id: 'culprit', label: 'Culprit', icon: <Ship className="w-3.5 h-3.5" />, badge: `${activeVessel?.probability_score || 98.4}` },
+    { id: 'culprit', label: 'Culprit', icon: <Ship className="w-3.5 h-3.5" />, badge: `${(activeVessel?.probability_score || activeVessel?.anomaly_score || 98.4).toFixed(1)}` },
     { id: 'metocean', label: 'Metocean', icon: <Wind className="w-3.5 h-3.5" /> },
     { id: 'threats', label: 'Threats', icon: <AlertTriangle className="w-3.5 h-3.5" />, badge: `${threat.overall_severity_score}` },
   ];
@@ -294,11 +294,15 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
           </div>
           <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
             <span className="text-slate-400 text-[9.5px]">Estimated Volume</span>
-            <strong className="text-white">{currentIncident.estimatedVolumeLiters?.toLocaleString() || "51,000"} L</strong>
+            <strong className="text-white">
+              {(currentIncident.volumeLiters || Math.round((spill?.area_sq_km || currentIncident.baseAreaSqKm) * 10740)).toLocaleString()} L
+            </strong>
           </div>
           <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
             <span className="text-slate-400 text-[9.5px]">Coast Distance</span>
-            <strong className="text-amber-300">{threat.coast_distance_km} km ({threat.eta_hours_to_landfall}h ETA)</strong>
+            <strong className="text-amber-300">
+              {threat.coast_distance_km} km ({threat.predicted_arrival_hours || 11.5}h ETA)
+            </strong>
           </div>
         </div>
       </div>
@@ -384,6 +388,9 @@ const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ currentIncident, falsePos
   const dampingRatio = (falsePositive?.marangoni_damping_db || spill?.damping_ratio_db || 8.4).toFixed(1);
   const rawDice = spill?.segmentation_dice_score || currentIncident?.segmentation_dice_score || 0.965;
   const diceScorePct = (rawDice <= 1.0 ? rawDice * 100 : rawDice).toFixed(1);
+  const modelArch = (spill as any)?.model?.architecture || "DeepSAR U-Net Architecture";
+  const modelEngine = (spill as any)?.model?.engine || "PyTorch 2.x • Sentinel-1 Calibrated Weights (Val Dice: 0.9618)";
+  const modelBadge = (spill as any)?.model?.engine?.includes("TensorFlow") ? "KERAS UNET" : "DEEP UNET";
 
   return (
     <div className="flex flex-col gap-3 font-mono text-xs">
@@ -394,12 +401,12 @@ const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ currentIncident, falsePos
             AI
           </div>
           <div>
-            <span className="text-white font-bold text-[10.5px] block">DeepSAR U-Net Architecture</span>
-            <span className="text-[9px] text-slate-400 block">PyTorch 2.2 • Kaiming / Calibrated Weights (Val Dice: 0.9618)</span>
+            <span className="text-white font-bold text-[10.5px] block">{modelArch}</span>
+            <span className="text-[9px] text-slate-400 block">{modelEngine}</span>
           </div>
         </div>
         <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-500/30 text-[9.5px]">
-          PURE UNET
+          {modelBadge}
         </span>
       </div>
 
@@ -461,7 +468,7 @@ const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ currentIncident, falsePos
           </div>
           <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400 block">Speckle Variance:</span>
-            <strong className="text-emerald-400 text-xs">0.034 (Low Noise)</strong>
+            <strong className="text-emerald-400 text-xs">{((spill as any)?.speckle_variance || 0.034).toFixed(3)} (Low Noise)</strong>
           </div>
           <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400 block">Contour Tracing:</span>
@@ -492,16 +499,21 @@ interface CulpritTabProps {
   currentIncident: any;
 }
 
-const CulpritTab: React.FC<CulpritTabProps> = ({ activeVessel, suspects, onSelectVessel }) => {
+const CulpritTab: React.FC<CulpritTabProps> = ({ activeVessel, suspects, onSelectVessel, currentIncident }) => {
   if (!activeVessel) {
     return <div className="text-slate-400 text-center py-6 font-mono text-xs">No suspect vessels detected in EEZ corridor.</div>;
   }
 
-  const anomalyScore = activeVessel.anomaly_score || activeVessel.probability_score || 98.4;
-  const speedDropDelta = (activeVessel as any).speed_drop_delta_kts || 9.6;
-  const maxAisGap = (activeVessel as any).max_ais_gap_minutes || 42;
-  const hindcastCpa = (activeVessel as any).hindcast_cpa_distance_km !== undefined
-    ? `${((activeVessel as any).hindcast_cpa_distance_km * 1000).toFixed(0)} meters`
+  const anomalyBreakdown = activeVessel.anomaly_breakdown ||
+    calculateVesselKinematicAnomaly(activeVessel, currentIncident.originCoords, currentIncident.dischargeOffsetMinutes);
+
+  const anomalyScore = (anomalyBreakdown.composite_score || activeVessel.anomaly_score || activeVessel.probability_score || 98.4).toFixed(1);
+  const speedDropDelta = anomalyBreakdown.speed_drop_delta_kts || (activeVessel as any).speed_drop_delta_kts || 9.6;
+  const maxAisGap = anomalyBreakdown.max_ais_gap_minutes || (activeVessel as any).max_ais_gap_minutes || 42;
+  const hindcastCpa = anomalyBreakdown.hindcast_cpa_distance_km !== undefined
+    ? anomalyBreakdown.hindcast_cpa_distance_km === 0
+      ? '0.00 meters (Exact Overpass)'
+      : `${(anomalyBreakdown.hindcast_cpa_distance_km * 1000).toFixed(0)} meters (${anomalyBreakdown.hindcast_cpa_distance_km.toFixed(2)} km)`
     : activeVessel.distance_meters === 0
     ? '0.00 meters (Exact Overpass)'
     : `${activeVessel.distance_meters || 340} meters`;
@@ -529,12 +541,12 @@ const CulpritTab: React.FC<CulpritTabProps> = ({ activeVessel, suspects, onSelec
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">Kinematic Speed Drop:</span>
             <strong className="text-amber-300">
-              {activeVessel.speed_knots || 14.8} kts → {Math.max(3.0, (activeVessel.speed_knots || 14.8) - speedDropDelta).toFixed(1)} kts (Δ {speedDropDelta} kts)
+              {activeVessel.speed_knots || 14.8} kts → {Math.max(3.0, (activeVessel.speed_knots || 14.8) - speedDropDelta).toFixed(1)} kts (Δ {speedDropDelta.toFixed(1)} kts)
             </strong>
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">AIS Blackout Gap:</span>
-            <strong className="text-rose-400">{maxAisGap} Minutes (Unnotified)</strong>
+            <strong className="text-rose-400">{maxAisGap.toFixed(0)} Minutes (Unnotified)</strong>
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">Hindcast CPA to Origin:</span>
@@ -542,7 +554,7 @@ const CulpritTab: React.FC<CulpritTabProps> = ({ activeVessel, suspects, onSelec
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">Vessel Class & Draught:</span>
-            <strong className="text-white">{activeVessel.vessel_type || 'Crude Oil Tanker'} • 14.2m Draft</strong>
+            <strong className="text-white">{activeVessel.vessel_type || 'Crude Oil Tanker'} • {activeVessel.draught_meters || 14.2}m Draft</strong>
           </div>
         </div>
 
@@ -668,7 +680,9 @@ const MetoceanTab: React.FC<MetoceanTabProps> = ({ metocean, threat }) => {
         <div className="flex flex-col gap-1.5 text-[10.5px]">
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">Net Drift Speed:</span>
-            <strong className="text-cyan-300">1.4 kts @ 72° ENE</strong>
+            <strong className="text-cyan-300">
+              {metocean?.net_drift_speed_kts ?? 1.95} kts @ {metocean?.net_drift_direction_deg ?? 69.3}° {metocean?.current_cardinal ?? 'ENE'}
+            </strong>
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">Radial Spread Rate:</span>
@@ -676,11 +690,11 @@ const MetoceanTab: React.FC<MetoceanTabProps> = ({ metocean, threat }) => {
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">Evaporative Weathering:</span>
-            <strong className="text-emerald-400">22.4% Mass Lost (12h)</strong>
+            <strong className="text-emerald-400">{metocean?.weathering_evaporation_pct ?? 22.5}% Mass Lost (12h)</strong>
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">Emulsification State:</span>
-            <strong className="text-rose-300">18.2% Water Content</strong>
+            <strong className="text-rose-300">{metocean?.weathering_emulsification_pct ?? 34.0}% Water Content</strong>
           </div>
         </div>
       </div>
@@ -740,8 +754,8 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocu
         <div className="flex flex-col gap-1.5 text-[10.5px]">
           <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.fishing_zone_name || 'Mumbai Pelagic Trawling Fairway'}</span>
-              <span className="text-emerald-400 font-mono">420 Trawlers</span>
+              <span>{threat.fishing_zone_name || 'Mumbai Pelagic Commercial Trawling Fairway'}</span>
+              <span className="text-emerald-400 font-mono">{threat.fishing_fleet_count || 420} Trawlers</span>
             </div>
             <p className="text-[9.5px] text-slate-400">
               Urgent broadcast alert issued. Standby advisory active for high-value pomfret and seerfish harvesting grounds.
@@ -774,8 +788,8 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocu
         <div className="flex flex-col gap-1.5 text-[10.5px]">
           <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.fishing_harbour_name || 'Sassoon Docks Fishery Terminal (41.5 km)'}</span>
-              <span className="text-blue-400 font-mono">1,250 Vessels</span>
+              <span>{threat.fishing_harbour_name || 'Sassoon Docks Fishery Terminal'}</span>
+              <span className="text-blue-400 font-mono">{threat.harbour_vessel_count || 1250} Vessels</span>
             </div>
             <p className="text-[9.5px] text-slate-400">
               Pre-position containment booms across harbor entrance. Evacuation alert ready for offshore landing berths.
@@ -808,8 +822,8 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocu
         <div className="flex flex-col gap-1.5 text-[10.5px]">
           <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.aquaculture_name || 'Raigad Estuarine Mariculture Cages (35.0 km)'}</span>
-              <span className="text-purple-400 font-mono">₹78.0 Cr Value</span>
+              <span>{threat.aquaculture_name || 'Raigad Estuarine Mariculture Cages'}</span>
+              <span className="text-purple-400 font-mono">₹{threat.aquaculture_economic_cr || 78.0} Cr Value</span>
             </div>
             <p className="text-[9.5px] text-slate-400">
               Emergency advisory issued to close intertidal water intake gates and deploy secondary skirt oil deflectors.
@@ -843,7 +857,7 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocu
           <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
               <span>{threat.coastal_community_name || 'Worli & Mahim Koliwada Settlements'}</span>
-              <span className="text-orange-400 font-mono">30,700 Pop.</span>
+              <span className="text-orange-400 font-mono">{threat.community_population ? threat.community_population.toLocaleString() : '30,700'} Pop.</span>
             </div>
             <p className="text-[9.5px] text-slate-400">
               Shoreline response contingency activated. Village community coordinators on alert for potential beach tarball deposits.

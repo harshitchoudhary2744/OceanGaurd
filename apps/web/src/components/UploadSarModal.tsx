@@ -75,6 +75,15 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
       timestampUtc: '2024-10-18 10:50:00 UTC',
       desc: 'Anchorage Bunkering Zone - Intermediate Fuel Oil breach'
     },
+    {
+      id: 'scene-dartis-med',
+      title: 'Copernicus S1B DARTIS Mediterranean (ow-0001)',
+      sceneId: 'DARTIS_OW_0001_CYPRUS_LEVANTINE',
+      coords: [33.0417, 33.2708] as [number, number],
+      timestampIst: '2019-01-01 09:12:35 IST',
+      timestampUtc: '2019-01-01 03:42:35 UTC',
+      desc: 'Eastern Mediterranean Basin - Benchmark SAR oil spill with Copernicus ocean reanalysis currents'
+    },
   ];
 
   const handleFileChange = (file: File) => {

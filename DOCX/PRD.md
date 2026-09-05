@@ -16,9 +16,9 @@
 ## Core Features & Requirements
 
 ### 1. Interactive Ocean GIS Dashboard
-* Render global maritime maps using Mapbox GL JS with custom dark-mode thematic layers.
+* Render global maritime maps using GPU-accelerated MapLibre GL JS with custom dark-mode bathymetric depth layers.
 * Display live/simulated AIS vessel coordinates with heading indicators and speed vectors.
-* Dual-layer overlay rendering: Toggle raw Sentinel-1 SAR geotiff imagery and predicted U-Net oil slick segmentation masks.
+* Dual-layer overlay rendering: Toggle raw Sentinel-1 SAR imagery and predicted U-Net oil slick segmentation masks.
 * Time-slider control to scrub back in time and replay vessel paths relative to slick formation timestamps.
 
 ### 2. Automated SAR Image Processing & Segmentation Pipeline
@@ -41,11 +41,11 @@
 ---
 
 ## Technical Stack & Architecture
-* **Frontend:** Next.js 14+ (App Router), TypeScript, Tailwind CSS, Mapbox GL JS, Lucide Icons, Recharts.
-* **Backend API:** Python 3.11+, FastAPI, Uvicorn, WebSockets (for live alert feeds).
-* **AI & Machine Learning:** PyTorch (U-Net model), OpenCV, GDAL/Rasterio (spatial raster processing).
-* **Database & GIS:** PostgreSQL 16 with PostGIS extension (geospatial relational data), Qdrant (spatial vector search engine).
-* **State & Data Fetching:** React Query (TanStack Query), Zustand (global map state).
+* **Frontend:** React.js 18 (Vite SPA), TypeScript, Tailwind CSS, MapLibre GL JS, Lucide Icons.
+* **Backend API:** Python 3.11/3.14, FastAPI, Uvicorn, WebSockets (for live alert feeds).
+* **AI & Machine Learning:** PyTorch (DeepSAR U-Net model), NumPy (2D integral Lee filter, spatial geometry).
+* **Database & GIS:** PostgreSQL 16 with PostGIS extension (geospatial relational data), Qdrant Cloud (spatial vector search engine).
+* **State & Data Fetching:** React Hooks, Typed Native Fetch API Client, Deterministic Kinematic Simulation Engine.
 
 ---
 
