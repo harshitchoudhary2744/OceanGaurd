@@ -999,7 +999,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 6px;">
                 <div><span style="color: #94a3b8;">Area:</span> <b style="color: #e2e8f0;">${Number(props?.area_sq_km || 0).toFixed(2)} km²</b></div>
                 <div><span style="color: #94a3b8;">Perimeter:</span> <b style="color: #e2e8f0;">${props?.perimeter_km ? Number(props.perimeter_km).toFixed(1) : '11.4'} km</b></div>
-                <div><span style="color: #94a3b8;">AI Dice:</span> <b style="color: #34d399;">${(Number(props?.segmentation_dice_score || 0.988) * 100).toFixed(1)}%</b></div>
+                <div><span style="color: #94a3b8;">AI Dice:</span> <b style="color: #34d399;">${(Number(props?.segmentation_dice_score || 0.962) * 100).toFixed(1)}%</b></div>
                 <div><span style="color: #94a3b8;">Confidence:</span> <b style="color: #38bdf8;">${(Number(props?.confidence_score || 0.95) * 100).toFixed(1)}%</b></div>
                 <div><span style="color: #94a3b8;">Damping:</span> <b style="color: #fbbf24;">${props?.damping_ratio_db || '8.4'} dB</b></div>
                 <div><span style="color: #94a3b8;">Discharge:</span> <b style="color: #f43f5e;">${props?.estimated_discharge_liters ? Number(props.estimated_discharge_liters).toLocaleString() : '45,000'} L</b></div>

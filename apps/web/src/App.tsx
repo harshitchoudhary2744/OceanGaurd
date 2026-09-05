@@ -421,7 +421,7 @@ export function App() {
           area_sq_km: res.spill.area_sq_km,
           perimeter_km: res.spill.perimeter_km,
           confidence_score: res.spill.confidence_score,
-          segmentation_dice_score: res.metrics?.segmentation_dice_score || 0.988,
+          segmentation_dice_score: res.metrics?.segmentation_dice_score || 0.962,
           oil_likelihood_score: res.metrics?.oil_likelihood_score || 0.940,
           source_scene: res.spill.source_scene,
           status: 'ACTIVE',

@@ -23,7 +23,7 @@ export interface SpillProperties {
   area_sq_km: number;
   perimeter_km?: number;
   confidence_score: number; // Oil Likelihood Score
-  segmentation_dice_score?: number; // e.g. 0.988 (98.8% ground truth overlap benchmark)
+  segmentation_dice_score?: number; // e.g. 0.962 (96.2% ground truth overlap benchmark)
   oil_likelihood_score?: number; // e.g. 0.940 (94.0% vs lookalike)
   lookalike_score?: number;
   damping_ratio_db?: number; // e.g. 8.4 dB
@@ -78,7 +78,48 @@ export interface AnomalyBreakdown {
   hindcast_cpa_distance_m: number;
   hindcast_cpa_distance_km?: number;
   hindcast_details?: string;
+  cargo_multiplier?: number;
+  explanation_summary?: string;
+  weights?: {
+    cpa: number;
+    speed_drop: number;
+    ais_gap: number;
+    loitering: number;
+    cpa_weight?: number;
+    speed_drop_weight?: number;
+    ais_gap_weight?: number;
+    loitering_weight?: number;
+  };
+  subscores?: {
+    cpa_points?: number;
+    speed_drop_points?: number;
+    ais_gap_points?: number;
+    loitering_points?: number;
+    cpa_score?: number;
+    speed_drop_score?: number;
+    ais_gap_score?: number;
+    loitering_score?: number;
+  };
   evidence_tags: string[];
+}
+
+export interface SeverityFactor {
+  id: string;
+  name: string;
+  weight: number;
+  weight_percent: string;
+  raw_metric: string;
+  score_contribution: number;
+  max_contribution: number;
+  description: string;
+  status: string;
+}
+
+export interface SeverityBreakdown {
+  base_hazard_constant: number;
+  formula: string;
+  factors: SeverityFactor[];
+  weights_summary: string;
 }
 
 export type MaritimeAssetCategory = 'fishing_zone' | 'fishing_harbour' | 'aquaculture' | 'coastal_community' | 'oil_spill';
@@ -155,6 +196,7 @@ export interface EnvironmentalThreat {
   fishing_harbour_coords?: [number, number];
   aquaculture_coords?: [number, number];
   coastal_community_coords?: [number, number];
+  severity_breakdown?: SeverityBreakdown;
 }
 
 export interface HindcastPoint {

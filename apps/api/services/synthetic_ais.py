@@ -53,12 +53,14 @@ def _trajectory(
             current_heading = (heading + ((i - loiter_at) * 55)) % 360
 
         records.append({
-                "mmsi": mmsi,
-   		 "timestamp": timestamp.isoformat(),
-   		 "latitude": round(lat, 6),
-   		 "longitude": round(lon, 6),
-   		 "speed": round(current_speed, 2),
-   		 "heading": round(current_heading, 1),
+            "mmsi": mmsi,
+            "timestamp": timestamp.isoformat(),
+            "latitude": round(lat, 6),
+            "longitude": round(lon, 6),
+            "speed": round(current_speed, 2),
+            "speed_knots": round(current_speed, 2),
+            "heading": round(current_heading, 1),
+            "heading_degrees": round(current_heading, 1),
         })
 
         # Move according to speed and interval
@@ -94,12 +96,13 @@ def generate_synthetic_ais(center_lat=33.25902604, center_lon=33.05775642):
             "draught_meters": 15.8,
             "call_sign": "9HA4211",
             "destination": "CYPRUS OFFSHORE TRANSIT",
-            "lat": center_lat - 0.08,
-            "lon": center_lon - 0.20,
+            "lat": 33.373641,
+            "lon": 31.603408,
             "heading": 95,
             "speed": 13.8,
-            "speed_drop_at": 14,
-            "gap_at": 12,
+            "speed_drop_at": 21,
+            "gap_at": 21,
+            "loiter_at": 21,
         },
         {
             "mmsi": 209123000,
@@ -145,8 +148,8 @@ def generate_synthetic_ais(center_lat=33.25902604, center_lon=33.05775642):
             "draught_meters": 9.5,
             "call_sign": "5BAK7",
             "destination": "VASILIKO OIL TERMINAL",
-            "lat": center_lat - 0.12,
-            "lon": center_lon + 0.35,
+            "lat": center_lat + 0.35,
+            "lon": center_lon + 0.45,
             "heading": 285,
             "speed": 11.0,
             "gap_at": 10,

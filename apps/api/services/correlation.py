@@ -334,13 +334,13 @@ class MaritimeAnomalyDetector:
             cargo_mult = 1.18
         elif "Chemical" in vtype or "Gas" in vtype:
             cargo_mult = 1.10
-        elif "Coast Guard" in vtype or "Patrol" in vtype:
+        elif any(k in vtype for k in ["Coast Guard", "Patrol", "Pollution", "Control", "Response", "Law Enforcement"]):
             cargo_mult = 0.12 # Official response vessels have low anomaly culpability
         else:
             cargo_mult = 0.95
 
         final_score = min(99.4, max(4.0, base_composite * cargo_mult))
-        if cpa_res["min_cpa_meters"] < 400 and (speed_res["detected"] or gap_res["detected"]):
+        if cargo_mult >= 0.9 and cpa_res["min_cpa_meters"] < 400 and (speed_res["detected"] or gap_res["detected"]):
             final_score = max(final_score, 96.5)
 
         # Categorization
