@@ -1071,6 +1071,461 @@ export const MMSI_TO_INCIDENT: Record<number, string> = {
   563032000: "DARTIS-ow-0001",
 };
 
+// 25 Authentic Commercial Maritime Corridor Vessels operating in the Eastern Mediterranean / Levantine Basin
+export interface CorridorShipDef {
+  mmsi: number;
+  imo_number: number;
+  name: string;
+  flag: string;
+  vessel_type: string;
+  length_meters: number;
+  draught_meters: number;
+  call_sign: string;
+  destination: string;
+  cargo_type: string;
+  lat: number;
+  lon: number;
+  heading_degrees: number;
+  speed_knots: number;
+}
+
+export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
+  {
+    mmsi: 500100001,
+    imo_number: 9708681,
+    name: "MSC SVEVA",
+    flag: "Panama",
+    vessel_type: "Container Ship",
+    length_meters: 395,
+    draught_meters: 15.5,
+    call_sign: "3FVR2",
+    destination: "ROTTERDAM COMMERCIAL GATEWAY",
+    cargo_type: "Containerized Consumer Goods (19,224 TEU)",
+    lat: 33.340,
+    lon: 32.720,
+    heading_degrees: 284,
+    speed_knots: 18.2,
+  },
+  {
+    mmsi: 500100002,
+    imo_number: 9705885,
+    name: "CMA CGM TIGRIS",
+    flag: "Malta",
+    vessel_type: "Container Ship",
+    length_meters: 300,
+    draught_meters: 14.2,
+    call_sign: "9HA3812",
+    destination: "PORT SAID ANCHORAGE",
+    cargo_type: "Manufactured Goods & Electronics (10,622 TEU)",
+    lat: 33.120,
+    lon: 32.850,
+    heading_degrees: 102,
+    speed_knots: 17.6,
+  },
+  {
+    mmsi: 500100003,
+    imo_number: 9786849,
+    name: "EVER GOLDEN",
+    flag: "Panama",
+    vessel_type: "Container Ship",
+    length_meters: 400,
+    draught_meters: 16.0,
+    call_sign: "3EPA7",
+    destination: "PIRAEUS CONTAINER TERMINAL",
+    cargo_type: "General High-Value Freight (20,124 TEU)",
+    lat: 33.410,
+    lon: 33.480,
+    heading_degrees: 286,
+    speed_knots: 18.8,
+  },
+  {
+    mmsi: 500100004,
+    imo_number: 9619907,
+    name: "MAERSK MC-KINNEY",
+    flag: "Denmark",
+    vessel_type: "Container Ship",
+    length_meters: 399,
+    draught_meters: 15.8,
+    call_sign: "OZHC2",
+    destination: "SUEZ CANAL SOUTHBOUND CONVOY",
+    cargo_type: "Refrigerated & Dry Containers (18,270 TEU)",
+    lat: 33.080,
+    lon: 33.320,
+    heading_degrees: 104,
+    speed_knots: 16.9,
+  },
+  {
+    mmsi: 500100005,
+    imo_number: 9732369,
+    name: "HAPAG AL JASRAH",
+    flag: "Germany",
+    vessel_type: "Container Ship",
+    length_meters: 368,
+    draught_meters: 15.0,
+    call_sign: "DGDH2",
+    destination: "VALENCIA COMMERCIAL PORT",
+    cargo_type: "Automotive Freight & Machinery (14,993 TEU)",
+    lat: 33.380,
+    lon: 33.820,
+    heading_degrees: 285,
+    speed_knots: 17.2,
+  },
+  {
+    mmsi: 500100006,
+    imo_number: 9795634,
+    name: "COSCO GALAXY",
+    flag: "Hong Kong",
+    vessel_type: "Container Ship",
+    length_meters: 400,
+    draught_meters: 16.1,
+    call_sign: "VRTY5",
+    destination: "SINGAPORE PSA TERMINAL",
+    cargo_type: "Industrial Equipment & Solar Modules (21,237 TEU)",
+    lat: 32.950,
+    lon: 32.610,
+    heading_degrees: 101,
+    speed_knots: 18.4,
+  },
+  {
+    mmsi: 500100007,
+    imo_number: 9745902,
+    name: "FRONT ALTAIR",
+    flag: "Marshall Islands",
+    vessel_type: "Crude Oil Tanker",
+    length_meters: 333,
+    draught_meters: 21.5,
+    call_sign: "V7HJ3",
+    destination: "TRIESTE OIL DOCKS",
+    cargo_type: "Arabian Light Crude Oil (300,000 DWT)",
+    lat: 33.210,
+    lon: 32.450,
+    heading_degrees: 282,
+    speed_knots: 13.6,
+  },
+  {
+    mmsi: 500100008,
+    imo_number: 9812456,
+    name: "NORDIC PASSAGE",
+    flag: "Liberia",
+    vessel_type: "Suezmax Tanker",
+    length_meters: 274,
+    draught_meters: 16.8,
+    call_sign: "A8ZZ9",
+    destination: "SIDI KERIR OIL TERMINAL",
+    cargo_type: "Segregated Ballast (158,000 DWT)",
+    lat: 32.980,
+    lon: 33.650,
+    heading_degrees: 98,
+    speed_knots: 13.1,
+  },
+  {
+    mmsi: 500100009,
+    imo_number: 9698541,
+    name: "MINERVA ELEONORA",
+    flag: "Greece",
+    vessel_type: "Aframax Tanker",
+    length_meters: 243,
+    draught_meters: 14.5,
+    call_sign: "SVBG4",
+    destination: "VASILIKO OIL TERMINAL",
+    cargo_type: "Low-Sulphur Marine Gasoil (115,000 DWT)",
+    lat: 34.520,
+    lon: 33.150,
+    heading_degrees: 268,
+    speed_knots: 12.4,
+  },
+  {
+    mmsi: 500100010,
+    imo_number: 9387475,
+    name: "EURONAV CAP VICTOR",
+    flag: "Belgium",
+    vessel_type: "Crude Oil Tanker",
+    length_meters: 277,
+    draught_meters: 17.2,
+    call_sign: "ONCV",
+    destination: "FOS SUR MER REFINERY",
+    cargo_type: "Basrah Heavy Crude Oil (156,000 DWT)",
+    lat: 33.480,
+    lon: 32.950,
+    heading_degrees: 287,
+    speed_knots: 14.0,
+  },
+  {
+    mmsi: 500100011,
+    imo_number: 9626273,
+    name: "GASLOG SYDNEY",
+    flag: "Bermuda",
+    vessel_type: "LNG Carrier",
+    length_meters: 285,
+    draught_meters: 11.8,
+    call_sign: "ZCEQ5",
+    destination: "DAMIETTA LNG EXPORT TERMINAL",
+    cargo_type: "Liquefied Natural Gas (155,000 m³)",
+    lat: 33.020,
+    lon: 32.980,
+    heading_degrees: 105,
+    speed_knots: 16.4,
+  },
+  {
+    mmsi: 500100012,
+    imo_number: 9637492,
+    name: "GOLAR ICE",
+    flag: "Marshall Islands",
+    vessel_type: "LNG Carrier",
+    length_meters: 288,
+    draught_meters: 11.9,
+    call_sign: "V7TR4",
+    destination: "BARCELONA REGASIFICATION TERMINAL",
+    cargo_type: "Liquefied Methane Gas (160,000 m³)",
+    lat: 33.450,
+    lon: 33.620,
+    heading_degrees: 283,
+    speed_knots: 15.7,
+  },
+  {
+    mmsi: 500100013,
+    imo_number: 9750945,
+    name: "BERGE OLYMPUS",
+    flag: "Isle of Man",
+    vessel_type: "Bulk Carrier",
+    length_meters: 300,
+    draught_meters: 18.2,
+    call_sign: "MDYJ8",
+    destination: "PORT SAID ANCHORAGE",
+    cargo_type: "Iron Ore Pellets (211,000 DWT)",
+    lat: 33.150,
+    lon: 33.780,
+    heading_degrees: 100,
+    speed_knots: 12.2,
+  },
+  {
+    mmsi: 500100014,
+    imo_number: 9831124,
+    name: "STAR BULK GEMINI",
+    flag: "Marshall Islands",
+    vessel_type: "Bulk Carrier",
+    length_meters: 229,
+    draught_meters: 13.8,
+    call_sign: "V7PL2",
+    destination: "BEIRUT COMMERCIAL HARBOUR",
+    cargo_type: "Feed Grain & Sunflower Seeds (82,000 DWT)",
+    lat: 33.620,
+    lon: 34.120,
+    heading_degrees: 34,
+    speed_knots: 12.6,
+  },
+  {
+    mmsi: 500100015,
+    imo_number: 9654321,
+    name: "OLDENDORFF DIETRICH",
+    flag: "Liberia",
+    vessel_type: "Bulk Carrier",
+    length_meters: 255,
+    draught_meters: 14.8,
+    call_sign: "D5MK8",
+    destination: "ALEXANDRIA GRAIN TERMINAL",
+    cargo_type: "Dry Bulk Fertilizer (105,000 DWT)",
+    lat: 33.850,
+    lon: 34.280,
+    heading_degrees: 212,
+    speed_knots: 11.8,
+  },
+  {
+    mmsi: 500100016,
+    imo_number: 9789123,
+    name: "PACIFIC VALOUR",
+    flag: "Singapore",
+    vessel_type: "Bulk Carrier",
+    length_meters: 199,
+    draught_meters: 12.8,
+    call_sign: "9V8432",
+    destination: "LARNACA BULK WHARF",
+    cargo_type: "Cement Clinker & Mineral Aggregate (63,500 DWT)",
+    lat: 34.780,
+    lon: 33.720,
+    heading_degrees: 88,
+    speed_knots: 12.0,
+  },
+  {
+    mmsi: 500100017,
+    imo_number: 9246580,
+    name: "GRIMALDI NIGERIA",
+    flag: "Italy",
+    vessel_type: "Ro-Ro Cargo",
+    length_meters: 214,
+    draught_meters: 9.2,
+    call_sign: "IBLC",
+    destination: "SALERNO COMMERCIAL PORT",
+    cargo_type: "Commercial Trucks & Wheeled Heavy Cargo",
+    lat: 33.520,
+    lon: 33.180,
+    heading_degrees: 280,
+    speed_knots: 15.4,
+  },
+  {
+    mmsi: 500100018,
+    imo_number: 9505039,
+    name: "WALLENIUS CARMEN",
+    flag: "Sweden",
+    vessel_type: "Vehicle Carrier",
+    length_meters: 228,
+    draught_meters: 9.8,
+    call_sign: "SLWD",
+    destination: "AQABA CAR TERMINAL",
+    cargo_type: "Automobiles & Electric Vehicles (6,500 CEU)",
+    lat: 33.050,
+    lon: 33.450,
+    heading_degrees: 106,
+    speed_knots: 16.2,
+  },
+  {
+    mmsi: 500100019,
+    imo_number: 9437153,
+    name: "BBC COLORADO",
+    flag: "Antigua & Barbuda",
+    vessel_type: "General Cargo",
+    length_meters: 153,
+    draught_meters: 8.5,
+    call_sign: "V2FP8",
+    destination: "LIMASSOL COMMERCIAL PORT",
+    cargo_type: "Offshore Wind Turbine Generators & Steel",
+    lat: 34.610,
+    lon: 33.240,
+    heading_degrees: 262,
+    speed_knots: 11.4,
+  },
+  {
+    mmsi: 500100020,
+    imo_number: 9138783,
+    name: "ARK FORWARDER",
+    flag: "Cyprus",
+    vessel_type: "Ro-Ro Cargo",
+    length_meters: 182,
+    draught_meters: 7.4,
+    call_sign: "5BLN3",
+    destination: "TRIPOLI COMMERCIAL BERTH",
+    cargo_type: "Inter-Levant Heavy Freight Trailers",
+    lat: 34.150,
+    lon: 34.420,
+    heading_degrees: 38,
+    speed_knots: 15.0,
+  },
+  {
+    mmsi: 500100021,
+    imo_number: 9823412,
+    name: "ALMI HORIZON",
+    flag: "Liberia",
+    vessel_type: "Suezmax Tanker",
+    length_meters: 274,
+    draught_meters: 16.5,
+    call_sign: "D5NX4",
+    destination: "GENOA MULTIEID OIL JETTY",
+    cargo_type: "Heavy Fuel Oil IFO-380 (157,500 DWT)",
+    lat: 33.360,
+    lon: 33.550,
+    heading_degrees: 285,
+    speed_knots: 13.5,
+  },
+  {
+    mmsi: 500100022,
+    imo_number: 9768521,
+    name: "SEACOR BRAVE",
+    flag: "Marshall Islands",
+    vessel_type: "Offshore Supply Vessel",
+    length_meters: 88,
+    draught_meters: 5.8,
+    call_sign: "V7KJ9",
+    destination: "APHRODITE GAS FIELD DRILL PLATFORM",
+    cargo_type: "Subsea Drilling Mud & Drill Collars",
+    lat: 33.100,
+    lon: 33.880,
+    heading_degrees: 195,
+    speed_knots: 10.4,
+  },
+  {
+    mmsi: 500100023,
+    imo_number: 9701231,
+    name: "MARAN GAS APHRODITE",
+    flag: "Greece",
+    vessel_type: "LNG Carrier",
+    length_meters: 294,
+    draught_meters: 12.0,
+    call_sign: "SVAX8",
+    destination: "IDKU LNG LIQUEFACTION PLANT",
+    cargo_type: "Clean LNG Cryogenic Tanks (162,000 m³)",
+    lat: 32.920,
+    lon: 33.150,
+    heading_degrees: 96,
+    speed_knots: 16.5,
+  },
+  {
+    mmsi: 500100024,
+    imo_number: 9892345,
+    name: "STENA PROMETHEUS",
+    flag: "Cyprus",
+    vessel_type: "Product Tanker",
+    length_meters: 183,
+    draught_meters: 10.8,
+    call_sign: "5BCR4",
+    destination: "MONI MULTIBUOY MOORING",
+    cargo_type: "Aviation Turbine Fuel Jet A-1 (49,900 DWT)",
+    lat: 34.680,
+    lon: 33.380,
+    heading_degrees: 75,
+    speed_knots: 12.8,
+  },
+  {
+    mmsi: 500100025,
+    imo_number: 9421876,
+    name: "OLYMPIC GLORY",
+    flag: "Greece",
+    vessel_type: "Crude Oil Tanker",
+    length_meters: 274,
+    draught_meters: 17.0,
+    call_sign: "SYGF",
+    destination: "AUGUSTA REFINERY ANCHORAGE",
+    cargo_type: "Basrah Light Crude (159,000 DWT)",
+    lat: 33.420,
+    lon: 32.550,
+    heading_degrees: 283,
+    speed_knots: 13.8,
+  },
+];
+
+// Helper to compute course-aligned timed waypoints for corridor traffic
+function generateShipWaypoints(ship: {
+  lat: number;
+  lon: number;
+  heading_degrees: number;
+  speed_knots: number;
+}): TimedWaypoint[] {
+  const revHeading = (ship.heading_degrees + 180) % 360;
+
+  // T-360m (6h ago)
+  const dist360 = (ship.speed_knots * 1.852) * 6.0;
+  const [lon360, lat360] = moveCoordinate(ship.lon, ship.lat, revHeading, dist360);
+
+  // T-180m (3h ago)
+  const dist180 = (ship.speed_knots * 1.852) * 3.0;
+  const [lon180, lat180] = moveCoordinate(ship.lon, ship.lat, revHeading, dist180);
+
+  // T-42m
+  const dist42 = (ship.speed_knots * 1.852) * (42.0 / 60.0);
+  const [lon42, lat42] = moveCoordinate(ship.lon, ship.lat, revHeading, dist42);
+
+  // T+180m (3h future)
+  const distFuture = (ship.speed_knots * 1.852) * 3.0;
+  const [lonFuture, latFuture] = moveCoordinate(ship.lon, ship.lat, ship.heading_degrees, distFuture);
+
+  return [
+    { tMinutes: -360, lon: lon360, lat: lat360, heading: ship.heading_degrees, speed: ship.speed_knots },
+    { tMinutes: -180, lon: lon180, lat: lat180, heading: ship.heading_degrees, speed: ship.speed_knots },
+    { tMinutes: -42,  lon: lon42,  lat: lat42,  heading: ship.heading_degrees, speed: ship.speed_knots },
+    { tMinutes: 0,    lon: ship.lon, lat: ship.lat, heading: ship.heading_degrees, speed: ship.speed_knots },
+    { tMinutes: 180,  lon: lonFuture, lat: latFuture, heading: ship.heading_degrees, speed: ship.speed_knots },
+  ];
+}
+
 // Deterministic Timed Waypoint Tracks for Eastern Mediterranean Fleet
 export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: boolean; linkedSpillId?: string; waypoints: TimedWaypoint[] }[] = [
   // 1. MEDITERRANEAN TRADER (VLCC Crude Tanker - Transits ESE 095° off Southern Cyprus across ow-0001.jpg locus)
@@ -1131,6 +1586,12 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
       { tMinutes: 180,  lon: 32.920, lat: 33.200, heading: 245, speed: 22.0 },
     ],
   },
+  // 6–30. Authentic Mediterranean Commercial Fleet Corridor Waypoints
+  ...CORRIDOR_TRAFFIC_FLEET.map((ship) => ({
+    mmsi: ship.mmsi,
+    name: ship.name,
+    waypoints: generateShipWaypoints(ship),
+  })),
 ];
 
 export const VESSEL_WAYPOINTS = MUMBAI_VESSEL_WAYPOINTS;
@@ -1464,44 +1925,29 @@ export class AutonomousSimulationEngine {
       },
     ];
 
-    // 25 Regional Mediterranean Corridor Traffic Vessels
-    const trafficTypes = ["Container", "Bulk Carrier", "Tanker", "Cargo"];
-    const trafficDestinations = ["Limassol", "Larnaca", "Beirut", "Port Said", "Alexandria", "Piraeus"];
-    const syntheticTraffic: Vessel[] = [];
-
-    for (let i = 0; i < 25; i++) {
-      const mmsi = 500100000 + i;
-      const numStr = (i + 1).toString().padStart(2, '0');
-      const vtype = trafficTypes[i % trafficTypes.length];
-      const dest = trafficDestinations[i % trafficDestinations.length];
-      const heading = (i * 37 + 15) % 360;
-      const spd = 10.5 + (i % 6) * 0.9;
-      const lat = 33.25902604 + Math.sin(i * 1.7) * 0.75;
-      const lon = 33.05775642 + Math.cos(i * 1.7) * 0.85;
-
-      syntheticTraffic.push({
-        mmsi,
-        imo_number: 9900000 + i,
-        name: `MED-TRAFFIC-${numStr}`,
-        flag: "Synthetic",
-        vessel_type: vtype,
-        length_meters: 140 + (i % 8) * 18,
-        draught_meters: 8.0 + (i % 5) * 1.2,
-        call_sign: `SIM${numStr}`,
-        destination: `${dest.toUpperCase()} HARBOUR`,
-        nav_status: "Under way using engine",
-        cargo_type: vtype === "Tanker" ? "Refined Distillates" : "Commercial Freight",
-        anomaly_score: 4.0,
-        current_position: {
-          latitude: Number(lat.toFixed(6)),
-          longitude: Number(lon.toFixed(6)),
-          speed_knots: Number(spd.toFixed(1)),
-          heading_degrees: heading,
-          rate_of_turn: 0.0,
-          timestamp: now.toISOString(),
-        },
-      });
-    }
+    // 25 Regional Mediterranean Corridor Commercial Fleet Vessels
+    const syntheticTraffic: Vessel[] = CORRIDOR_TRAFFIC_FLEET.map((ship) => ({
+      mmsi: ship.mmsi,
+      imo_number: ship.imo_number,
+      name: ship.name,
+      flag: ship.flag,
+      vessel_type: ship.vessel_type,
+      length_meters: ship.length_meters,
+      draught_meters: ship.draught_meters,
+      call_sign: ship.call_sign,
+      destination: ship.destination,
+      nav_status: "Under way using engine",
+      cargo_type: ship.cargo_type,
+      anomaly_score: 4.0,
+      current_position: {
+        latitude: ship.lat,
+        longitude: ship.lon,
+        speed_knots: ship.speed_knots,
+        heading_degrees: ship.heading_degrees,
+        rate_of_turn: 0.0,
+        timestamp: now.toISOString(),
+      },
+    }));
 
     const vessels: Vessel[] = [...baseVessels, ...syntheticTraffic];
 
@@ -1516,12 +1962,26 @@ export class AutonomousSimulationEngine {
         timestamp_utc: now.toISOString(),
       };
 
+      // Compute authentic backwards trajectory along vessel's actual course vector
+      const revHeading = (pos.heading_degrees + 180) % 360;
+      const dist180Km = (pos.speed_knots * 1.852) * 3.0;
+      const [lon180, lat180] = moveCoordinate(pos.longitude, pos.latitude, revHeading, dist180Km);
+      const dist60Km = (pos.speed_knots * 1.852) * 1.0;
+      const [lon60, lat60] = moveCoordinate(pos.longitude, pos.latitude, revHeading, dist60Km);
+
+      const trajectory: [number, number, string][] = [
+        [lon180, lat180, new Date(now.getTime() - 180 * 60000).toISOString()],
+        [lon60, lat60, new Date(now.getTime() - 60 * 60000).toISOString()],
+        [pos.longitude, pos.latitude, now.toISOString()],
+      ];
+
       const anomaly = calculateVesselKinematicAnomaly(
         {
           mmsi: v.mmsi,
           name: v.name,
           vessel_type: v.vessel_type,
           speed_knots: pos.speed_knots,
+          trajectory,
         },
         [33.0421, 33.2684],
         -42
@@ -1552,10 +2012,7 @@ export class AutonomousSimulationEngine {
         heading_degrees: pos.heading_degrees,
         last_lat: pos.latitude,
         last_lon: pos.longitude,
-        trajectory: [
-          [pos.longitude - 0.2, pos.latitude - 0.1, new Date(now.getTime() - 180 * 60000).toISOString()],
-          [pos.longitude, pos.latitude, now.toISOString()],
-        ],
+        trajectory,
       };
     });
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Radar,
   ShieldAlert,
@@ -1273,11 +1274,17 @@ interface ModelDiceModalProps {
 }
 
 const ModelDiceModal: React.FC<ModelDiceModalProps> = ({ onClose, currentIncident, spill }) => {
-  const diceScorePct = ((currentIncident.segmentation_dice_score || 0.962) * 100).toFixed(1);
+  const diceScorePct = ((currentIncident?.segmentation_dice_score || spill?.segmentation_dice_score || 0.9618) * 100).toFixed(1);
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#0e1422] border border-cyan-500/40 rounded-2xl shadow-2xl max-w-lg w-full p-5 font-mono text-xs flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto">
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[#0e1422] border border-cyan-500/40 rounded-2xl shadow-2xl max-w-lg w-full p-5 font-mono text-xs flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <div className="flex items-center gap-2">
@@ -1361,7 +1368,8 @@ const ModelDiceModal: React.FC<ModelDiceModalProps> = ({ onClose, currentInciden
           Close Validation Inspector
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -1375,23 +1383,79 @@ interface SeverityCalculationModalProps {
 }
 
 const SeverityCalculationModal: React.FC<SeverityCalculationModalProps> = ({ onClose, threat, currentIncident }) => {
-  const breakdown = threat.severity_breakdown || {
-    base_severity: 25.0,
-    formula: "Severity = Base (25) + Sum(Factor * Weight)",
+  const breakdown = threat?.severity_breakdown || {
+    base_hazard_constant: 25.0,
+    formula: "Severity = Base (25) + Area [35%] + CoastDistance [25%] + Fisheries [15%] + Aquaculture [15%] + Population [10%]",
     factors: [
-      { name: "Slick Surface Area", value: "7.61 km²", weight_pct: 35, score: 84.3, points_contributed: 29.5, description: "Geometric coverage of oil slick in marine environment" },
-      { name: "Coast Proximity", value: "154.4 km", weight_pct: 25, score: 22.8, points_contributed: 5.7, description: "Exponential proximity risk to littoral shoreline" },
-      { name: "Marine Protected Areas & Fisheries", value: "Limassol Fishery Zone", weight_pct: 15, score: 30.0, points_contributed: 4.5, description: "Exposure of pelagic fishing grounds & marine habitats" },
-      { name: "Aquaculture & Mariculture", value: "Vasiliko Bay Cages", weight_pct: 15, score: 28.0, points_contributed: 4.2, description: "High-value offshore fish cages within drift envelope" },
-      { name: "Coastal Communities", value: "185,000 Population", weight_pct: 10, score: 31.0, points_contributed: 3.1, description: "Socio-economic impact on shoreline populations" },
+      { name: "Slick Surface Extent", raw_metric: "7.61 km²", weight_percent: "35%", score_contribution: 26.6, max_contribution: 35.0, description: "Geometric coverage of oil slick in marine environment" },
+      { name: "Coastline Proximity & Arrival ETA", raw_metric: "154.4 km", weight_percent: "25%", score_contribution: 5.7, max_contribution: 25.0, description: "Exponential proximity risk to littoral shoreline" },
+      { name: "Pelagic Commercial Fishery Fairway", raw_metric: "Limassol Fishery Fairway", weight_percent: "15%", score_contribution: 4.5, max_contribution: 15.0, description: "Exposure of pelagic fishing grounds & marine habitats" },
+      { name: "Offshore Mariculture Vulnerability", raw_metric: "Vasiliko Bay Cages", weight_percent: "15%", score_contribution: 4.2, max_contribution: 15.0, description: "High-value offshore fish cages within drift envelope" },
+      { name: "Littoral Population & Commercial Port", raw_metric: "185,000 Population", weight_percent: "10%", score_contribution: 3.1, max_contribution: 10.0, description: "Socio-economic impact on shoreline populations" },
     ],
-    total_calculated: 72.0,
-    clamped_severity: 72
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-[#0e1422] border border-rose-500/40 rounded-2xl shadow-2xl max-w-xl w-full p-5 font-mono text-xs flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto">
+  const baseScore = typeof breakdown.base_hazard_constant === 'number'
+    ? breakdown.base_hazard_constant
+    : typeof breakdown.base_severity === 'number'
+      ? breakdown.base_severity
+      : 25.0;
+
+  const rawFactors: any[] = Array.isArray(breakdown.factors) ? breakdown.factors : [];
+
+  const factors = rawFactors.map((f: any, idx: number) => {
+    const name = f.name || f.id || `Factor ${idx + 1}`;
+    const rawMetric = f.raw_metric || f.value || 'N/A';
+    const weightStr = typeof f.weight_percent === 'string'
+      ? f.weight_percent
+      : typeof f.weight_pct === 'number'
+        ? `${f.weight_pct}%`
+        : typeof f.weight === 'number'
+          ? `${Math.round(f.weight * 100)}%`
+          : '20%';
+    const points = typeof f.score_contribution === 'number'
+      ? f.score_contribution
+      : typeof f.points_contributed === 'number'
+        ? f.points_contributed
+        : 0.0;
+    const maxPts = typeof f.max_contribution === 'number' ? f.max_contribution : 25.0;
+    const normalizedScore = typeof f.score === 'number'
+      ? f.score
+      : maxPts > 0
+        ? Math.min(100, Math.max(0, (points / maxPts) * 100))
+        : 50.0;
+    const desc = f.description || '';
+    const status = f.status;
+
+    return {
+      name,
+      rawMetric,
+      weightStr,
+      points,
+      maxPts,
+      normalizedScore,
+      desc,
+      status,
+    };
+  });
+
+  const overallScore = typeof threat?.overall_severity_score === 'number'
+    ? threat.overall_severity_score
+    : Math.round(Math.min(100, baseScore + factors.reduce((sum, f) => sum + f.points, 0)));
+
+  const overallLevel = threat?.overall_severity_level || (
+    overallScore >= 85 ? 'CRITICAL' : overallScore >= 70 ? 'HIGH' : overallScore >= 50 ? 'MEDIUM' : 'LOW'
+  );
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[#0e1422] border border-rose-500/40 rounded-2xl shadow-2xl max-w-xl w-full p-5 font-mono text-xs flex flex-col gap-3.5 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
           <div className="flex items-center gap-2">
@@ -1403,7 +1467,7 @@ const SeverityCalculationModal: React.FC<SeverityCalculationModalProps> = ({ onC
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer"
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -1415,13 +1479,15 @@ const SeverityCalculationModal: React.FC<SeverityCalculationModalProps> = ({ onC
             <span className="text-[9.5px] text-rose-400 font-bold block mb-0.5">OVERALL THREAT SEVERITY SCORE</span>
             <div className="text-2xl font-black text-rose-300 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-              {threat.overall_severity_score} <span className="text-xs font-normal text-rose-400/80">/ 100</span>
+              {overallScore} <span className="text-xs font-normal text-rose-400/80">/ 100</span>
             </div>
-            <span className="text-[9px] text-slate-400 block mt-0.5">Classification: HIGH SEVERITY (Tier-2 Response Mandated)</span>
+            <span className="text-[9px] text-slate-400 block mt-0.5">
+              Classification: {overallLevel} SEVERITY ({overallScore >= 80 ? 'Tier-2 Response Mandated' : 'Elevated Monitoring Required'})
+            </span>
           </div>
           <div className="text-right">
             <span className="text-[9.5px] text-slate-400 block">BASE SCORE</span>
-            <div className="text-lg font-bold text-amber-300">+25.0 pts</div>
+            <div className="text-lg font-bold text-amber-300">+{baseScore.toFixed(1)} pts</div>
             <span className="text-[9px] text-slate-400">Operational incident baseline</span>
           </div>
         </div>
@@ -1430,7 +1496,7 @@ const SeverityCalculationModal: React.FC<SeverityCalculationModalProps> = ({ onC
         <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 text-[10px] flex flex-col gap-1">
           <span className="text-cyan-300 font-bold uppercase text-[9px]">Mathematical Formulation</span>
           <div className="p-2 bg-slate-950 rounded border border-slate-800/80 text-center font-mono text-cyan-300 text-[10px]">
-            Overall Severity = min(100, Base (25.0) + ∑ (Factor Score × Weight %))
+            Overall Severity = min(100, Base ({baseScore.toFixed(1)}) + ∑ (Factor Score Contribution))
           </div>
           <p className="text-slate-400 text-[9px]">
             Each environmental vector is evaluated, mapped to a 0–100 scale, and weighted according to marine protection sensitivity protocols.
@@ -1442,36 +1508,41 @@ const SeverityCalculationModal: React.FC<SeverityCalculationModalProps> = ({ onC
           <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider px-1">
             Input Metrics, Weightage & Points Contributed
           </span>
-          <div className="flex flex-col gap-1.5">
-            {breakdown.factors.map((f: any, idx: number) => (
-              <div key={idx} className="p-2 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-1">
+          <div className="flex flex-col gap-2">
+            {factors.map((f, idx) => (
+              <div key={idx} className="p-2.5 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-1.5 hover:border-slate-700 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                    <span className="text-white font-bold text-[10.5px]">{f.name}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                    <span className="text-white font-bold text-[11px]">{f.name}</span>
+                    {f.status && (
+                      <span className="px-1.5 py-0.2 rounded bg-slate-800 border border-slate-700 text-slate-300 text-[8.5px] font-mono">
+                        {f.status}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[9px]">
-                      Weight: {f.weight_pct}%
+                    <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[9px] font-mono">
+                      Weight: {f.weightStr}
                     </span>
-                    <strong className="text-rose-400 font-mono text-xs">+{f.points_contributed.toFixed(1)} pts</strong>
+                    <strong className="text-rose-400 font-mono text-xs">+{f.points.toFixed(1)} pts</strong>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between text-[9.5px] text-slate-400">
-                  <span>Input: <strong className="text-slate-200">{f.value}</strong> (Score: {f.score.toFixed(1)}/100)</span>
-                  <span>{f.score.toFixed(1)} × {f.weight_pct}% = +{f.points_contributed.toFixed(1)} pts</span>
+                  <span>Input: <strong className="text-slate-200">{f.rawMetric}</strong></span>
+                  <span>Contribution: <strong className="text-cyan-300 font-mono">+{f.points.toFixed(1)} / {f.maxPts.toFixed(1)} max pts</strong> ({f.normalizedScore.toFixed(0)}%)</span>
                 </div>
 
                 {/* Progress bar */}
                 <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-amber-500 to-rose-500 h-full rounded-full"
-                    style={{ width: `${Math.min(100, Math.max(0, f.score))}%` }}
+                    className="bg-gradient-to-r from-amber-500 via-rose-500 to-rose-400 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, Math.max(0, f.normalizedScore))}%` }}
                   />
                 </div>
 
-                <p className="text-[9px] text-slate-400 italic">{f.description}</p>
+                {f.desc && <p className="text-[9px] text-slate-400/90 italic">{f.desc}</p>}
               </div>
             ))}
           </div>
@@ -1479,21 +1550,22 @@ const SeverityCalculationModal: React.FC<SeverityCalculationModalProps> = ({ onC
 
         {/* Calculation Sum Footnote */}
         <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 text-[10px] flex items-center justify-between font-mono">
-          <span className="text-slate-400">
-            25.0 (Base) + 29.5 (Area) + 5.7 (Coast) + 4.5 (Fish) + 4.2 (Aqua) + 3.1 (Pop) =
+          <span className="text-slate-400 truncate mr-2">
+            {baseScore.toFixed(1)} (Base) + {factors.map((f) => `${f.points.toFixed(1)} (${f.name.split(' ')[0]})`).join(' + ')} =
           </span>
-          <strong className="text-rose-400 text-xs">{threat.overall_severity_score} / 100</strong>
+          <strong className="text-rose-400 text-xs shrink-0">{overallScore} / 100</strong>
         </div>
 
         {/* Action Button */}
         <button
           onClick={onClose}
-          className="w-full py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold cursor-pointer transition-all text-xs"
+          className="w-full py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 font-bold cursor-pointer transition-all text-xs shadow-lg"
         >
           Close Severity Breakdown
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
