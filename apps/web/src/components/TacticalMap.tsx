@@ -216,17 +216,20 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [showCoastalCommunities, setShowCoastalCommunities] = useState<boolean>(true);
   const [showOilSpills, setShowOilSpills] = useState<boolean>(true);
 
-  // Manual Drift & Trail Overrides
+  // Tactical Layer Toggles & Base Map Mode
   const [showTrails, setShowTrails] = useState(true);
   const [showForecast, setShowForecast] = useState(true);
   const [showHindcast, setShowHindcast] = useState(true);
+  const [showSarSwath, setShowSarSwath] = useState(true);
+  const [showCpaVector, setShowCpaVector] = useState(true);
   const [showLegend, setShowLegend] = useState(true);
+  const [baseMapMode, setBaseMapMode] = useState<'dark' | 'satellite'>('dark');
 
   // Active Incident Config
-  const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
-  const dischargeOffset = currentIncident.dischargeOffsetMinutes;
+  const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["DARTIS-ow-0001"] || Object.values(MUMBAI_INCIDENTS)[0];
+  const dischargeOffset = currentIncident?.dischargeOffsetMinutes ?? -45;
   const isPostDischarge = timeOffsetMinutes >= dischargeOffset;
-  const baseOrigin = currentIncident.originCoords;
+  const baseOrigin = currentIncident?.originCoords || [33.05775642, 33.25902604];
 
   // Active Inspected Suspect Vessel
   const activeSuspect = useMemo(() => {
@@ -238,44 +241,79 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     );
   }, [suspects, selectedVesselMmsi, currentIncident]);
 
-  // Synchronized Hydrodynamic Oil Spill Polygons
+  // Synchronized Hydrodynamic Oil Spill Polygons - Merging Backend Features + Simulation
   const currentSpills = useMemo<SpillFeatureCollection>(() => {
-    const features: SpillGeoFeature[] = Object.values(MUMBAI_INCIDENTS).map((config) => {
-      const offsetToUse = config.id === selectedSpillId ? timeOffsetMinutes : 0;
-      const live = calculateSynchronizedOilSpill(offsetToUse, config.id, metocean);
+    const mergedMap = new Map<string, SpillGeoFeature>();
 
-      return {
+    // 1. Process configured incidents with hydrodynamic drift simulation
+    Object.values(MUMBAI_INCIDENTS).forEach((config) => {
+      const offsetToUse = config.id === selectedSpillId ? timeOffsetMinutes : 0;
+      const backendFeature = spills?.features?.find((f) => f.properties.id === config.id);
+      const live = calculateSynchronizedOilSpill(offsetToUse, config.id, metocean, backendFeature);
+
+      mergedMap.set(config.id, {
         type: "Feature",
         id: config.id,
         properties: {
           id: config.id,
-          detection_timestamp: new Date().toISOString(),
+          detection_timestamp: backendFeature?.properties?.detection_timestamp || new Date().toISOString(),
           acquisition_timestamp_ist: config.acquisition_timestamp_ist,
           acquisition_timestamp_utc: config.acquisition_timestamp_utc,
-          area_sq_km: live.area,
-          perimeter_km: live.perimeter,
-          confidence_score: config.confidence,
-          segmentation_dice_score: config.segmentation_dice_score,
-          oil_likelihood_score: config.oil_likelihood_score,
-          source_scene: config.sourceScene,
-          status: "ACTIVE",
-          center: live.center,
+          area_sq_km: backendFeature?.properties?.area_sq_km || live.area,
+          perimeter_km: backendFeature?.properties?.perimeter_km || live.perimeter,
+          confidence_score: backendFeature?.properties?.confidence_score || config.confidence,
+          segmentation_dice_score: backendFeature?.properties?.segmentation_dice_score || config.segmentation_dice_score,
+          oil_likelihood_score: backendFeature?.properties?.oil_likelihood_score || config.oil_likelihood_score,
+          damping_ratio_db: backendFeature?.properties?.damping_ratio_db || config.false_positive_analysis?.marangoni_damping_db || 8.4,
+          source_scene: backendFeature?.properties?.source_scene || config.sourceScene,
+          status: (backendFeature?.properties?.status as any) || "ACTIVE",
+          center: offsetToUse === 0 && backendFeature?.properties?.center ? backendFeature.properties.center : live.center,
           centroid: config.centroid,
-          estimated_discharge_liters: config.volumeLiters,
-          slick_type: config.slickType,
+          estimated_discharge_liters: backendFeature?.properties?.estimated_discharge_liters || config.volumeLiters,
+          slick_type: backendFeature?.properties?.slick_type || config.slickType,
         },
-        geometry: {
-          type: "Polygon",
-          coordinates: live.hasDischarged && live.polygon.length > 0 ? [live.polygon] : [],
-        },
-      };
+        geometry: (offsetToUse === 0 && backendFeature?.geometry?.coordinates?.length)
+          ? backendFeature.geometry
+          : {
+              type: "Polygon",
+              coordinates: live.hasDischarged && live.polygon.length > 0
+                ? [live.polygon]
+                : (backendFeature?.geometry?.coordinates || []),
+            },
+      });
     });
+
+    // 2. Ingest external / uploaded / dynamic spills from backend
+    if (spills?.features?.length) {
+      spills.features.forEach((bf) => {
+        if (!mergedMap.has(bf.properties.id)) {
+          const offsetToUse = bf.properties.id === selectedSpillId ? timeOffsetMinutes : 0;
+          const live = calculateSynchronizedOilSpill(offsetToUse, bf.properties.id, metocean, bf);
+          mergedMap.set(bf.properties.id, {
+            ...bf,
+            properties: {
+              ...bf.properties,
+              center: offsetToUse === 0 && bf.properties.center ? bf.properties.center : live.center,
+              area_sq_km: live.hasDischarged && offsetToUse !== 0 ? live.area : bf.properties.area_sq_km,
+              perimeter_km: live.hasDischarged && offsetToUse !== 0 ? live.perimeter : (bf.properties.perimeter_km || 10.0),
+              damping_ratio_db: bf.properties.damping_ratio_db || 8.2,
+            },
+            geometry: (offsetToUse === 0 && bf.geometry?.coordinates?.length)
+              ? bf.geometry
+              : {
+                  type: "Polygon",
+                  coordinates: live.hasDischarged && live.polygon.length > 0 ? [live.polygon] : bf.geometry.coordinates,
+                },
+          });
+        }
+      });
+    }
 
     return {
       type: "FeatureCollection",
-      features: features.filter((f) => f.geometry.coordinates.length > 0),
+      features: Array.from(mergedMap.values()).filter((f) => f.geometry.coordinates.length > 0 && f.geometry.coordinates[0]?.length > 0),
     };
-  }, [selectedSpillId, timeOffsetMinutes, metocean]);
+  }, [spills, selectedSpillId, timeOffsetMinutes, metocean]);
 
   // Current Slick Centroid Position for Active Spill
   const slickCentroid = useMemo<[number, number]>(() => {
@@ -283,8 +321,100 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (activeSpill?.properties?.center) {
       return activeSpill.properties.center as [number, number];
     }
-    return baseOrigin;
-  }, [currentSpills, selectedSpillId, baseOrigin]);
+    const incident = MUMBAI_INCIDENTS[selectedSpillId];
+    if (incident?.originCoords) {
+      return incident.originCoords;
+    }
+    return centerCoordinates || baseOrigin;
+  }, [currentSpills, selectedSpillId, baseOrigin, centerCoordinates]);
+
+  // Smooth camera auto-fly when selected spill or center coordinates update
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+    map.flyTo({
+      center: [slickCentroid[0], slickCentroid[1]],
+      zoom: 11.2,
+      duration: 1400,
+      essential: true,
+    });
+  }, [selectedSpillId, mapLoaded]);
+
+  // Satellite SAR Swath Footprint (24 km x 24 km Sentinel-1 / PALSAR radar frame)
+  const sarSwathFeature = useMemo(() => {
+    const halfSizeKm = 12.0;
+    const centerLon = slickCentroid[0];
+    const centerLat = slickCentroid[1];
+    const heading = 192; // Typical Sun-synchronous descending SAR orbit angle
+    const rad = (heading * Math.PI) / 180;
+
+    const corners = [
+      [-halfSizeKm, -halfSizeKm],
+      [halfSizeKm, -halfSizeKm],
+      [halfSizeKm, halfSizeKm],
+      [-halfSizeKm, halfSizeKm],
+      [-halfSizeKm, -halfSizeKm],
+    ];
+
+    const boxCoords = corners.map(([dx, dy]) => {
+      const rx = dx * Math.cos(rad) - dy * Math.sin(rad);
+      const ry = dx * Math.sin(rad) + dy * Math.cos(rad);
+      return moveCoordinate(centerLon, centerLat, (Math.atan2(rx, ry) * (180 / Math.PI) + 360) % 360, Math.sqrt(rx * rx + ry * ry));
+    });
+
+    return {
+      type: "FeatureCollection" as const,
+      features: [
+        {
+          type: "Feature" as const,
+          properties: {
+            title: "Copernicus Sentinel-1 SAR Acquisition Frame",
+            polarization: "VV + VH Cross-Polarization",
+            mode: "IW (Interferometric Wide Swath)",
+            resolution: "10m Ground Resolution",
+            scene_id: currentIncident.sourceScene,
+          },
+          geometry: {
+            type: "Polygon" as const,
+            coordinates: [boxCoords],
+          },
+        },
+      ],
+    };
+  }, [slickCentroid, currentIncident]);
+
+  // Closest Point of Approach (CPA) Intercept Vector from active suspect to breach origin
+  const cpaVectorFeature = useMemo(() => {
+    if (!activeSuspect || !isPostDischarge || !showCpaVector) {
+      return { type: "FeatureCollection" as const, features: [] };
+    }
+
+    const suspectDisplay = scrubbedVessels?.find((v) => v.mmsi === activeSuspect.mmsi);
+    const suspectCoord: [number, number] = suspectDisplay
+      ? [suspectDisplay.lon, suspectDisplay.lat]
+      : (activeSuspect.trajectory?.[0] ? [activeSuspect.trajectory[0][0], activeSuspect.trajectory[0][1]] : baseOrigin);
+
+    return {
+      type: "FeatureCollection" as const,
+      features: [
+        {
+          type: "Feature" as const,
+          properties: {
+            type: "cpa_vector",
+            title: "CPA Trajectory Intercept Vector",
+            cpa_km: 0.0,
+          },
+          geometry: {
+            type: "LineString" as const,
+            coordinates: [
+              [suspectCoord[0], suspectCoord[1]],
+              [baseOrigin[0], baseOrigin[1]],
+            ],
+          },
+        },
+      ],
+    };
+  }, [activeSuspect, isPostDischarge, showCpaVector, scrubbedVessels, baseOrigin]);
 
   // Hydrodynamic Hindcast Back-Tracing
   const hindcastFeatures = useMemo(() => {
@@ -392,6 +522,15 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             attribution: 'Esri, DeLorme, GEBCO, NOAA NGDC',
             maxzoom: 16,
           },
+          'satellite-base': {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            attribution: 'Esri, Maxar, Earthstar Geographics',
+            maxzoom: 18,
+          },
           'dark-ocean-labels': {
             type: 'raster',
             tiles: [
@@ -408,6 +547,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             source: 'dark-ocean-base',
             minzoom: 0,
             maxzoom: 20,
+          },
+          {
+            id: 'satellite-base-layer',
+            type: 'raster',
+            source: 'satellite-base',
+            minzoom: 0,
+            maxzoom: 20,
+            layout: {
+              visibility: 'none',
+            },
           },
           {
             id: 'dark-ocean-labels-layer',
@@ -728,7 +877,53 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         },
       });
 
-      // 7. Oil Spill Layers (Multi-Spill Polygons)
+      // 7. SAR Satellite Footprint Swath Layer
+      map.addSource('sar-swath-source', {
+        type: 'geojson',
+        data: sarSwathFeature,
+      });
+
+      map.addLayer({
+        id: 'sar-swath-fill',
+        type: 'fill',
+        source: 'sar-swath-source',
+        paint: {
+          'fill-color': '#06b6d4',
+          'fill-opacity': 0.05,
+        },
+      });
+
+      map.addLayer({
+        id: 'sar-swath-line',
+        type: 'line',
+        source: 'sar-swath-source',
+        paint: {
+          'line-color': '#06b6d4',
+          'line-width': 1.6,
+          'line-dasharray': [4, 4],
+          'line-opacity': 0.65,
+        },
+      });
+
+      // 8. CPA Intercept Vector Layer
+      map.addSource('cpa-vector-source', {
+        type: 'geojson',
+        data: cpaVectorFeature,
+      });
+
+      map.addLayer({
+        id: 'cpa-vector-line',
+        type: 'line',
+        source: 'cpa-vector-source',
+        paint: {
+          'line-color': '#fbbf24',
+          'line-width': 2.0,
+          'line-dasharray': [3, 3],
+          'line-opacity': 0.85,
+        },
+      });
+
+      // 9. Oil Spill Layers (Multi-Spill Polygons)
       map.addSource('spills-source', {
         type: 'geojson',
         data: currentSpills,
@@ -740,8 +935,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         source: 'spills-source',
         paint: {
           'line-color': '#e11d48',
-          'line-width': 7,
-          'line-opacity': 0.40,
+          'line-width': 8,
+          'line-opacity': 0.45,
         },
       });
 
@@ -759,8 +954,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           'fill-opacity': [
             'case',
             ['==', ['get', 'id'], selectedSpillId],
-            0.65,
-            0.35
+            0.68,
+            0.40
           ],
         },
       });
@@ -779,19 +974,47 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           'line-width': [
             'case',
             ['==', ['get', 'id'], selectedSpillId],
-            3.0,
-            1.5
+            3.2,
+            1.6
           ],
         },
       });
 
-      // Click on spill polygon to select
+      // Click on spill polygon to select & show Tactical HUD Popup
       map.on('click', 'spills-fill', (e) => {
         if (e.features && e.features[0]) {
-          const clickedId = e.features[0].properties?.id;
+          const props = e.features[0].properties;
+          const clickedId = props?.id;
           if (clickedId) {
             onSelectSpillRef.current(clickedId);
           }
+
+          const coords = e.lngLat;
+          const popupHtml = `
+            <div style="font-family: monospace; padding: 8px; background: #070b14; border: 1.5px solid #06b6d4; border-radius: 10px; color: #f8fafc; font-size: 11px; min-width: 225px; box-shadow: 0 10px 25px rgba(0,0,0,0.85);">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 5px; margin-bottom: 6px;">
+                <strong style="color: #38bdf8; font-size: 12px; display: flex; align-items: center; gap: 4px;">🚨 ${props?.id || 'OIL SPILL'}</strong>
+                <span style="background: rgba(225,29,72,0.25); color: #fda4af; padding: 1.5px 6px; border-radius: 4px; font-weight: bold; border: 1px solid rgba(225,29,72,0.4); font-size: 9.5px;">${props?.status || 'ACTIVE'}</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 6px;">
+                <div><span style="color: #94a3b8;">Area:</span> <b style="color: #e2e8f0;">${Number(props?.area_sq_km || 0).toFixed(2)} km²</b></div>
+                <div><span style="color: #94a3b8;">Perimeter:</span> <b style="color: #e2e8f0;">${props?.perimeter_km ? Number(props.perimeter_km).toFixed(1) : '11.4'} km</b></div>
+                <div><span style="color: #94a3b8;">AI Dice:</span> <b style="color: #34d399;">${(Number(props?.segmentation_dice_score || 0.988) * 100).toFixed(1)}%</b></div>
+                <div><span style="color: #94a3b8;">Confidence:</span> <b style="color: #38bdf8;">${(Number(props?.confidence_score || 0.95) * 100).toFixed(1)}%</b></div>
+                <div><span style="color: #94a3b8;">Damping:</span> <b style="color: #fbbf24;">${props?.damping_ratio_db || '8.4'} dB</b></div>
+                <div><span style="color: #94a3b8;">Discharge:</span> <b style="color: #f43f5e;">${props?.estimated_discharge_liters ? Number(props.estimated_discharge_liters).toLocaleString() : '45,000'} L</b></div>
+              </div>
+              <div style="border-top: 1px solid #1e293b; padding-top: 5px; font-size: 9.5px; color: #94a3b8; display: flex; flex-direction: column; gap: 2px;">
+                <div><span style="color: #64748b;">Type:</span> ${props?.slick_type || 'Heavy Fuel Oil'}</div>
+                <div><span style="color: #64748b;">Scene:</span> ${props?.source_scene || 'Copernicus Sentinel-1'}</div>
+              </div>
+            </div>
+          `;
+
+          new maplibregl.Popup({ closeButton: true, closeOnClick: true, className: 'tactical-popup' })
+            .setLngLat(coords)
+            .setHTML(popupHtml)
+            .addTo(map);
         }
       });
 
@@ -830,12 +1053,15 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const dumpSrc = map.getSource('dump-origin-source') as maplibregl.GeoJSONSource;
     if (dumpSrc) dumpSrc.setData(dumpOriginFeature);
 
-    // 5. Update 5-Category Layer Visibility
+    // 5. Update Base Map & 5-Category Layer Visibility
     const setVisibility = (layerId: string, visible: boolean) => {
       if (map.getLayer(layerId)) {
         map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
       }
     };
+
+    setVisibility('dark-ocean-base-layer', baseMapMode === 'dark');
+    setVisibility('satellite-base-layer', baseMapMode === 'satellite');
 
     setVisibility('fishing-zones-fill', showFishingZones);
     setVisibility('fishing-zones-line', showFishingZones);
@@ -849,7 +1075,18 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     setVisibility('spills-fill', showOilSpills);
     setVisibility('spills-line', showOilSpills);
 
-    // 6. Update Background Trajectories for all vessels
+    // 6. Update SAR Satellite Swath Footprint
+    const swathSrc = map.getSource('sar-swath-source') as maplibregl.GeoJSONSource;
+    if (swathSrc) swathSrc.setData(sarSwathFeature);
+    setVisibility('sar-swath-fill', showSarSwath);
+    setVisibility('sar-swath-line', showSarSwath);
+
+    // 7. Update CPA Intercept Vector
+    const cpaSrc = map.getSource('cpa-vector-source') as maplibregl.GeoJSONSource;
+    if (cpaSrc) cpaSrc.setData(cpaVectorFeature);
+    setVisibility('cpa-vector-line', showCpaVector);
+
+    // 8. Update Background Trajectories for all vessels
     const allTrajSrc = map.getSource('all-trajectories') as maplibregl.GeoJSONSource;
     const shouldShowTrails = showTrails;
     if (allTrajSrc && shouldShowTrails) {
@@ -866,7 +1103,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       allTrajSrc.setData({ type: 'FeatureCollection', features: [] });
     }
 
-    // 7. Update Active Inspected Culprit Trajectory Track
+    // 9. Update Active Inspected Culprit Trajectory Track
     const trajSrc = map.getSource('culprit-trajectory') as maplibregl.GeoJSONSource;
     if (trajSrc && shouldShowTrails) {
       const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === activeSuspect?.mmsi);
@@ -901,8 +1138,13 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     hindcastFeatures,
     forecastFeatures,
     dumpOriginFeature,
+    sarSwathFeature,
+    cpaVectorFeature,
     activeSuspect,
+    baseMapMode,
     showTrails,
+    showSarSwath,
+    showCpaVector,
     showFishingZones,
     showFishingHarbours,
     showAquaculture,
@@ -1020,7 +1262,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const map = mapRef.current;
 
     const displayVessels = scrubbedVessels || vessels.map((v) => {
-      const interp = interpolateVesselPosition(v.mmsi, 0, 'mumbai', v.current_position ? {
+      const interp = interpolateVesselPosition(v.mmsi, 0, 'mediterranean_dartis', v.current_position ? {
         longitude: v.current_position.longitude,
         latitude: v.current_position.latitude,
         heading_degrees: v.current_position.heading_degrees,
@@ -1292,15 +1534,50 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                 </div>
                 <span className="text-[9px] font-mono">{showTrails ? 'ON' : 'OFF'}</span>
               </button>
+              <button
+                onClick={() => setShowSarSwath(!showSarSwath)}
+                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
+                  showSarSwath ? 'text-cyan-300 font-semibold' : 'text-slate-500'
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Satellite className="w-3 h-3 text-cyan-400" />
+                  <span>SAR Satellite Frame</span>
+                </div>
+                <span className="text-[9px] font-mono">{showSarSwath ? 'ON' : 'OFF'}</span>
+              </button>
+              <button
+                onClick={() => setShowCpaVector(!showCpaVector)}
+                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
+                  showCpaVector ? 'text-amber-300 font-semibold' : 'text-slate-500'
+                }`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Compass className="w-3 h-3 text-amber-400" />
+                  <span>CPA Intercept Line</span>
+                </div>
+                <span className="text-[9px] font-mono">{showCpaVector ? 'ON' : 'OFF'}</span>
+              </button>
             </div>
           </div>
         )}
       </div>
 
       {/* ============================================================== */}
-      {/* MAP ZOOM & CENTER CONTROLS (TOP RIGHT) */}
+      {/* MAP ZOOM, BASEMAP & CENTER CONTROLS (TOP RIGHT) */}
       {/* ============================================================== */}
       <div className="absolute top-3.5 right-3 sm:right-4 flex flex-col gap-1.5 z-20 select-none">
+        <button
+          onClick={() => setBaseMapMode((prev) => (prev === 'dark' ? 'satellite' : 'dark'))}
+          className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-all ${
+            baseMapMode === 'satellite'
+              ? 'bg-cyan-950/90 border-cyan-500 text-cyan-300 shadow-cyan-500/30'
+              : 'bg-[#111622]/90 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'
+          }`}
+          title={baseMapMode === 'dark' ? 'Switch to High-Res Satellite Imagery' : 'Switch to Dark Tactical Bathymetry'}
+        >
+          <Satellite className="w-4 h-4" />
+        </button>
         <button
           onClick={() => mapRef.current?.zoomIn()}
           className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
@@ -1317,12 +1594,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </button>
         <button
           onClick={() => {
-            const targetLon = activeSuspect?.last_lon ?? baseOrigin[0];
-            const targetLat = activeSuspect?.last_lat ?? baseOrigin[1];
-            mapRef.current?.flyTo({ center: [targetLon, targetLat], zoom: 10.4, duration: 1000 });
+            mapRef.current?.flyTo({ center: [slickCentroid[0], slickCentroid[1]], zoom: 11.2, duration: 1200 });
           }}
           className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-cyan-400 hover:text-cyan-300 hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
-          title="Recenter on Active Target"
+          title="Recenter on Active Oil Spill"
         >
           <Crosshair className="w-4 h-4" />
         </button>
@@ -1335,7 +1610,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         <div className="flex items-center justify-between font-bold text-white border-b border-slate-800 pb-1">
           <span className="flex items-center gap-1.5 text-cyan-400">
             <Compass className="w-3.5 h-3.5" />
-            MUMBAI EEZ RADAR
+            CYPRUS EEZ RADAR
           </span>
           <span className="text-rose-400 font-bold">{timeOffsetMinutes === 0 ? 'LIVE' : `T${timeOffsetMinutes}m`}</span>
         </div>

@@ -79,8 +79,8 @@ try:
 
         # 3. Load latest fixture data
         print("\n3. Loading and Preparing Relevant Updated OceanGuard Dataset...")
-        from apps.api.scripts.seed_demo_data import generate_mumbai_demo_data
-        generate_mumbai_demo_data()
+        from apps.api.scripts.seed_demo_data import generate_demo_data
+        generate_demo_data()
 
         fixture_file = Path(__file__).resolve().parent.parent / "db" / "demo_fixture.json"
         with open(fixture_file, "r", encoding="utf-8") as f:
@@ -215,8 +215,8 @@ try:
                 """),
                 {
                     "spill_id": c["spill_id"],
-                    "vessel_mmsi": c["mmsi"],
-                    "probability_score": float(c["probability_score"]),
+                    "vessel_mmsi": c.get("vessel_mmsi") or c.get("mmsi", 212000001),
+                    "probability_score": float(c.get("probability_score") or c.get("correlation_score", 0.984)),
                     "distance_meters": float(c.get("distance_meters", 0.0)),
                     "delta_t": float(c.get("trajectory_delta_time_min", -42.0)),
                     "drift_align": float(c.get("drift_alignment_pct", 95.0))

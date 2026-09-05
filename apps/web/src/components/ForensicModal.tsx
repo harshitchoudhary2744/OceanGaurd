@@ -14,7 +14,7 @@ interface ForensicModalProps {
 export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, spillId }) => {
   if (!isOpen) return null;
 
-  const currentIncident = MUMBAI_INCIDENTS[spillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
+  const currentIncident = MUMBAI_INCIDENTS[spillId] || MUMBAI_INCIDENTS["DARTIS-ow-0001"] || Object.values(MUMBAI_INCIDENTS)[0];
   const falsePositive = currentIncident.false_positive_analysis;
   const culprit: SuspectVessel = INITIAL_SUSPECTS.find((s: SuspectVessel) => s.mmsi === currentIncident.culpritMmsi) || INITIAL_SUSPECTS[0];
   const anomalyBreakdown = culprit?.anomaly_breakdown || calculateVesselKinematicAnomaly(culprit, currentIncident.originCoords, currentIncident.dischargeOffsetMinutes);
@@ -39,7 +39,7 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
               {spillId}
             </span>
             <h3 className="font-mono text-sm font-bold text-white uppercase">
-              Forensic SAR & Kinematic Trajectory Audit • Mumbai Maritime Corridor
+              Forensic SAR & Kinematic Trajectory Audit • Eastern Mediterranean Corridor
             </h3>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white p-1" aria-label="Close modal">

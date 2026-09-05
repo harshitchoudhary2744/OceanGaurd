@@ -63,32 +63,32 @@ export async function fetchVectorMatches(spillId: string): Promise<VectorMatch[]
 }
 
 
-export async function fetchMetoceanData(sector: string = 'mumbai'): Promise<MetoceanData> {
+export async function fetchMetoceanData(sector: string = 'mediterranean_dartis'): Promise<MetoceanData> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/metocean?sector=${sector}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
-    return DEFAULT_METOCEAN[sector] || DEFAULT_METOCEAN.arabian_sea;
+    return DEFAULT_METOCEAN[sector] || DEFAULT_METOCEAN.mediterranean_dartis || Object.values(DEFAULT_METOCEAN)[0];
   }
 }
 
 export async function fetchHindcastData(
   spillId: string,
   lookbackHours: number = 6,
-  sector: string = 'mumbai'
+  sector: string = 'mediterranean_dartis'
 ): Promise<HindcastData | null> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/spills/${spillId}/hindcast?lookback_hours=${lookbackHours}&sector=${sector}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
-    // Generate fallback hindcast data based on Mumbai incident
-    const config = MUMBAI_INCIDENTS[spillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
+    // Generate fallback hindcast data based on benchmark incident
+    const config = MUMBAI_INCIDENTS[spillId] || MUMBAI_INCIDENTS["DARTIS-ow-0001"];
     const centerLon = config.originCoords[0];
     const centerLat = config.originCoords[1];
-    const driftDir = 69.3;
-    const driftSpeed = 1.95;
+    const driftDir = 84.5;
+    const driftSpeed = 1.35;
     const rawTrack = generateHindcastTrack(centerLon, centerLat, driftDir, driftSpeed, lookbackHours);
 
     const hindcast_track = rawTrack.map(pt => ({
@@ -108,7 +108,7 @@ export async function fetchHindcastData(
       detection_timestamp: new Date().toISOString(),
       detection_center: [centerLon, centerLat],
       lookback_hours: lookbackHours,
-      sector: 'mumbai',
+      sector: 'mediterranean_dartis',
       reverse_drift_heading_deg: (driftDir + 180) % 360,
       reverse_drift_speed_kts: driftSpeed,
       reconstructed_origin: {
@@ -124,7 +124,7 @@ export async function fetchHindcastData(
 
 export async function fetchVesselAnomalies(
   mmsi: number,
-  spillId: string = 'INC-MUM-2024-01'
+  spillId: string = 'DARTIS-ow-0001'
 ): Promise<AnomalyBreakdown | null> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/vessels/${mmsi}/anomalies?spill_id=${spillId}`);
@@ -140,16 +140,17 @@ export function calculateHydrodynamicDrift(
   basePolygon: number[][],
   timeOffsetMinutes: number,
   metocean?: MetoceanData,
-  scenario: string = 'arabian_sea'
+  scenario: string = 'mediterranean_dartis'
 ): number[][] {
   if (Math.abs(timeOffsetMinutes) < 0.1 || !basePolygon?.length) return basePolygon;
 
-  const isArabian = scenario === 'arabian_sea' || basePolygon[0][0] < 76.0;
-  const dischargeOffset = isArabian ? -42 : -60;
-  const baseOrigin: [number, number] = isArabian ? [72.145, 19.048] : [80.750, 13.250];
+  const dischargeOffset = -45;
+  const baseOrigin: [number, number] = (basePolygon && basePolygon.length > 0)
+    ? [basePolygon[0][0], basePolygon[0][1]]
+    : [33.05775642, 33.25902604];
 
-  const driftSpeedKts = metocean?.net_drift_speed_kts || (isArabian ? 1.95 : 1.52);
-  const driftDir = metocean?.net_drift_direction_deg || (isArabian ? 69.3 : 48.2);
+  const driftSpeedKts = metocean?.net_drift_speed_kts || 1.35;
+  const driftDir = metocean?.net_drift_direction_deg || 84.5;
 
   // Time elapsed since oil was dumped (in hours)
   const elapsedSinceDischargeHours = (timeOffsetMinutes - dischargeOffset) / 60.0;
@@ -203,9 +204,9 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
     const latRaw = formData.get('center_lat');
     const sceneIdRaw = formData.get('scene_id');
 
-    const centerLon = lonRaw ? Number(lonRaw) : 72.150;
-    const centerLat = latRaw ? Number(latRaw) : 19.050;
-    const sceneId = sceneIdRaw ? String(sceneIdRaw) : `S1A_IW_GRDH_CUSTOM_${Date.now().toString().slice(-4)}`;
+    const centerLon = lonRaw ? Number(lonRaw) : 33.05775642;
+    const centerLat = latRaw ? Number(latRaw) : 33.25902604;
+    const sceneId = sceneIdRaw ? String(sceneIdRaw) : 'ow-0001.jpg';
     const mockId = `INC-CUST-${Date.now().toString().slice(-4)}`;
 
     const polygon = generateRealisticSpillPolygon(centerLon, centerLat, 52.0, 4.6, 1.3);

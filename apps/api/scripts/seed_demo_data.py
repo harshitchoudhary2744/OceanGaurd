@@ -1,369 +1,220 @@
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-def generate_mumbai_demo_data():
-    base_time = datetime.now(timezone.utc)
+def generate_demo_data():
+    base_time = datetime(2019, 1, 1, 3, 42, 35, tzinfo=timezone.utc)
     
-    # 1. Vessels operating in the Mumbai Maritime Corridor
+    # 1. Vessels operating in Eastern Mediterranean / Cyprus Levantine Basin
     vessels = [
         {
-            "mmsi": 419000123,
-            "imo_number": 9272840,
-            "name": "MT DESH SHANTI",
-            "flag": "India (SCI)",
+            "mmsi": 212000001,
+            "imo_number": 9481234,
+            "name": "MEDITERRANEAN TRADER",
+            "flag": "Malta",
             "vessel_type": "Very Large Crude Carrier (VLCC)",
-            "length_meters": 333.0,
-            "draught_meters": 16.8,
-            "call_sign": "VTDS",
-            "destination": "SIKKA REFINERY TERMINAL",
+            "length_meters": 315.0,
+            "draught_meters": 15.8,
+            "call_sign": "9HA4211",
+            "destination": "CYPRUS OFFSHORE TRANSIT",
             "current_position": {
-                "latitude": 19.112,
-                "longitude": 72.100,
-                "speed_knots": 14.8,
-                "heading_degrees": 325.0,
+                "latitude": 33.285,
+                "longitude": 33.130,
+                "speed_knots": 13.5,
+                "heading_degrees": 95.0,
                 "timestamp": base_time.isoformat()
             }
         },
         {
-            "mmsi": 255806000,
-            "imo_number": 9842061,
-            "name": "MSC KANOKO",
-            "flag": "Liberia",
+            "mmsi": 209123000,
+            "imo_number": 9512345,
+            "name": "LEVANT STAR",
+            "flag": "Cyprus",
             "vessel_type": "Container Ship",
-            "length_meters": 366.0,
-            "draught_meters": 14.5,
-            "call_sign": "CQES",
-            "destination": "JNPT PORT MUMBAI",
+            "length_meters": 295.0,
+            "draught_meters": 13.5,
+            "call_sign": "5BKA2",
+            "destination": "LIMASSOL COMMERCIAL PORT",
             "current_position": {
-                "latitude": 18.975,
-                "longitude": 72.896,
-                "speed_knots": 15.6,
-                "heading_degrees": 18.0,
+                "latitude": 33.320,
+                "longitude": 33.080,
+                "speed_knots": 14.2,
+                "heading_degrees": 35.0,
                 "timestamp": base_time.isoformat()
             }
         },
         {
-            "mmsi": 419000789,
-            "imo_number": 9324567,
-            "name": "MT SWARNA SINDHU",
-            "flag": "India (SCI)",
+            "mmsi": 239456000,
+            "imo_number": 9623456,
+            "name": "AEGEAN VOYAGER",
+            "flag": "Greece",
+            "vessel_type": "Bulk Carrier",
+            "length_meters": 225.0,
+            "draught_meters": 11.8,
+            "call_sign": "SVXY",
+            "destination": "PORT SAID ANCHORAGE",
+            "current_position": {
+                "latitude": 33.240,
+                "longitude": 33.220,
+                "speed_knots": 12.5,
+                "heading_degrees": 110.0,
+                "timestamp": base_time.isoformat()
+            }
+        },
+        {
+            "mmsi": 212789000,
+            "imo_number": 9734567,
+            "name": "AKROTIRI BREEZE",
+            "flag": "Cyprus",
             "vessel_type": "Product Tanker",
-            "length_meters": 228.0,
-            "draught_meters": 12.0,
-            "call_sign": "AWXZ",
-            "destination": "MUMBAI REFINERY BERTH",
+            "length_meters": 185.0,
+            "draught_meters": 9.5,
+            "call_sign": "5BAK7",
+            "destination": "VASILIKO OIL TERMINAL",
             "current_position": {
-                "latitude": 18.930,
-                "longitude": 72.871,
-                "speed_knots": 11.2,
-                "heading_degrees": 72.0,
+                "latitude": 33.290,
+                "longitude": 32.980,
+                "speed_knots": 11.0,
+                "heading_degrees": 285.0,
                 "timestamp": base_time.isoformat()
             }
         },
         {
-            "mmsi": 563032000,
-            "imo_number": 9418290,
-            "name": "CHEMBULK GIBRALTAR",
-            "flag": "Singapore",
-            "vessel_type": "Chemical Tanker",
-            "length_meters": 175.0,
-            "draught_meters": 9.8,
-            "call_sign": "9V2941",
-            "destination": "MUMBAI CHEMICAL TERMINAL",
-            "current_position": {
-                "latitude": 19.170,
-                "longitude": 72.020,
-                "speed_knots": 12.8,
-                "heading_degrees": 155.0,
-                "timestamp": base_time.isoformat()
-            }
-        },
-        {
-            "mmsi": 419000456,
-            "imo_number": 9308144,
-            "name": "MT JAG LOK",
-            "flag": "India (GE Shipping)",
-            "vessel_type": "Crude Oil Tanker",
-            "length_meters": 244.0,
-            "draught_meters": 11.2,
-            "call_sign": "AVJL",
-            "destination": "SIKKA JAMNAGAR",
-            "current_position": {
-                "latitude": 19.020,
-                "longitude": 72.270,
-                "speed_knots": 12.4,
-                "heading_degrees": 245.0,
-                "timestamp": base_time.isoformat()
-            }
-        },
-        {
-            "mmsi": 419000999,
-            "imo_number": 9594004,
-            "name": "ICGS SAMUDRA PRAHARI",
-            "flag": "India (Coast Guard)",
+            "mmsi": 212999000,
+            "imo_number": 9899001,
+            "name": "CYPRUS POLICE PATROL / EMSA",
+            "flag": "Cyprus",
             "vessel_type": "Pollution Control Vessel",
-            "length_meters": 95.0,
-            "draught_meters": 4.5,
-            "call_sign": "AWAH",
-            "destination": "POLLUTION RESPONSE SECTOR",
+            "length_meters": 65.0,
+            "draught_meters": 4.2,
+            "call_sign": "5BCP1",
+            "destination": "DARTIS INCIDENT PATROL",
             "current_position": {
-                "latitude": 19.060,
-                "longitude": 72.180,
-                "speed_knots": 18.5,
-                "heading_degrees": 310.0,
+                "latitude": 33.270,
+                "longitude": 33.090,
+                "speed_knots": 18.0,
+                "heading_degrees": 220.0,
                 "timestamp": base_time.isoformat()
             }
         }
     ]
 
-    # 2. AIS Telemetry across -6 hours
-    telemetry = []
-
-    # MT DESH SHANTI (Primary Culprit for INC-MUM-2024-01 - Course 325° NNW)
-    desh_pts = [
-        {"lon": 72.260, "lat": 18.880, "t_offset_m": 360, "speed": 14.8, "heading": 325.0, "status": "Under way using engine"},
-        {"lon": 72.202, "lat": 18.964, "t_offset_m": 180, "speed": 14.8, "heading": 325.0, "status": "Under way using engine"},
-        {"lon": 72.145, "lat": 19.048, "t_offset_m": 42,  "speed": 5.2,  "heading": 325.0, "status": "Under way using engine"}, # Spill 1 Origin
-        {"lon": 72.100, "lat": 19.112, "t_offset_m": 0,   "speed": 14.8, "heading": 325.0, "status": "Under way using engine"}
+    # 2. Kinematic Telemetry
+    telemetry = [
+        {
+            "mmsi": 212000001,
+            "timestamp": "2018-12-31T21:42:35+00:00",
+            "latitude": 33.240,
+            "longitude": 32.850,
+            "speed_knots": 13.8,
+            "heading_degrees": 95.0,
+            "nav_status": "Under way using engine"
+        },
+        {
+            "mmsi": 212000001,
+            "timestamp": "2019-01-01T00:42:35+00:00",
+            "latitude": 33.255,
+            "longitude": 32.950,
+            "speed_knots": 13.8,
+            "heading_degrees": 95.0,
+            "nav_status": "Under way using engine"
+        },
+        {
+            "mmsi": 212000001,
+            "timestamp": "2019-01-01T03:00:35+00:00",
+            "latitude": 33.259026,
+            "longitude": 33.057756,
+            "speed_knots": 5.4,
+            "heading_degrees": 95.0,
+            "nav_status": "Under way using engine"
+        },
+        {
+            "mmsi": 212000001,
+            "timestamp": "2019-01-01T03:42:35+00:00",
+            "latitude": 33.285,
+            "longitude": 33.130,
+            "speed_knots": 13.5,
+            "heading_degrees": 95.0,
+            "nav_status": "Under way using engine"
+        },
+        {
+            "mmsi": 209123000,
+            "timestamp": "2018-12-31T21:42:35+00:00",
+            "latitude": 33.050,
+            "longitude": 32.920,
+            "speed_knots": 14.5,
+            "heading_degrees": 35.0,
+            "nav_status": "Under way using engine"
+        },
+        {
+            "mmsi": 209123000,
+            "timestamp": "2019-01-01T00:42:35+00:00",
+            "latitude": 33.180,
+            "longitude": 33.000,
+            "speed_knots": 14.5,
+            "heading_degrees": 35.0,
+            "nav_status": "Under way using engine"
+        },
+        {
+            "mmsi": 209123000,
+            "timestamp": "2019-01-01T03:42:35+00:00",
+            "latitude": 33.320,
+            "longitude": 33.080,
+            "speed_knots": 14.2,
+            "heading_degrees": 35.0,
+            "nav_status": "Under way using engine"
+        }
     ]
-    for p in desh_pts:
-        pt_time = base_time - timedelta(minutes=p["t_offset_m"])
-        telemetry.append({
-            "mmsi": 419000123,
-            "timestamp": pt_time.isoformat(),
-            "latitude": p["lat"],
-            "longitude": p["lon"],
-            "speed_knots": p["speed"],
-            "heading_degrees": p["heading"],
-            "nav_status": p["status"]
-        })
 
-    # MSC KANOKO (Primary Culprit for INC-MUM-2024-02 - Course 018° NNE)
-    msc_pts = [
-        {"lon": 72.818, "lat": 18.735, "t_offset_m": 360, "speed": 16.5, "heading": 18.0, "status": "Under way using engine"},
-        {"lon": 72.844, "lat": 18.815, "t_offset_m": 180, "speed": 16.5, "heading": 18.0, "status": "Under way using engine"},
-        {"lon": 72.870, "lat": 18.895, "t_offset_m": 30,  "speed": 6.8,  "heading": 18.0, "status": "Under way using engine"}, # Spill 2 Origin
-        {"lon": 72.896, "lat": 18.975, "t_offset_m": 0,   "speed": 15.6, "heading": 18.0, "status": "Under way using engine"}
-    ]
-    for p in msc_pts:
-        pt_time = base_time - timedelta(minutes=p["t_offset_m"])
-        telemetry.append({
-            "mmsi": 255806000,
-            "timestamp": pt_time.isoformat(),
-            "latitude": p["lat"],
-            "longitude": p["lon"],
-            "speed_knots": p["speed"],
-            "heading_degrees": p["heading"],
-            "nav_status": p["status"]
-        })
-
-    # MT SWARNA SINDHU (Primary Culprit for INC-MUM-2024-03 - Course 072° ENE)
-    swarna_pts = [
-        {"lon": 72.643, "lat": 18.855, "t_offset_m": 360, "speed": 12.0, "heading": 72.0, "status": "Under way using engine"},
-        {"lon": 72.719, "lat": 18.880, "t_offset_m": 180, "speed": 12.0, "heading": 72.0, "status": "Under way using engine"},
-        {"lon": 72.795, "lat": 18.905, "t_offset_m": 25,  "speed": 4.5,  "heading": 72.0, "status": "Under way using engine"}, # Spill 3 Origin
-        {"lon": 72.871, "lat": 18.930, "t_offset_m": 0,   "speed": 11.2, "heading": 72.0, "status": "Under way using engine"}
-    ]
-    for p in swarna_pts:
-        pt_time = base_time - timedelta(minutes=p["t_offset_m"])
-        telemetry.append({
-            "mmsi": 419000789,
-            "timestamp": pt_time.isoformat(),
-            "latitude": p["lat"],
-            "longitude": p["lon"],
-            "speed_knots": p["speed"],
-            "heading_degrees": p["heading"],
-            "nav_status": p["status"]
-        })
-
-    # 4. CHEMBULK GIBRALTAR (Primary Culprit for INC-MUM-2024-04 - Course 155° SSE)
-    chem_pts = [
-        {"lon": 71.915, "lat": 19.395, "t_offset_m": 360, "speed": 13.4, "heading": 155.0, "status": "Under way using engine"},
-        {"lon": 71.950, "lat": 19.320, "t_offset_m": 180, "speed": 13.4, "heading": 155.0, "status": "Under way using engine"},
-        {"lon": 71.985, "lat": 19.245, "t_offset_m": 20,  "speed": 5.8,  "heading": 155.0, "status": "Under way using engine"}, # Spill 4 Origin
-        {"lon": 72.020, "lat": 19.170, "t_offset_m": 0,   "speed": 12.8, "heading": 155.0, "status": "Under way using engine"}
-    ]
-    for p in chem_pts:
-        pt_time = base_time - timedelta(minutes=p["t_offset_m"])
-        telemetry.append({
-            "mmsi": 563032000,
-            "timestamp": pt_time.isoformat(),
-            "latitude": p["lat"],
-            "longitude": p["lon"],
-            "speed_knots": p["speed"],
-            "heading_degrees": p["heading"],
-            "nav_status": p["status"]
-        })
-
-    # 5. MT JAG LOK (Crude Oil Tanker - Course 245° WSW)
-    jaglok_pts = [
-        {"lon": 72.450, "lat": 19.100, "t_offset_m": 360, "speed": 12.4, "heading": 245.0, "status": "Under way using engine"},
-        {"lon": 72.360, "lat": 19.060, "t_offset_m": 180, "speed": 12.4, "heading": 245.0, "status": "Under way using engine"},
-        {"lon": 72.270, "lat": 19.020, "t_offset_m": 0,   "speed": 12.4, "heading": 245.0, "status": "Under way using engine"}
-    ]
-    for p in jaglok_pts:
-        pt_time = base_time - timedelta(minutes=p["t_offset_m"])
-        telemetry.append({
-            "mmsi": 419000456,
-            "timestamp": pt_time.isoformat(),
-            "latitude": p["lat"],
-            "longitude": p["lon"],
-            "speed_knots": p["speed"],
-            "heading_degrees": p["heading"],
-            "nav_status": p["status"]
-        })
-
-    # 6. ICGS SAMUDRA PRAHARI (Pollution Control Vessel - Course 310° NW)
-    samudra_pts = [
-        {"lon": 72.420, "lat": 18.900, "t_offset_m": 360, "speed": 18.5, "heading": 310.0, "status": "Under way using engine"},
-        {"lon": 72.300, "lat": 18.980, "t_offset_m": 180, "speed": 18.5, "heading": 310.0, "status": "Under way using engine"},
-        {"lon": 72.180, "lat": 19.060, "t_offset_m": 0,   "speed": 18.5, "heading": 310.0, "status": "Under way using engine"}
-    ]
-    for p in samudra_pts:
-        pt_time = base_time - timedelta(minutes=p["t_offset_m"])
-        telemetry.append({
-            "mmsi": 419000999,
-            "timestamp": pt_time.isoformat(),
-            "latitude": p["lat"],
-            "longitude": p["lon"],
-            "speed_knots": p["speed"],
-            "heading_degrees": p["heading"],
-            "nav_status": p["status"]
-        })
-
-    # 3. Four Real-Time Oil Spills in Mumbai Maritime Zone
+    # 3. DARTIS ow-0001 Benchmark Oil Spill
     spills = [
         {
-            "id": "INC-MUM-2024-01",
-            "name": "Mumbai High Sector Alpha - Heavy Crude Discharge",
-            "detection_timestamp": base_time.isoformat(),
-            "area_sq_km": 5.4,
-            "perimeter_km": 14.8,
+            "id": "DARTIS-ow-0001",
+            "name": "Cyprus Levantine Basin - DARTIS Benchmark Discharge (ow-0001.jpg)",
+            "detection_timestamp": "2019-01-01T03:42:35+00:00",
+            "area_sq_km": 8.42,
+            "perimeter_km": 18.6,
             "confidence_score": 0.988,
-            "source_scene": "S1A_IW_GRDH_1SDV_MUMBAI_HIGH_ALPHA",
+            "segmentation_dice_score": 0.985,
+            "oil_likelihood_score": 0.952,
+            "lookalike_score": 0.048,
+            "damping_ratio_db": 8.9,
+            "source_scene": "ow-0001.jpg",
             "status": "ACTIVE",
-            "center": [72.1674, 19.0562],
-            "estimated_discharge_liters": 58000,
-            "slick_type": "Heavy Crude Oil (Arabian Heavy)",
+            "center": [33.05775642, 33.25902604],
+            "centroid": [33.25902604, 33.05775642],
+            "estimated_discharge_liters": 92000,
+            "slick_type": "Heavy Fuel Oil (DARTIS Benchmark OW-0001)",
             "polygon_coordinates": [
-                [72.145, 19.048],
-                [72.155, 19.060],
-                [72.172, 19.066],
-                [72.188, 19.062],
-                [72.190, 19.052],
-                [72.178, 19.044],
-                [72.158, 19.042],
-                [72.145, 19.048]
-            ]
-        },
-        {
-            "id": "INC-MUM-2024-02",
-            "name": "JNPT Channel Approach - Bilge Sludge Flush",
-            "detection_timestamp": base_time.isoformat(),
-            "area_sq_km": 2.85,
-            "perimeter_km": 8.6,
-            "confidence_score": 0.965,
-            "source_scene": "S1A_IW_GRDH_1SDV_JNPT_CHANNEL",
-            "status": "ACTIVE",
-            "center": [72.8700, 18.8950],
-            "estimated_discharge_liters": 31000,
-            "slick_type": "Heavy Fuel Oil (HFO-380 Bilge Sludge)",
-            "polygon_coordinates": [
-                [72.855, 18.888],
-                [72.865, 18.898],
-                [72.876, 18.902],
-                [72.886, 18.899],
-                [72.888, 18.892],
-                [72.878, 18.886],
-                [72.864, 18.884],
-                [72.855, 18.888]
-            ]
-        },
-        {
-            "id": "INC-MUM-2024-03",
-            "name": "Prongs Reef Anchorage - Bunker Fuel Leak",
-            "detection_timestamp": base_time.isoformat(),
-            "area_sq_km": 1.95,
-            "perimeter_km": 6.2,
-            "confidence_score": 0.942,
-            "source_scene": "S1A_IW_GRDH_1SDV_PRONGS_REEF",
-            "status": "ACTIVE",
-            "center": [72.7950, 18.9050],
-            "estimated_discharge_liters": 18500,
-            "slick_type": "Intermediate Fuel Oil (IFO-180)",
-            "polygon_coordinates": [
-                [72.782, 18.898],
-                [72.790, 18.908],
-                [72.800, 18.911],
-                [72.808, 18.907],
-                [72.806, 18.901],
-                [72.798, 18.897],
-                [72.788, 18.895],
-                [72.782, 18.898]
-            ]
-        },
-        {
-            "id": "INC-MUM-2024-04",
-            "name": "Neelam South Offshore - Condensate Sheen",
-            "detection_timestamp": base_time.isoformat(),
-            "area_sq_km": 3.60,
-            "perimeter_km": 10.4,
-            "confidence_score": 0.958,
-            "source_scene": "S1A_IW_GRDH_1SDV_NEELAM_SOUTH",
-            "status": "ACTIVE",
-            "center": [71.9850, 19.2450],
-            "estimated_discharge_liters": 42000,
-            "slick_type": "Condensate & Light Crude Sheen",
-            "polygon_coordinates": [
-                [71.968, 19.236],
-                [71.978, 19.249],
-                [71.992, 19.254],
-                [72.002, 19.250],
-                [72.004, 19.241],
-                [71.994, 19.236],
-                [71.978, 19.233],
-                [71.968, 19.236]
+                [33.032, 33.245],
+                [33.048, 33.262],
+                [33.068, 33.272],
+                [33.085, 33.268],
+                [33.082, 33.252],
+                [33.062, 33.248],
+                [33.042, 33.242],
+                [33.032, 33.245]
             ]
         }
     ]
 
+    # 4. Spatial Correlation
     correlations = [
         {
-            "spill_id": "INC-MUM-2024-01",
-            "mmsi": 419000123,
-            "vessel_name": "MT DESH SHANTI",
-            "probability_score": 98.4,
-            "distance_meters": 0.0,
-            "trajectory_delta_time_min": -42.3,
-            "drift_alignment_pct": 97.5
-        },
-        {
-            "spill_id": "INC-MUM-2024-02",
-            "mmsi": 255806000,
-            "vessel_name": "MSC KANOKO",
-            "probability_score": 94.8,
-            "distance_meters": 0.0,
-            "trajectory_delta_time_min": -30.0,
-            "drift_alignment_pct": 94.2
-        },
-        {
-            "spill_id": "INC-MUM-2024-03",
-            "mmsi": 419000789,
-            "vessel_name": "MT SWARNA SINDHU",
-            "probability_score": 91.2,
-            "distance_meters": 0.0,
-            "trajectory_delta_time_min": -25.0,
-            "drift_alignment_pct": 91.8
-        },
-        {
-            "spill_id": "INC-MUM-2024-04",
-            "mmsi": 563032000,
-            "vessel_name": "CHEMBULK GIBRALTAR",
-            "probability_score": 89.6,
-            "distance_meters": 0.0,
-            "trajectory_delta_time_min": -20.0,
-            "drift_alignment_pct": 89.5
+            "spill_id": "DARTIS-ow-0001",
+            "vessel_mmsi": 212000001,
+            "vessel_name": "MEDITERRANEAN TRADER",
+            "correlation_score": 0.984,
+            "cpa_distance_nm": 0.12,
+            "time_discrepancy_minutes": 8.0,
+            "speed_profile_drop_detected": True,
+            "ais_gap_detected": True,
+            "anomaly_reasons": [
+                "Kinematic back-projection intercept at discharge origin (CPA 0.12 NM)",
+                "Transit speed anomaly: dropped from 13.8 kts to 5.4 kts inside benchmark polygon",
+                "AIS gap detected during passage through radar dark-spot origin"
+            ],
+            "risk_level": "CRITICAL"
         }
     ]
 
@@ -377,10 +228,12 @@ def generate_mumbai_demo_data():
     out_path = os.path.join(os.path.dirname(__file__), "..", "db", "demo_fixture.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(fixture_data, f, indent=2)
-    print(f"Generated Mumbai Maritime Zone multi-incident demo fixture data at: {out_path}")
+    print(f"Generated Cyprus Levantine Basin demo fixture data at: {out_path}")
 
 def seed_database_and_fixtures():
-    generate_mumbai_demo_data()
+    generate_demo_data()
+
+generate_mumbai_demo_data = generate_demo_data
 
 if __name__ == "__main__":
-    generate_mumbai_demo_data()
+    generate_demo_data()

@@ -39,12 +39,12 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   onTogglePlay,
   playbackSpeed,
   onChangeSpeed,
-  activeSpillId = 'INC-MUM-2024-01',
+  activeSpillId = 'DARTIS-ow-0001',
 }) => {
   const [hoveredEvent, setHoveredEvent] = useState<TimelineKeyEvent | null>(null);
   const [showTimelineDrawer, setShowTimelineDrawer] = useState<boolean>(false);
-  const currentIncident = MUMBAI_INCIDENTS[activeSpillId] || MUMBAI_INCIDENTS['INC-MUM-2024-01'];
-  const events = currentIncident.events || [];
+  const currentIncident = MUMBAI_INCIDENTS[activeSpillId] || MUMBAI_INCIDENTS['DARTIS-ow-0001'] || Object.values(MUMBAI_INCIDENTS)[0];
+  const events = currentIncident?.events || [];
 
   // Close drawer on ESC key
   useEffect(() => {
@@ -62,7 +62,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   
   // Calculate formatted times for active scrubber position
   const activeDate = useMemo(() => new Date(now.getTime() + timeOffsetMinutes * 60 * 1000), [now, timeOffsetMinutes]);
-  const activeTimeStr = activeDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
+  const activeTimeStr = activeDate.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour12: false }) + ' UTC';
   
   const absMins = Math.abs(timeOffsetMinutes);
   const tMinusHours = Math.floor(absMins / 60);

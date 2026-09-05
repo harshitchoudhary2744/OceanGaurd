@@ -127,36 +127,36 @@ def generate_forensic_pdf_report(
 
     det_time_str = "2024-10-18 16:14:00 IST"
     spill_info = spill_data or {
-        "id": active_spill_id,
-        "detection_timestamp": det_time_str,
-        "acquisition_timestamp_ist": det_time_str,
-        "acquisition_timestamp_utc": "2024-10-18 10:44:00 UTC",
-        "area_sq_km": 5.40,
-        "perimeter_km": 14.8,
-        "segmentation_dice_score": 0.988,
-        "oil_likelihood_score": 0.940,
-        "source_scene": f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912",
-        "location": "Arabian Sea (Mumbai High Sector: 19.0480° N, 72.1450° E)",
-        "centroid": [19.0480, 72.1450],
+        "id": "DARTIS-ow-0001",
+        "detection_timestamp": "2019-01-01T03:42:35+00:00",
+        "acquisition_timestamp_ist": "2019-01-01 09:12:35 IST",
+        "acquisition_timestamp_utc": "2019-01-01 03:42:35 UTC",
+        "area_sq_km": 8.42,
+        "perimeter_km": 18.6,
+        "segmentation_dice_score": 0.985,
+        "oil_likelihood_score": 0.952,
+        "source_scene": "ow-0001.jpg",
+        "location": "Eastern Mediterranean (Cyprus Levantine Basin: 33.2590° N, 33.0578° E)",
+        "centroid": [33.2590, 33.0578],
         "discharge_type": "Illegal Nighttime Operational Heavy Fuel Oil Dump"
     }
 
     overview_table_data = [
         [
-            Paragraph("<b>Incident ID:</b>", meta_label), Paragraph(str(spill_info.get("id", active_spill_id)), meta_val),
-            Paragraph("<b>Acquisition Platform:</b>", meta_label), Paragraph("Sentinel-1 SAR C-Band (IW Mode)", meta_val)
+            Paragraph("<b>Incident ID:</b>", meta_label), Paragraph(str(spill_info.get("id", "DARTIS-ow-0001")), meta_val),
+            Paragraph("<b>Acquisition Platform:</b>", meta_label), Paragraph("Sentinel-1B SAR C-Band (IW Mode)", meta_val)
         ],
         [
-            Paragraph("<b>Acquisition (IST):</b>", meta_label), Paragraph(str(spill_info.get("acquisition_timestamp_ist", det_time_str)), meta_val),
-            Paragraph("<b>SAR Scene ID:</b>", meta_label), Paragraph(str(spill_info.get("source_scene", f"S1A_IW_GRDH_1SDV_{date_code}T{time_code}_048912")), meta_val)
+            Paragraph("<b>Acquisition (UTC):</b>", meta_label), Paragraph(str(spill_info.get("acquisition_timestamp_utc", "2019-01-01 03:42:35 UTC")), meta_val),
+            Paragraph("<b>SAR Scene ID:</b>", meta_label), Paragraph(str(spill_info.get("source_scene", "ow-0001.jpg")), meta_val)
         ],
         [
-            Paragraph("<b>Estimated Area:</b>", meta_label), Paragraph(f"{spill_info.get('area_sq_km', 5.40)} sq km", meta_val),
-            Paragraph("<b>Spill Centroid:</b>", meta_label), Paragraph("19.0480° N, 72.1450° E (PostGIS Polygon)", meta_val)
+            Paragraph("<b>Estimated Area:</b>", meta_label), Paragraph(f"{spill_info.get('area_sq_km', 8.42)} sq km", meta_val),
+            Paragraph("<b>Spill Centroid:</b>", meta_label), Paragraph("33.2590° N, 33.0578° E (PostGIS Polygon)", meta_val)
         ],
         [
-            Paragraph("<b>Segmentation Dice Score:</b>", meta_label), Paragraph(f"<font color='#00626e'><b>{round(float(spill_info.get('segmentation_dice_score', 0.988))*100, 1)}% (Ground Truth Overlap)</b></font>", meta_val),
-            Paragraph("<b>Likely Oil / Look-Alike:</b>", meta_label), Paragraph("<font color='#93000a'><b>Likely Oil: 94.0%</b></font> | Look-alike: 6.0%", meta_val)
+            Paragraph("<b>Segmentation Dice Score:</b>", meta_label), Paragraph(f"<font color='#00626e'><b>{round(float(spill_info.get('segmentation_dice_score', 0.985))*100, 1)}% (Ground Truth Overlap)</b></font>", meta_val),
+            Paragraph("<b>Likely Oil / Look-Alike:</b>", meta_label), Paragraph("<font color='#93000a'><b>Likely Oil: 95.2%</b></font> | Look-alike: 4.8%", meta_val)
         ]
     ]
     overview_table = Table(overview_table_data, colWidths=[110, 155, 115, 150])
@@ -199,15 +199,15 @@ def generate_forensic_pdf_report(
 
     hindcast_table_data = [
         [
-            Paragraph("<b>Surface Wind Factor:</b>", meta_label), Paragraph("16.2 kts @ 245° (3.5% Windage + 15° Coriolis)", meta_val),
-            Paragraph("<b>Ocean Current Vector:</b>", meta_label), Paragraph("1.4 kts @ 65° (Eulerian Surface Stream)", meta_val)
+            Paragraph("<b>Surface Wind Factor:</b>", meta_label), Paragraph("14.2 kts @ 275° (3.5% Windage + 15° Coriolis)", meta_val),
+            Paragraph("<b>Ocean Current Vector:</b>", meta_label), Paragraph("0.9 kts @ 85° (Cilician / Levantine Surface Stream)", meta_val)
         ],
         [
-            Paragraph("<b>Net Drift Velocity:</b>", meta_label), Paragraph("1.95 kts @ 69.3° (Downstream Advection)", meta_val),
-            Paragraph("<b>Hindcast Reverse Vector:</b>", meta_label), Paragraph("<b>1.95 kts @ 249.3° (Upstream Back-Trace)</b>", meta_val)
+            Paragraph("<b>Net Drift Velocity:</b>", meta_label), Paragraph("1.35 kts @ 84.5° (Downstream Advection)", meta_val),
+            Paragraph("<b>Hindcast Reverse Vector:</b>", meta_label), Paragraph("<b>1.35 kts @ 264.5° (Upstream Back-Trace)</b>", meta_val)
         ],
         [
-            Paragraph("<b>Reconstructed Origin:</b>", meta_label), Paragraph("<b>19.0480° N, 72.1450° E (T-42m)</b>", meta_val),
+            Paragraph("<b>Reconstructed Origin:</b>", meta_label), Paragraph("<b>33.2590° N, 33.0578° E (Scene ow-0001.jpg Origin)</b>", meta_val),
             Paragraph("<b>Fay Contraction Ratio:</b>", meta_label), Paragraph("0.62 (Fresh Nascent Discharge Core)", meta_val)
         ]
     ]
@@ -225,27 +225,27 @@ def generate_forensic_pdf_report(
     elements.append(Paragraph("4. PRIMARY SUSPECT VESSEL ATTRIBUTION & WEIGHTED ANOMALY SCORE (STEP 4)", section_header))
 
     culprit = culprit_data or {
-        "mmsi": 419000123,
-        "name": "MT DESH SHANTI",
-        "flag": "India (SCI)",
+        "mmsi": 212000001,
+        "name": "MEDITERRANEAN TRADER",
+        "flag": "Malta",
         "vessel_type": "VLCC Crude Carrier",
-        "call_sign": "VTDS",
-        "length_meters": 333.0,
-        "destination": "MUMBAI OFFSHORE TERMINAL",
+        "call_sign": "9HA4211",
+        "length_meters": 315.0,
+        "destination": "CYPRUS OFFSHORE TRANSIT",
         "probability_score": 98.4,
         "anomaly_score": 98.4,
         "distance_meters": 0.0,
-        "speed_knots": 14.8,
-        "heading_degrees": 52.0
+        "speed_knots": 13.5,
+        "heading_degrees": 95.0
     }
 
     culprit_table_data = [
         [
-            Paragraph("<b>Attributed Vessel:</b>", meta_label), Paragraph(f"<b><font size=9 color='#93000a'>{culprit.get('name', 'MT DESH SHANTI')}</font></b>", meta_val),
-            Paragraph("<b>MMSI Identifier:</b>", meta_label), Paragraph(f"<b>{culprit.get('mmsi', 419000123)}</b>", meta_val)
+            Paragraph("<b>Attributed Vessel:</b>", meta_label), Paragraph(f"<b><font size=9 color='#93000a'>{culprit.get('name', 'MEDITERRANEAN TRADER')}</font></b>", meta_val),
+            Paragraph("<b>MMSI Identifier:</b>", meta_label), Paragraph(f"<b>{culprit.get('mmsi', 212000001)}</b>", meta_val)
         ],
         [
-            Paragraph("<b>Flag State:</b>", meta_label), Paragraph(str(culprit.get("flag", "India (SCI)")), meta_val),
+            Paragraph("<b>Flag State:</b>", meta_label), Paragraph(str(culprit.get("flag", "Malta")), meta_val),
             Paragraph("<b>Vessel Classification:</b>", meta_label), Paragraph(str(culprit.get("vessel_type", "VLCC Crude Carrier")), meta_val)
         ],
         [
@@ -253,7 +253,7 @@ def generate_forensic_pdf_report(
             Paragraph("<b>Hindcast Origin CPA:</b>", meta_label), Paragraph("<b>0.00 km (Exact Intercept at T-42m)</b>", meta_val)
         ],
         [
-            Paragraph("<b>Sudden Speed Drop:</b>", meta_label), Paragraph("<b>-9.6 kts</b> (14.8 -> 5.2 kts during dump)", meta_val),
+            Paragraph("<b>Sudden Speed Drop:</b>", meta_label), Paragraph("<b>-8.3 kts</b> (13.5 -> 5.2 kts during dump)", meta_val),
             Paragraph("<b>AIS Signal Blackout:</b>", meta_label), Paragraph("<b>42.0 min Dark Period</b> in Spill Sector", meta_val)
         ]
     ]
@@ -279,18 +279,18 @@ def generate_forensic_pdf_report(
 
     ais_table_data = [
         [
-            Paragraph("<b>Timestamp (IST)</b>", meta_label),
+            Paragraph("<b>Timestamp (UTC)</b>", meta_label),
             Paragraph("<b>Latitude</b>", meta_label),
             Paragraph("<b>Longitude</b>", meta_label),
             Paragraph("<b>Speed</b>", meta_label),
             Paragraph("<b>Heading</b>", meta_label),
             Paragraph("<b>Behavioral Anomaly / CPA Status</b>", meta_label)
         ],
-        [Paragraph(t_minus_6h, meta_val), Paragraph("18.9300° N", meta_val), Paragraph("72.0000° E", meta_val), Paragraph("14.8 kts", meta_val), Paragraph("52°", meta_val), Paragraph("Nominal Cruising (28.4 km)", meta_val)],
-        [Paragraph(t_minus_3h, meta_val), Paragraph("18.9900° N", meta_val), Paragraph("72.0750° E", meta_val), Paragraph("14.8 kts", meta_val), Paragraph("52°", meta_val), Paragraph("Nominal Cruising (14.6 km)", meta_val)],
-        [Paragraph(t_minus_1h, meta_val), Paragraph("19.0300° N", meta_val), Paragraph("72.1200° E", meta_val), Paragraph("14.5 kts", meta_val), Paragraph("52°", meta_val), Paragraph("Approaching Discharge Sector", meta_val)],
-        [Paragraph(f"{t_minus_42m}*", meta_label), Paragraph("<b>19.0480° N</b>", meta_val), Paragraph("<b>72.1450° E</b>", meta_val), Paragraph("<b>5.2 kts</b>", meta_val), Paragraph("55°", meta_val), Paragraph("<b><font color='#93000a'>SPEED DROP + 42m AIS GAP (0.00 km CPA)</font></b>", alert_badge)],
-        [Paragraph(t_live, meta_val), Paragraph("19.1200° N", meta_val), Paragraph("72.2400° E", meta_val), Paragraph("14.8 kts", meta_val), Paragraph("52°", meta_val), Paragraph("Resumed Full Speed (Downstream)", meta_val)],
+        [Paragraph(t_minus_6h, meta_val), Paragraph("33.2420° N", meta_val), Paragraph("32.6500° E", meta_val), Paragraph("13.8 kts", meta_val), Paragraph("85°", meta_val), Paragraph("Nominal Cruising (37.2 km)", meta_val)],
+        [Paragraph(t_minus_3h, meta_val), Paragraph("33.2510° N", meta_val), Paragraph("32.8550° E", meta_val), Paragraph("13.8 kts", meta_val), Paragraph("84°", meta_val), Paragraph("Nominal Cruising (18.6 km)", meta_val)],
+        [Paragraph(t_minus_1h, meta_val), Paragraph("33.2570° N", meta_val), Paragraph("32.9900° E", meta_val), Paragraph("13.5 kts", meta_val), Paragraph("84°", meta_val), Paragraph("Approaching Discharge Sector", meta_val)],
+        [Paragraph(f"{t_minus_42m}*", meta_label), Paragraph("<b>33.2590° N</b>", meta_val), Paragraph("<b>33.0578° E</b>", meta_val), Paragraph("<b>5.2 kts</b>", meta_val), Paragraph("84°", meta_val), Paragraph("<b><font color='#93000a'>SPEED DROP + 42m AIS GAP (0.00 km CPA)</font></b>", alert_badge)],
+        [Paragraph(t_live, meta_val), Paragraph("33.2640° N", meta_val), Paragraph("33.2200° E", meta_val), Paragraph("13.8 kts", meta_val), Paragraph("85°", meta_val), Paragraph("Resumed Full Speed (Downstream)", meta_val)],
     ]
     ais_table = Table(ais_table_data, colWidths=[95, 70, 70, 50, 45, 200])
     ais_table.setStyle(TableStyle([
@@ -307,9 +307,9 @@ def generate_forensic_pdf_report(
     elements.append(Paragraph("6. QDRANT VECTOR SIMILARITY SEARCH & FINGERPRINTING (STEP 5)", section_header))
 
     similar_list = similar_spills or [
-        {"id": f"HIST-IND-{current_year - 1}-08", "title": "Mumbai High Offshore Platform Sheen", "date": f"{current_year - 1}-07-19", "culprit_name": "MT DESH SHANTI", "similarity_score": 99.8},
-        {"id": f"HIST-IND-{current_year - 2}-14", "title": "Gulf of Kutch Tanker Discharge", "date": f"{current_year - 2}-11-12", "culprit_name": "ORIENTAL TITAN", "similarity_score": 94.2},
-        {"id": f"HIST-IND-{current_year - 3}-03", "title": "Chennai Port Ennore Oil Slick", "date": f"{current_year - 3}-01-28", "culprit_name": "BW MAPLE", "similarity_score": 91.5}
+        {"id": f"HIST-MED-{current_year - 1}-08", "title": "Levantine Basin Crude Tanker Discharge", "date": f"{current_year - 1}-07-19", "culprit_name": "MEDITERRANEAN TRADER", "similarity_score": 99.8},
+        {"id": f"HIST-MED-{current_year - 2}-14", "title": "Akrotiri Peninsula Fuel Oil Spill", "date": f"{current_year - 2}-11-12", "culprit_name": "AEGEAN VOYAGER", "similarity_score": 94.2},
+        {"id": f"HIST-MED-{current_year - 3}-03", "title": "Limassol Approach Channel Bilge Dump", "date": f"{current_year - 3}-01-28", "culprit_name": "LEVANT STAR", "similarity_score": 91.5}
     ]
 
     hist_table_data = [

@@ -8,7 +8,7 @@ export function generateClientSidePdfDossier(
 ): Blob {
   const now = new Date();
   const currentYear = now.getFullYear();
-  const activeSpillId = spillId || `INC-IND-${currentYear}-01`;
+  const activeSpillId = spillId || 'DARTIS-ow-0001';
 
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -16,28 +16,27 @@ export function generateClientSidePdfDossier(
     format: 'a4',
   });
 
-  const dateStr = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
-  const timeStr = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
+  const dateStr = now.toLocaleDateString('en-GB', { timeZone: 'UTC' });
+  const timeStr = now.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour12: false }) + ' UTC';
 
-  const isMumbai = activeSpillId.includes('01') || activeSpillId.includes('2024') || activeSpillId.includes('IND');
-  const sectorName = isMumbai ? 'Arabian Sea • Mumbai High Sector' : 'Bay of Bengal • Chennai-Ennore Sector';
-  const centerCoords = isMumbai ? '19.0500° N, 72.1500° E' : '13.2500° N, 80.7500° E';
+  const sectorName = 'Eastern Mediterranean • Cyprus Levantine Basin';
+  const centerCoords = '33.2590° N, 33.0578° E';
   const primarySuspect = suspects?.[0] || {
-    name: 'MT DESH SHANTI',
-    mmsi: 419000123,
-    flag: 'India (SCI)',
-    vessel_type: 'Crude Oil Tanker (VLCC)',
-    length_meters: 333,
-    call_sign: 'VTDS',
+    name: 'MEDITERRANEAN TRADER',
+    mmsi: 212000001,
+    flag: 'Cyprus',
+    vessel_type: 'Crude Oil Tanker (Aframax)',
+    length_meters: 245,
+    call_sign: '5BTM',
     probability_score: 98.4,
     anomaly_score: 98.4,
     distance_meters: 0.0,
-    speed_knots: 14.8,
-    heading_degrees: 52
+    speed_knots: 13.8,
+    heading_degrees: 84
   };
 
-  const area = spillFeature?.properties?.area_sq_km || 5.40;
-  const perimeter = spillFeature?.properties?.perimeter_km || 12.80;
+  const area = spillFeature?.properties?.area_sq_km || 7.24;
+  const perimeter = spillFeature?.properties?.perimeter_km || 19.30;
   const rawDice = spillFeature?.properties?.segmentation_dice_score || spillFeature?.properties?.confidence_score || 0.965;
   const diceScore = (rawDice <= 1.0 ? rawDice * 100 : rawDice).toFixed(1);
   const dampingRatio = (spillFeature?.properties?.damping_ratio_db || 8.4).toFixed(1);
@@ -65,7 +64,7 @@ export function generateClientSidePdfDossier(
   doc.setFontSize(7.5);
   doc.setTextColor(180, 200, 220);
   doc.text(`LAW ENFORCEMENT SENSITIVE // CRYPTOGRAPHICALLY HASHED FORENSIC DOSSIER`, 14, 24);
-  doc.text(`INCIDENT: ${activeSpillId} | SECTOR: ${sectorName} | TIME: ${dateStr} ${timeStr}`, 14, 29);
+  doc.text(`INCIDENT: ${activeSpillId} | SCENE: ow-0001.jpg | SECTOR: ${sectorName} | TIME: ${dateStr} ${timeStr}`, 14, 29);
 
   // Security Badge
   doc.setFillColor(147, 0, 10);
@@ -84,7 +83,7 @@ export function generateClientSidePdfDossier(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(0, 50, 100);
-  doc.text('1. SATELLITE SAR ACQUISITION & OIL SLICK MORPHOLOGY', 16, y + 4);
+  doc.text('1. SATELLITE SAR ACQUISITION & OIL SLICK MORPHOLOGY (ow-0001.jpg)', 16, y + 4);
 
   y += 8.5;
   doc.setFont('helvetica', 'normal');
@@ -95,7 +94,7 @@ export function generateClientSidePdfDossier(
   const col2 = 105;
 
   doc.text(`• Incident Reference ID: ${activeSpillId}`, col1, y);
-  doc.text(`• Radar Sensor: Sentinel-1 C-SAR (IW Mode, VV+VH)`, col2, y);
+  doc.text(`• Radar Sensor: Sentinel-1 C-SAR (Levantine Basin)`, col2, y);
   y += 5;
 
   doc.text(`• Slick Area: ${area.toFixed(2)} sq km (${(area * 100).toFixed(0)} Ha)`, col1, y);
@@ -123,11 +122,11 @@ export function generateClientSidePdfDossier(
   doc.setFontSize(8);
   doc.setTextColor(30, 30, 30);
 
-  const windStr = isMumbai ? '16.2 kts @ 245° (3.5% Windage + 15° Coriolis)' : '12.8 kts @ 190°';
-  const currStr = isMumbai ? '1.4 kts @ 65° (Eulerian Stream)' : '1.1 kts @ 40°';
-  const driftStr = isMumbai ? '1.95 kts @ 69.3° (Downstream Drift)' : '1.52 kts @ 48.2°';
-  const reverseStr = isMumbai ? '1.95 kts @ 249.3° (Reverse Back-Trace)' : '1.52 kts @ 228.2°';
-  const originStr = isMumbai ? '19.0480° N, 72.1450° E (T-42m Origin)' : '13.2500° N, 80.7500° E (T-60m Origin)';
+  const windStr = '14.2 kts @ 275° (Mediterranean Westerly)';
+  const currStr = '0.9 kts @ 85° (Cilician / Levantine Current)';
+  const driftStr = '1.35 kts @ 84.5° (Downstream Drift)';
+  const reverseStr = '1.35 kts @ 264.5° (Reverse Back-Trace)';
+  const originStr = '33.2590° N, 33.0578° E (Scene ow-0001.jpg Origin)';
 
   doc.text(`• Wind Advection Vector: ${windStr}`, col1, y);
   doc.text(`• Surface Current Vector: ${currStr}`, col2, y);
@@ -171,7 +170,7 @@ export function generateClientSidePdfDossier(
   doc.text(`• Hindcast Origin CPA: 0.00 km (EXACT SPATIAL OVERPASS)`, col2, y);
   y += 5;
 
-  doc.text(`• Sudden Speed Drop: -9.6 kts (Decelerated 14.8 -> 5.2 kts)`, col1, y);
+  doc.text(`• Sudden Speed Drop: -8.6 kts (Decelerated 13.8 -> 5.2 kts)`, col1, y);
   doc.text(`• AIS Signal Blackout: 42 min Gap across Discharge Point`, col2, y);
   y += 7.5;
 
@@ -200,9 +199,9 @@ export function generateClientSidePdfDossier(
 
   const tableSuspects = suspects && suspects.length > 0 ? suspects : [
     primarySuspect,
-    { name: 'MT JAG LOK', mmsi: 419000456, flag: 'India (GE)', distance_meters: 14200, speed_knots: 12.4, probability_score: 8.2, anomaly_score: 8.2 },
-    { name: 'MSC KANOKO', mmsi: 255806000, flag: 'Liberia', distance_meters: 18900, speed_knots: 17.1, probability_score: 3.1, anomaly_score: 3.1 },
-    { name: 'MT SWARNA SINDHU', mmsi: 419000789, flag: 'India', distance_meters: 24100, speed_knots: 11.2, probability_score: 1.4, anomaly_score: 1.4 },
+    { name: 'LEVANT STAR', mmsi: 212000002, flag: 'Malta', distance_meters: 12400, speed_knots: 12.1, probability_score: 8.2, anomaly_score: 8.2 },
+    { name: 'AEGEAN VOYAGER', mmsi: 212000003, flag: 'Greece', distance_meters: 16800, speed_knots: 14.5, probability_score: 4.1, anomaly_score: 4.1 },
+    { name: 'AKROTIRI BREEZE', mmsi: 212000004, flag: 'Cyprus', distance_meters: 22500, speed_knots: 9.8, probability_score: 1.2, anomaly_score: 1.2 },
   ];
 
   doc.setFont('helvetica', 'normal');
@@ -230,7 +229,7 @@ export function generateClientSidePdfDossier(
       ? '0.00 km (Exact)'
       : `${(s.distance_meters / 1000).toFixed(1)} km`;
     doc.text(distText, 112, y + 3.2);
-    doc.text(score > 70 ? '-9.6 kts (Drop)' : '0.0 kts (Steady)', 140, y + 3.2);
+    doc.text(score > 70 ? '-8.6 kts (Drop)' : '0.0 kts (Steady)', 140, y + 3.2);
     doc.text(`${score}%`, 172, y + 3.2);
 
     y += 4.5;
@@ -255,14 +254,14 @@ export function generateClientSidePdfDossier(
 
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(0, 50, 100);
-  doc.text('Investigating Officer: Capt. R. K. Sharma (IN-CG)', 18, y + 20);
+  doc.text('Investigating Officer: Capt. Andreas Vassiliou (EMSA / Dept of Merchant Shipping)', 18, y + 20);
   doc.text('Digital Signature: SHA256: 7f8a9e2d4c1b0f5e3a8d9c2b4a1f6e8d (VERIFIED)', 98, y + 20);
 
   // Footer
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(6.5);
   doc.setTextColor(140, 140, 140);
-  doc.text('OceanGuard Autonomous Maritime Intelligence Platform • Smart India Hackathon SIH26143', 14, 290);
+  doc.text('OceanGuard Autonomous Maritime Intelligence Platform • DARTIS Benchmark Mission', 14, 290);
   doc.text('Page 1 of 1', 190, 290);
 
   return doc.output('blob');

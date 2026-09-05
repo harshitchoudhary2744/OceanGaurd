@@ -3,6 +3,8 @@ OceanGuard FastAPI Backend Server (SIH26143)
 Satellite Oil Spill Detection, Vessel Tracking & Spatial Correlation System
 """
 import os
+import sys
+from pathlib import Path
 import io
 import json
 import math
@@ -10,6 +12,11 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+
+API_DIR = Path(__file__).resolve().parent
+if str(API_DIR) not in sys.path:
+    sys.path.insert(0, str(API_DIR))
+
 from services.synthetic_ais import generate_synthetic_ais
 
 from fastapi import (
@@ -80,19 +87,8 @@ _FIXTURE_DATA = {
 }
 
 def _refresh_fixture_timestamps(data: dict):
-    now = datetime.utcnow()
-    current_year = now.year
-
-    # Dynamically update detection timestamps to near-real-time for active Mumbai spills
-    spills = data.get("spills", [])
-    offsets_minutes = [42, 30, 25, 20]
-    for i, s in enumerate(spills):
-        offset = offsets_minutes[i % len(offsets_minutes)]
-        s["detection_timestamp"] = (now - timedelta(minutes=offset)).isoformat() + "Z"
-
-    # Refresh telemetry timestamps relative to now
-    #for t in data.get("telemetry", []):
-    #    t["timestamp"] = (now - timedelta(minutes=15)).isoformat() + "Z"
+    # DARTIS ow-0001 preserves precise historical benchmark timestamps from Copernicus Sentinel-1B
+    pass
 
 def load_fixtures():
     global _FIXTURE_DATA
@@ -101,11 +97,10 @@ def load_fixtures():
             with open(FIXTURE_PATH, "r", encoding="utf-8") as f:
                 _FIXTURE_DATA = json.load(f)
             _refresh_fixture_timestamps(_FIXTURE_DATA)
-            logger.info("Loaded and refreshed demo fixture data into real-time memory.")
+            logger.info("Loaded demo fixture data into real-time memory.")
         except Exception as e:
             logger.warning(f"Failed to read fixture: {e}")
     else:
-        # Run generator to build fixture
         try:
             from apps.api.scripts.seed_demo_data import seed_database_and_fixtures
             seed_database_and_fixtures()
@@ -116,7 +111,7 @@ def load_fixtures():
             logger.warning(f"Error seeding fixture: {e}")
 
 load_fixtures()
-SYNTHETIC_AIS = generate_synthetic_ais()
+SYNTHETIC_AIS = generate_synthetic_ais(center_lat=33.25902604, center_lon=33.05775642)
 
 
 @app.on_event("startup")
@@ -158,7 +153,7 @@ def health_check():
 
 
 @app.get("/api/v1/satellite/latest")
-async def get_latest_satellite_feed(sector: str = Query("mumbai_high")):
+async def get_latest_satellite_feed(sector: str = Query("mediterranean_dartis")):
     """
     Fetches the latest Copernicus Sentinel-1 SAR acquisition pass for the requested maritime sector.
     """
@@ -363,94 +358,70 @@ def get_similar_historical_spills(spill_id: str):
 @app.post("/api/v1/spills/detect")
 async def detect_spill_from_sar_image(
     file: Optional[UploadFile] = File(None),
-    center_lon: float = Form(72.150),
-    center_lat: float = Form(19.050),
-    scene_id: Optional[str] = Form("S1A_IW_GRDH_ARABIAN_SEA_01")
+    center_lon: float = Form(33.05775642),
+    center_lat: float = Form(33.25902604),
+    scene_id: Optional[str] = Form("ow-0001.jpg")
 ):
     """
-    Uploads SAR satellite scene, executes PyTorch U-Net inference,
+    Uploads SAR satellite scene, executes U-Net inference,
     computes oil slick boundaries and auto-correlates against live vessel fleet.
     """
     if file:
         content = await file.read()
     else:
-        # Default mock 256x256 byte payload
         content = bytes([128] * (256 * 256))
 
-    is_dartis = scene_id and scene_id.startswith("DARTIS")
-
-    detection_time = (
-        "2019-01-01T03:42:35+00:00"
-        if is_dartis
-        else datetime.utcnow().isoformat() + "Z"
-    )
-
-    acquisition_time = (
-        "2019-01-01 03:42:35 UTC"
-        if is_dartis
-        else datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    )
+    detection_time = "2019-01-01T03:42:35+00:00"
+    acquisition_time = "2019-01-01 03:42:35 UTC"
 
     # Run ML Pipeline
     pipeline_result = sar_pipeline.process_sar_payload(
         image_bytes=content,
         center_lon=center_lon,
         center_lat=center_lat,
-        scene_id=scene_id or "S1A_IW_GRDH_1SDV_UPLOADED",
+        scene_id=scene_id or "ow-0001.jpg",
         acquisition_timestamp_utc=acquisition_time
     )
 
     feature = pipeline_result["feature"]
     metrics = pipeline_result["metrics"]
     new_spill_id = feature["properties"]["id"]
-    
-    is_dartis = scene_id and scene_id.startswith("DARTIS")
-
-    detection_time = (
-    "2019-01-01T03:42:35+00:00"
-    if is_dartis
-    else datetime.utcnow().isoformat() + "Z"
-    )
 
     new_spill_obj = {
-    "id": new_spill_id,
-    "detection_timestamp": detection_time,
-    "acquisition_timestamp_utc": acquisition_time,
-    "acquisition_timestamp_utc": (
-        "2019-01-01 03:42:35 UTC"
-        if is_dartis
-        else datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    ),
-    "area_sq_km": metrics["area_sq_km"],
-    "perimeter_km": metrics["perimeter_km"],
-    "confidence_score": metrics["confidence"],
-    "segmentation_dice_score": metrics["segmentation_dice_score"],
-    "oil_likelihood_score": metrics["oil_likelihood_score"],
-    "lookalike_score": metrics["lookalike_score"],
-    "damping_ratio_db": metrics["damping_ratio_db"],
-    "source_scene": scene_id or "S1A_IW_GRDH_1SDV_UPLOADED",
-    "status": "ACTIVE",
-    "center": [center_lon, center_lat],
-    "centroid": [center_lat, center_lon],
-    "polygon_coordinates": feature["geometry"]["coordinates"][0],
-    "estimated_discharge_liters": int(metrics["area_sq_km"] * 10500),
-    "slick_type": "Synthetic SAR Dark-Spot Detection"
+        "id": new_spill_id,
+        "detection_timestamp": detection_time,
+        "acquisition_timestamp_utc": acquisition_time,
+        "area_sq_km": metrics["area_sq_km"],
+        "perimeter_km": metrics["perimeter_km"],
+        "confidence_score": metrics["confidence"],
+        "segmentation_dice_score": metrics["segmentation_dice_score"],
+        "oil_likelihood_score": metrics["oil_likelihood_score"],
+        "lookalike_score": metrics["lookalike_score"],
+        "damping_ratio_db": metrics["damping_ratio_db"],
+        "source_scene": scene_id or "ow-0001.jpg",
+        "status": "ACTIVE",
+        "center": [center_lon, center_lat],
+        "centroid": [center_lat, center_lon],
+        "polygon_coordinates": feature["geometry"]["coordinates"][0] if feature["geometry"]["coordinates"] else [],
+        "estimated_discharge_liters": int(metrics["area_sq_km"] * 10500),
+        "slick_type": "Synthetic SAR Dark-Spot Detection"
     }
+
     # Prepend to in-memory fixture so UI updates immediately
     _FIXTURE_DATA["spills"].insert(0, new_spill_obj)
 
     # Auto-correlate with vessels
     synthetic_ais = generate_synthetic_ais(
-    center_lat=center_lat,
-    center_lon=center_lon,
+        center_lat=center_lat,
+        center_lon=center_lon,
     )
 
     suspects = correlation_engine.correlate_standalone(
-    spill_id=new_spill_id,
-    spill_center=[center_lon, center_lat],
-    spill_timestamp=new_spill_obj["detection_timestamp"],
-    vessels_list=synthetic_ais["vessels"],
-    telemetry_records=synthetic_ais["telemetry"]
+        spill_id=new_spill_id,
+        spill_center=[center_lon, center_lat],
+        spill_timestamp=new_spill_obj["detection_timestamp"],
+        vessels_list=synthetic_ais["vessels"],
+        telemetry_records=synthetic_ais["telemetry"]
     )
 
     return {
@@ -481,7 +452,7 @@ def download_forensic_audit_pdf(spill_id: str):
     # Get suspect details
     suspects = correlation_engine.correlate_standalone(
         spill_id=spill_id,
-        spill_center=spill["center"] if spill else [72.150, 19.050],
+        spill_center=spill["center"] if spill else [33.05775642, 33.25902604],
         spill_timestamp=spill["detection_timestamp"] if spill else datetime.utcnow().isoformat(),
         vessels_list=SYNTHETIC_AIS["vessels"],
 	telemetry_records=SYNTHETIC_AIS["telemetry"]
@@ -527,8 +498,8 @@ def get_vessels_fleet():
         results.append({
             **v,
             "current_position": {
-                "latitude": latest_point.get("latitude", 19.05) if latest_point else 19.05,
-                "longitude": latest_point.get("longitude", 72.15) if latest_point else 72.15,
+                "latitude": latest_point.get("latitude", 33.259026) if latest_point else 33.259026,
+                "longitude": latest_point.get("longitude", 33.057756) if latest_point else 33.057756,
                 "speed_knots": latest_point.get("speed", latest_point.get("speed_knots", 14.0)) if latest_point else 14.0,
                 "heading_degrees": latest_point.get("heading", latest_point.get("heading_degrees", 128.0)) if latest_point else 128.0,
                 "timestamp": latest_point.get("timestamp") if latest_point else None,
@@ -538,7 +509,7 @@ def get_vessels_fleet():
 
 
 @app.get("/api/v1/metocean")
-def get_metocean_telemetry(sector: str = Query("arabian_sea")):
+def get_metocean_telemetry(sector: str = Query("mediterranean_dartis")):
     """
     Returns real-time metocean factors (Wind, Ocean current, Sea Surface Temp, Wave Height, Net Drift Vector).
     """
@@ -571,7 +542,7 @@ def get_spill_drift_trajectory(
         "spill_id": spill_id,
         "time_offset_minutes": time_offset_minutes,
         "drifted_polygon": drifted_poly,
-        "metocean": metocean_engine.get_metocean_conditions("arabian_sea" if "01" in spill_id else "bay_of_bengal")
+        "metocean": metocean_engine.get_metocean_conditions("mediterranean_dartis")
     }
 
 
@@ -597,10 +568,7 @@ def get_spill_hindcast_backtrace(
     if not target_spill:
         raise HTTPException(status_code=404, detail="Spill incident not found")
 
-    if "DARTIS" in spill_id or "ow-" in spill_id:
-    	sector = "mediterranean_dartis"	
-    else:
-    	sector = "arabian_sea" if "01" in spill_id else "bay_of_bengal"
+    sector = "mediterranean_dartis"
     metocean = metocean_engine.get_metocean_conditions(sector)
     
     hindcast_points = metocean_engine.calculate_hindcast_track(
@@ -638,7 +606,7 @@ def get_spill_hindcast_backtrace(
 
 
 @app.get("/api/v1/vessels/{mmsi}/anomalies")
-def get_vessel_anomaly_profile(mmsi: int, spill_id: Optional[str] = "INC-MUM-2024-01"):
+def get_vessel_anomaly_profile(mmsi: int, spill_id: Optional[str] = "DARTIS-ow-0001"):
     """
     Returns granular anomaly profile (speed drops, AIS gaps, loitering, hindcast CPA) for a target vessel.
     """

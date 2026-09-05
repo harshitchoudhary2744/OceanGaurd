@@ -66,8 +66,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     }
   }, [initialTab]);
 
-  const incidentId = spill?.id || "INC-MUM-2024-01";
-  const currentIncident = MUMBAI_INCIDENTS[incidentId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
+  const incidentId = spill?.id || "DARTIS-ow-0001";
+  const currentIncident = MUMBAI_INCIDENTS[incidentId] || MUMBAI_INCIDENTS["DARTIS-ow-0001"] || Object.values(MUMBAI_INCIDENTS)[0];
   const threat = calculateEnvironmentalThreat(incidentId, timeOffsetMinutes, metocean);
   const falsePositive = currentIncident.false_positive_analysis;
 
@@ -646,7 +646,7 @@ const MetoceanTab: React.FC<MetoceanTabProps> = ({ metocean, threat }) => {
         <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
           <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
             <Wind className="w-3.5 h-3.5 text-cyan-400" />
-            Arabian Sea Metocean Vectors
+            Levantine Basin Metocean Vectors
           </span>
           <span className="text-[9.5px] text-emerald-400 font-bold">LIVE TELEMETRY</span>
         </div>
@@ -681,7 +681,7 @@ const MetoceanTab: React.FC<MetoceanTabProps> = ({ metocean, threat }) => {
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">Net Drift Speed:</span>
             <strong className="text-cyan-300">
-              {metocean?.net_drift_speed_kts ?? 1.95} kts @ {metocean?.net_drift_direction_deg ?? 69.3}° {metocean?.current_cardinal ?? 'ENE'}
+              {metocean?.net_drift_speed_kts ?? 1.35} kts @ {metocean?.net_drift_direction_deg ?? 84.5}° {metocean?.current_cardinal ?? 'E'}
             </strong>
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
@@ -754,15 +754,15 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocu
         <div className="flex flex-col gap-1.5 text-[10.5px]">
           <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.fishing_zone_name || 'Mumbai Pelagic Commercial Trawling Fairway'}</span>
-              <span className="text-emerald-400 font-mono">{threat.fishing_fleet_count || 420} Trawlers</span>
+              <span>{threat.fishing_zone_name || 'Levantine Deep-Water Pelagic Fishery Fairway'}</span>
+              <span className="text-emerald-400 font-mono">{threat.fishing_fleet_count || 180} Trawlers</span>
             </div>
             <p className="text-[9.5px] text-slate-400">
-              Urgent broadcast alert issued. Standby advisory active for high-value pomfret and seerfish harvesting grounds.
+              Urgent broadcast alert issued. Standby advisory active for high-value pelagic tuna and swordfish harvesting grounds.
             </p>
             {onFocusLocation && (
               <button
-                onClick={() => onFocusLocation([72.18, 19.05], threat.fishing_zone_name || 'Mumbai Pelagic Fairway', 'fishing_zone')}
+                onClick={() => onFocusLocation(threat.fishing_zone_coords || [33.0578, 33.2590], threat.fishing_zone_name || 'Levantine Pelagic Fairway', 'fishing_zone')}
                 className="mt-1 self-start px-2 py-1 rounded bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
               >
                 <Navigation className="w-3 h-3 text-emerald-400" />
@@ -788,15 +788,15 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocu
         <div className="flex flex-col gap-1.5 text-[10.5px]">
           <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.fishing_harbour_name || 'Sassoon Docks Fishery Terminal'}</span>
-              <span className="text-blue-400 font-mono">{threat.harbour_vessel_count || 1250} Vessels</span>
+              <span>{threat.fishing_harbour_name || 'Limassol Commercial & Fishery Terminal'}</span>
+              <span className="text-blue-400 font-mono">{threat.harbour_vessel_count || 450} Vessels</span>
             </div>
             <p className="text-[9.5px] text-slate-400">
               Pre-position containment booms across harbor entrance. Evacuation alert ready for offshore landing berths.
             </p>
             {onFocusLocation && (
               <button
-                onClick={() => onFocusLocation([72.8256, 18.9158], threat.fishing_harbour_name || 'Sassoon Docks Fishery Terminal', 'fishing_harbour')}
+                onClick={() => onFocusLocation(threat.fishing_harbour_coords || [33.0450, 34.6750], threat.fishing_harbour_name || 'Limassol Port Terminal', 'fishing_harbour')}
                 className="mt-1 self-start px-2 py-1 rounded bg-blue-950/60 hover:bg-blue-900/80 text-blue-300 border border-blue-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
               >
                 <Navigation className="w-3 h-3 text-blue-400" />
@@ -822,15 +822,15 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocu
         <div className="flex flex-col gap-1.5 text-[10.5px]">
           <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.aquaculture_name || 'Raigad Estuarine Mariculture Cages'}</span>
-              <span className="text-purple-400 font-mono">₹{threat.aquaculture_economic_cr || 78.0} Cr Value</span>
+              <span>{threat.aquaculture_name || 'Vasiliko Bay Offshore Mariculture Cages'}</span>
+              <span className="text-purple-400 font-mono">€{threat.aquaculture_economic_cr || 75.0}M Value</span>
             </div>
             <p className="text-[9.5px] text-slate-400">
               Emergency advisory issued to close intertidal water intake gates and deploy secondary skirt oil deflectors.
             </p>
             {onFocusLocation && (
               <button
-                onClick={() => onFocusLocation([72.88, 18.72], threat.aquaculture_name || 'Raigad Estuarine Mariculture Cages', 'aquaculture')}
+                onClick={() => onFocusLocation(threat.aquaculture_coords || [33.31, 34.70], threat.aquaculture_name || 'Vasiliko Bay Mariculture', 'aquaculture')}
                 className="mt-1 self-start px-2 py-1 rounded bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
               >
                 <Navigation className="w-3 h-3 text-purple-400" />
@@ -846,7 +846,7 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocu
         <div className="flex items-center justify-between border-b border-slate-800 pb-1">
           <span className="text-[10.5px] text-orange-300 font-bold uppercase flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" />
-            🟠 Coastal Communities & Koliwadas
+            🟠 Coastal Communities Impact
           </span>
           <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-orange-950 text-orange-300 border border-orange-500/40">
             {threat.coastal_community_risk || 'HIGH'}
@@ -856,19 +856,19 @@ const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocu
         <div className="flex flex-col gap-1.5 text-[10.5px]">
           <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
             <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.coastal_community_name || 'Worli & Mahim Koliwada Settlements'}</span>
-              <span className="text-orange-400 font-mono">{threat.community_population ? threat.community_population.toLocaleString() : '30,700'} Pop.</span>
+              <span>{threat.coastal_community_name || 'Limassol Waterfront Maritime Community'}</span>
+              <span className="text-orange-400 font-mono">{threat.community_population ? threat.community_population.toLocaleString() : '185,000'} Pop.</span>
             </div>
             <p className="text-[9.5px] text-slate-400">
               Shoreline response contingency activated. Village community coordinators on alert for potential beach tarball deposits.
             </p>
             {onFocusLocation && (
               <button
-                onClick={() => onFocusLocation([72.8160, 19.0220], threat.coastal_community_name || 'Worli Koliwada Village', 'coastal_community')}
+                onClick={() => onFocusLocation(threat.coastal_community_coords || [33.0450, 34.6750], threat.coastal_community_name || 'Limassol Waterfront', 'coastal_community')}
                 className="mt-1 self-start px-2 py-1 rounded bg-orange-950/60 hover:bg-orange-900/80 text-orange-300 border border-orange-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
               >
                 <Navigation className="w-3 h-3 text-orange-400" />
-                Locate Koliwada on Map
+                Locate Coastal Community on Map
               </button>
             )}
           </div>

@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["INC-MUM-2024-01"];
+  const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["DARTIS-ow-0001"] || Object.values(MUMBAI_INCIDENTS)[0];
 
   return (
     <>
@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <span className="hidden xs:inline-block px-2 py-0.5 rounded bg-slate-800/80 text-cyan-300 border border-cyan-500/30 font-mono text-[11px] sm:text-xs font-semibold">
-            MUMBAI MARITIME ZONE
+            EASTERN MEDITERRANEAN • CYPRUS LEVANTINE
           </span>
 
           {/* Live Environmental Ticker */}
@@ -282,7 +282,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="text-[11px] text-slate-400 pt-1 flex justify-between items-center">
-            <span>MUMBAI EEZ: 16.2 kts WSW</span>
+            <span>CYPRUS EEZ: 14.2 kts W</span>
             <span className="text-cyan-400 font-bold">{istTime}</span>
           </div>
         </div>

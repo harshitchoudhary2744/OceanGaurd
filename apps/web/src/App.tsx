@@ -39,7 +39,8 @@ import {
   interpolateVesselPosition,
   MUMBAI_INCIDENTS,
   MMSI_TO_INCIDENT,
-  generateDashboardAlerts
+  generateDashboardAlerts,
+  registerCustomSpillIncident
 } from './lib/simulationEngine';
 
 export function App() {
@@ -47,9 +48,9 @@ export function App() {
   const [vessels, setVessels] = useState<Vessel[]>(INITIAL_VESSELS);
   const [suspects, setSuspects] = useState<SuspectVessel[]>(INITIAL_SUSPECTS);
   const [vectorMatches, setVectorMatches] = useState<VectorMatch[]>(INITIAL_VECTOR_MATCHES);
-  const [metocean, setMetocean] = useState<MetoceanData>(DEFAULT_METOCEAN.mumbai || DEFAULT_METOCEAN.arabian_sea);
-  const [selectedSpillId, setSelectedSpillId] = useState<string>("INC-MUM-2024-01");
-  const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(419000123);
+  const [metocean, setMetocean] = useState<MetoceanData>(DEFAULT_METOCEAN.mediterranean_dartis || DEFAULT_METOCEAN.levantine || Object.values(DEFAULT_METOCEAN)[0]);
+  const [selectedSpillId, setSelectedSpillId] = useState<string>("DARTIS-ow-0001");
+  const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(212000001);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Mobile Bottom Sheet / Active Tab
@@ -98,7 +99,7 @@ export function App() {
     if (actionType === 'focus_map' || Array.isArray(actionValue) || (alert && alert.coordinates)) {
       const coords: [number, number] = Array.isArray(actionValue) && actionValue.length === 2
         ? (actionValue as [number, number])
-        : (alert?.coordinates || [72.200, 19.050]);
+        : (alert?.coordinates || [33.05775642, 33.25902604]);
 
       setFocusTarget({
         coordinates: coords,
@@ -119,7 +120,7 @@ export function App() {
     } 
     // 2. Jump Timeline Scrubber to Breach Discharging Offset
     else if (actionType === 'jump_scrubber') {
-      const offset = typeof actionValue === 'number' ? actionValue : (alert?.incident_offset_minutes ?? -42);
+      const offset = typeof actionValue === 'number' ? actionValue : (alert?.incident_offset_minutes ?? -45);
       setTimeOffsetMinutes(offset);
 
       if (alert?.coordinates) {
@@ -202,7 +203,7 @@ export function App() {
         fetchVessels(),
         fetchCorrelations(selectedSpillId),
         fetchVectorMatches(selectedSpillId),
-        fetchMetoceanData('mumbai')
+        fetchMetoceanData('mediterranean_dartis')
       ]);
 
       if (spillsData?.features?.length) setSpills(spillsData);
@@ -284,6 +285,16 @@ export function App() {
     const config = MUMBAI_INCIDENTS[spillId];
     if (config) {
       setSelectedVesselMmsi(config.culpritMmsi);
+      if (config.originCoords) {
+        setFocusTarget({
+          coordinates: config.originCoords,
+          title: config.name,
+          category: 'oil_spill',
+          description: config.locationName,
+          zoom: 11.2,
+          timestamp: Date.now(),
+        });
+      }
     }
   };
 
@@ -348,7 +359,7 @@ export function App() {
 
       // Replay only the active anomaly suspect; background traffic stays static at live (t=0)
       const offsetForThisVessel = (v.mmsi === activeCulpritMmsi) ? timeOffsetMinutes : 0;
-      const interp = interpolateVesselPosition(v.mmsi, offsetForThisVessel, 'mumbai', curPos);
+      const interp = interpolateVesselPosition(v.mmsi, offsetForThisVessel, 'mediterranean_dartis', curPos);
       return {
         mmsi: v.mmsi,
         lon: interp.lon,
@@ -367,12 +378,38 @@ export function App() {
   // Active Map Center
   const mapCenter = useMemo<[number, number]>(() => {
     const config = MUMBAI_INCIDENTS[selectedSpillId];
-    return config?.originCoords || selectedSpillFeature?.properties?.center || [72.200, 19.050];
+    return config?.originCoords || selectedSpillFeature?.properties?.center || [33.05775642, 33.25902604];
   }, [selectedSpillFeature, selectedSpillId]);
 
   // Handle SAR Inference Result from Upload Modal
   const handleInferenceResult = (res: SARInferenceResponse) => {
     if (res?.spill) {
+      // 1. Use response.geojson_feature.geometry to render the detected oil-spill polygon
+      const geometry = res.geojson_feature?.geometry || {
+        type: "Polygon",
+        coordinates: res.spill.polygon_coordinates ? [res.spill.polygon_coordinates] : [],
+      };
+
+      // 2. Use response.spill.center for the spill center / map positioning: [longitude, latitude]
+      const centerLon = res.spill.center[0];
+      const centerLat = res.spill.center[1];
+
+      // 3. Register custom spill incident into simulationEngine for full HUD/threat/culprit synchronization
+      registerCustomSpillIncident({
+        id: res.spill.id,
+        name: `SAR Detection: ${res.spill.source_scene || res.spill.id}`,
+        originCoords: [centerLon, centerLat],
+        areaSqKm: res.spill.area_sq_km,
+        sourceScene: res.spill.source_scene,
+        slickType: res.spill.slick_type,
+        confidence: res.spill.confidence_score,
+        polygonCoordinates: geometry.coordinates?.[0] || res.spill.polygon_coordinates,
+        culpritMmsi: res.primary_suspect?.mmsi || (res.ranked_suspects?.[0]?.mmsi),
+        culpritName: res.primary_suspect?.name || (res.ranked_suspects?.[0]?.name),
+        acquisitionTimestampUtc: res.spill.acquisition_timestamp_utc,
+        detectionTimestampIso: res.spill.detection_timestamp,
+      });
+
       const newFeature: SpillGeoFeature = {
         type: "Feature",
         id: res.spill.id,
@@ -388,15 +425,12 @@ export function App() {
           oil_likelihood_score: res.metrics?.oil_likelihood_score || 0.940,
           source_scene: res.spill.source_scene,
           status: 'ACTIVE',
-          center: res.spill.center,
-          centroid: res.spill.centroid || [res.spill.center[1], res.spill.center[0]],
+          center: [centerLon, centerLat],
+          centroid: res.spill.centroid || [centerLat, centerLon],
           estimated_discharge_liters: res.spill.estimated_discharge_liters,
           slick_type: res.spill.slick_type,
         },
-        geometry: {
-          type: "Polygon",
-          coordinates: [res.spill.polygon_coordinates],
-        },
+        geometry: geometry,
       };
 
       setSpills((prev) => ({
@@ -406,8 +440,23 @@ export function App() {
 
       setSelectedSpillId(res.spill.id);
 
-      if (res.ranked_suspects?.length) {
+      // Center and mark map using response.spill.center
+      setFocusTarget({
+        coordinates: [centerLon, centerLat],
+        title: `SAR Detection: ${res.spill.id}`,
+        category: 'oil_spill',
+        description: `Acquired ${res.spill.source_scene || 'Sentinel-1'} | Area: ${res.spill.area_sq_km.toFixed(2)} km² | Centroid: ${centerLat.toFixed(4)}°N, ${centerLon.toFixed(4)}°E`,
+        zoom: 12.0,
+        timestamp: Date.now(),
+      });
+
+      // 4. Update primary suspect and ranked suspects from /detect
+      if (res.ranked_suspects && res.ranked_suspects.length > 0) {
         setSuspects(res.ranked_suspects);
+      }
+      if (res.primary_suspect) {
+        setSelectedVesselMmsi(res.primary_suspect.mmsi);
+      } else if (res.ranked_suspects?.length) {
         setSelectedVesselMmsi(res.ranked_suspects[0].mmsi);
       }
     }

@@ -151,6 +151,10 @@ export interface EnvironmentalThreat {
   fishing_harbour_distance_km?: number;
   aquaculture_distance_km?: number;
   community_distance_km?: number;
+  fishing_zone_coords?: [number, number];
+  fishing_harbour_coords?: [number, number];
+  aquaculture_coords?: [number, number];
+  coastal_community_coords?: [number, number];
 }
 
 export interface HindcastPoint {

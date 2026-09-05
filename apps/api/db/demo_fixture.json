@@ -1,552 +1,237 @@
 {
   "vessels": [
     {
-      "mmsi": 419000123,
-      "imo_number": 9272840,
-      "name": "MT DESH SHANTI",
-      "flag": "India (SCI)",
+      "mmsi": 212000001,
+      "imo_number": 9481234,
+      "name": "MEDITERRANEAN TRADER",
+      "flag": "Malta",
       "vessel_type": "Very Large Crude Carrier (VLCC)",
-      "length_meters": 333.0,
-      "draught_meters": 16.8,
-      "call_sign": "VTDS",
-      "destination": "SIKKA REFINERY TERMINAL",
+      "length_meters": 315.0,
+      "draught_meters": 15.8,
+      "call_sign": "9HA4211",
+      "destination": "CYPRUS OFFSHORE TRANSIT",
       "current_position": {
-        "latitude": 19.112,
-        "longitude": 72.1,
-        "speed_knots": 14.8,
-        "heading_degrees": 325.0,
-        "timestamp": "2026-08-31T17:59:24.743617+00:00"
+        "latitude": 33.285,
+        "longitude": 33.13,
+        "speed_knots": 13.5,
+        "heading_degrees": 95.0,
+        "timestamp": "2019-01-01T03:42:35+00:00"
       }
     },
     {
-      "mmsi": 255806000,
-      "imo_number": 9842061,
-      "name": "MSC KANOKO",
-      "flag": "Liberia",
+      "mmsi": 209123000,
+      "imo_number": 9512345,
+      "name": "LEVANT STAR",
+      "flag": "Cyprus",
       "vessel_type": "Container Ship",
-      "length_meters": 366.0,
-      "draught_meters": 14.5,
-      "call_sign": "CQES",
-      "destination": "JNPT PORT MUMBAI",
+      "length_meters": 295.0,
+      "draught_meters": 13.5,
+      "call_sign": "5BKA2",
+      "destination": "LIMASSOL COMMERCIAL PORT",
       "current_position": {
-        "latitude": 18.975,
-        "longitude": 72.896,
-        "speed_knots": 15.6,
-        "heading_degrees": 18.0,
-        "timestamp": "2026-08-31T17:59:24.743617+00:00"
+        "latitude": 33.32,
+        "longitude": 33.08,
+        "speed_knots": 14.2,
+        "heading_degrees": 35.0,
+        "timestamp": "2019-01-01T03:42:35+00:00"
       }
     },
     {
-      "mmsi": 419000789,
-      "imo_number": 9324567,
-      "name": "MT SWARNA SINDHU",
-      "flag": "India (SCI)",
+      "mmsi": 239456000,
+      "imo_number": 9623456,
+      "name": "AEGEAN VOYAGER",
+      "flag": "Greece",
+      "vessel_type": "Bulk Carrier",
+      "length_meters": 225.0,
+      "draught_meters": 11.8,
+      "call_sign": "SVXY",
+      "destination": "PORT SAID ANCHORAGE",
+      "current_position": {
+        "latitude": 33.24,
+        "longitude": 33.22,
+        "speed_knots": 12.5,
+        "heading_degrees": 110.0,
+        "timestamp": "2019-01-01T03:42:35+00:00"
+      }
+    },
+    {
+      "mmsi": 212789000,
+      "imo_number": 9734567,
+      "name": "AKROTIRI BREEZE",
+      "flag": "Cyprus",
       "vessel_type": "Product Tanker",
-      "length_meters": 228.0,
-      "draught_meters": 12.0,
-      "call_sign": "AWXZ",
-      "destination": "MUMBAI REFINERY BERTH",
+      "length_meters": 185.0,
+      "draught_meters": 9.5,
+      "call_sign": "5BAK7",
+      "destination": "VASILIKO OIL TERMINAL",
       "current_position": {
-        "latitude": 18.93,
-        "longitude": 72.871,
-        "speed_knots": 11.2,
-        "heading_degrees": 72.0,
-        "timestamp": "2026-08-31T17:59:24.743617+00:00"
+        "latitude": 33.29,
+        "longitude": 32.98,
+        "speed_knots": 11.0,
+        "heading_degrees": 285.0,
+        "timestamp": "2019-01-01T03:42:35+00:00"
       }
     },
     {
-      "mmsi": 563032000,
-      "imo_number": 9418290,
-      "name": "CHEMBULK GIBRALTAR",
-      "flag": "Singapore",
-      "vessel_type": "Chemical Tanker",
-      "length_meters": 175.0,
-      "draught_meters": 9.8,
-      "call_sign": "9V2941",
-      "destination": "MUMBAI CHEMICAL TERMINAL",
-      "current_position": {
-        "latitude": 19.17,
-        "longitude": 72.02,
-        "speed_knots": 12.8,
-        "heading_degrees": 155.0,
-        "timestamp": "2026-08-31T17:59:24.743617+00:00"
-      }
-    },
-    {
-      "mmsi": 419000456,
-      "imo_number": 9308144,
-      "name": "MT JAG LOK",
-      "flag": "India (GE Shipping)",
-      "vessel_type": "Crude Oil Tanker",
-      "length_meters": 244.0,
-      "draught_meters": 11.2,
-      "call_sign": "AVJL",
-      "destination": "SIKKA JAMNAGAR",
-      "current_position": {
-        "latitude": 19.02,
-        "longitude": 72.27,
-        "speed_knots": 12.4,
-        "heading_degrees": 245.0,
-        "timestamp": "2026-08-31T17:59:24.743617+00:00"
-      }
-    },
-    {
-      "mmsi": 419000999,
-      "imo_number": 9594004,
-      "name": "ICGS SAMUDRA PRAHARI",
-      "flag": "India (Coast Guard)",
+      "mmsi": 212999000,
+      "imo_number": 9899001,
+      "name": "CYPRUS POLICE PATROL / EMSA",
+      "flag": "Cyprus",
       "vessel_type": "Pollution Control Vessel",
-      "length_meters": 95.0,
-      "draught_meters": 4.5,
-      "call_sign": "AWAH",
-      "destination": "POLLUTION RESPONSE SECTOR",
+      "length_meters": 65.0,
+      "draught_meters": 4.2,
+      "call_sign": "5BCP1",
+      "destination": "DARTIS INCIDENT PATROL",
       "current_position": {
-        "latitude": 19.06,
-        "longitude": 72.18,
-        "speed_knots": 18.5,
-        "heading_degrees": 310.0,
-        "timestamp": "2026-08-31T17:59:24.743617+00:00"
+        "latitude": 33.27,
+        "longitude": 33.09,
+        "speed_knots": 18.0,
+        "heading_degrees": 220.0,
+        "timestamp": "2019-01-01T03:42:35+00:00"
       }
     }
   ],
   "telemetry": [
     {
-      "mmsi": 419000123,
-      "timestamp": "2026-08-31T11:59:24.743617+00:00",
-      "latitude": 18.88,
-      "longitude": 72.26,
-      "speed_knots": 14.8,
-      "heading_degrees": 325.0,
+      "mmsi": 212000001,
+      "timestamp": "2018-12-31T21:42:35+00:00",
+      "latitude": 33.24,
+      "longitude": 32.85,
+      "speed_knots": 13.8,
+      "heading_degrees": 95.0,
       "nav_status": "Under way using engine"
     },
     {
-      "mmsi": 419000123,
-      "timestamp": "2026-08-31T14:59:24.743617+00:00",
-      "latitude": 18.964,
-      "longitude": 72.202,
-      "speed_knots": 14.8,
-      "heading_degrees": 325.0,
+      "mmsi": 212000001,
+      "timestamp": "2019-01-01T00:42:35+00:00",
+      "latitude": 33.255,
+      "longitude": 32.95,
+      "speed_knots": 13.8,
+      "heading_degrees": 95.0,
       "nav_status": "Under way using engine"
     },
     {
-      "mmsi": 419000123,
-      "timestamp": "2026-08-31T17:17:24.743617+00:00",
-      "latitude": 19.048,
-      "longitude": 72.145,
-      "speed_knots": 5.2,
-      "heading_degrees": 325.0,
+      "mmsi": 212000001,
+      "timestamp": "2019-01-01T03:00:35+00:00",
+      "latitude": 33.259026,
+      "longitude": 33.057756,
+      "speed_knots": 5.4,
+      "heading_degrees": 95.0,
       "nav_status": "Under way using engine"
     },
     {
-      "mmsi": 419000123,
-      "timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "latitude": 19.112,
-      "longitude": 72.1,
-      "speed_knots": 14.8,
-      "heading_degrees": 325.0,
+      "mmsi": 212000001,
+      "timestamp": "2019-01-01T03:42:35+00:00",
+      "latitude": 33.285,
+      "longitude": 33.13,
+      "speed_knots": 13.5,
+      "heading_degrees": 95.0,
       "nav_status": "Under way using engine"
     },
     {
-      "mmsi": 255806000,
-      "timestamp": "2026-08-31T11:59:24.743617+00:00",
-      "latitude": 18.735,
-      "longitude": 72.818,
-      "speed_knots": 16.5,
-      "heading_degrees": 18.0,
+      "mmsi": 209123000,
+      "timestamp": "2018-12-31T21:42:35+00:00",
+      "latitude": 33.05,
+      "longitude": 32.92,
+      "speed_knots": 14.5,
+      "heading_degrees": 35.0,
       "nav_status": "Under way using engine"
     },
     {
-      "mmsi": 255806000,
-      "timestamp": "2026-08-31T14:59:24.743617+00:00",
-      "latitude": 18.815,
-      "longitude": 72.844,
-      "speed_knots": 16.5,
-      "heading_degrees": 18.0,
+      "mmsi": 209123000,
+      "timestamp": "2019-01-01T00:42:35+00:00",
+      "latitude": 33.18,
+      "longitude": 33.0,
+      "speed_knots": 14.5,
+      "heading_degrees": 35.0,
       "nav_status": "Under way using engine"
     },
     {
-      "mmsi": 255806000,
-      "timestamp": "2026-08-31T17:29:24.743617+00:00",
-      "latitude": 18.895,
-      "longitude": 72.87,
-      "speed_knots": 6.8,
-      "heading_degrees": 18.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 255806000,
-      "timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "latitude": 18.975,
-      "longitude": 72.896,
-      "speed_knots": 15.6,
-      "heading_degrees": 18.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000789,
-      "timestamp": "2026-08-31T11:59:24.743617+00:00",
-      "latitude": 18.855,
-      "longitude": 72.643,
-      "speed_knots": 12.0,
-      "heading_degrees": 72.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000789,
-      "timestamp": "2026-08-31T14:59:24.743617+00:00",
-      "latitude": 18.88,
-      "longitude": 72.719,
-      "speed_knots": 12.0,
-      "heading_degrees": 72.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000789,
-      "timestamp": "2026-08-31T17:34:24.743617+00:00",
-      "latitude": 18.905,
-      "longitude": 72.795,
-      "speed_knots": 4.5,
-      "heading_degrees": 72.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000789,
-      "timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "latitude": 18.93,
-      "longitude": 72.871,
-      "speed_knots": 11.2,
-      "heading_degrees": 72.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 563032000,
-      "timestamp": "2026-08-31T11:59:24.743617+00:00",
-      "latitude": 19.395,
-      "longitude": 71.915,
-      "speed_knots": 13.4,
-      "heading_degrees": 155.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 563032000,
-      "timestamp": "2026-08-31T14:59:24.743617+00:00",
-      "latitude": 19.32,
-      "longitude": 71.95,
-      "speed_knots": 13.4,
-      "heading_degrees": 155.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 563032000,
-      "timestamp": "2026-08-31T17:39:24.743617+00:00",
-      "latitude": 19.245,
-      "longitude": 71.985,
-      "speed_knots": 5.8,
-      "heading_degrees": 155.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 563032000,
-      "timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "latitude": 19.17,
-      "longitude": 72.02,
-      "speed_knots": 12.8,
-      "heading_degrees": 155.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000456,
-      "timestamp": "2026-08-31T11:59:24.743617+00:00",
-      "latitude": 19.1,
-      "longitude": 72.45,
-      "speed_knots": 12.4,
-      "heading_degrees": 245.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000456,
-      "timestamp": "2026-08-31T14:59:24.743617+00:00",
-      "latitude": 19.06,
-      "longitude": 72.36,
-      "speed_knots": 12.4,
-      "heading_degrees": 245.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000456,
-      "timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "latitude": 19.02,
-      "longitude": 72.27,
-      "speed_knots": 12.4,
-      "heading_degrees": 245.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000999,
-      "timestamp": "2026-08-31T11:59:24.743617+00:00",
-      "latitude": 18.9,
-      "longitude": 72.42,
-      "speed_knots": 18.5,
-      "heading_degrees": 310.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000999,
-      "timestamp": "2026-08-31T14:59:24.743617+00:00",
-      "latitude": 18.98,
-      "longitude": 72.3,
-      "speed_knots": 18.5,
-      "heading_degrees": 310.0,
-      "nav_status": "Under way using engine"
-    },
-    {
-      "mmsi": 419000999,
-      "timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "latitude": 19.06,
-      "longitude": 72.18,
-      "speed_knots": 18.5,
-      "heading_degrees": 310.0,
+      "mmsi": 209123000,
+      "timestamp": "2019-01-01T03:42:35+00:00",
+      "latitude": 33.32,
+      "longitude": 33.08,
+      "speed_knots": 14.2,
+      "heading_degrees": 35.0,
       "nav_status": "Under way using engine"
     }
   ],
   "spills": [
     {
-      "id": "INC-MUM-2024-01",
-      "name": "Mumbai High Sector Alpha - Heavy Crude Discharge",
-      "detection_timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "area_sq_km": 5.4,
-      "perimeter_km": 14.8,
+      "id": "DARTIS-ow-0001",
+      "name": "Cyprus Levantine Basin - DARTIS Benchmark Discharge (ow-0001.jpg)",
+      "detection_timestamp": "2019-01-01T03:42:35+00:00",
+      "area_sq_km": 8.42,
+      "perimeter_km": 18.6,
       "confidence_score": 0.988,
-      "source_scene": "S1A_IW_GRDH_1SDV_MUMBAI_HIGH_ALPHA",
+      "segmentation_dice_score": 0.985,
+      "oil_likelihood_score": 0.952,
+      "lookalike_score": 0.048,
+      "damping_ratio_db": 8.9,
+      "source_scene": "ow-0001.jpg",
       "status": "ACTIVE",
       "center": [
-        72.1674,
-        19.0562
+        33.05775642,
+        33.25902604
       ],
-      "estimated_discharge_liters": 58000,
-      "slick_type": "Heavy Crude Oil (Arabian Heavy)",
+      "centroid": [
+        33.25902604,
+        33.05775642
+      ],
+      "estimated_discharge_liters": 92000,
+      "slick_type": "Heavy Fuel Oil (DARTIS Benchmark OW-0001)",
       "polygon_coordinates": [
         [
-          72.145,
-          19.048
+          33.032,
+          33.245
         ],
         [
-          72.155,
-          19.06
+          33.048,
+          33.262
         ],
         [
-          72.172,
-          19.066
+          33.068,
+          33.272
         ],
         [
-          72.188,
-          19.062
+          33.085,
+          33.268
         ],
         [
-          72.19,
-          19.052
+          33.082,
+          33.252
         ],
         [
-          72.178,
-          19.044
+          33.062,
+          33.248
         ],
         [
-          72.158,
-          19.042
+          33.042,
+          33.242
         ],
         [
-          72.145,
-          19.048
-        ]
-      ]
-    },
-    {
-      "id": "INC-MUM-2024-02",
-      "name": "JNPT Channel Approach - Bilge Sludge Flush",
-      "detection_timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "area_sq_km": 2.85,
-      "perimeter_km": 8.6,
-      "confidence_score": 0.965,
-      "source_scene": "S1A_IW_GRDH_1SDV_JNPT_CHANNEL",
-      "status": "ACTIVE",
-      "center": [
-        72.87,
-        18.895
-      ],
-      "estimated_discharge_liters": 31000,
-      "slick_type": "Heavy Fuel Oil (HFO-380 Bilge Sludge)",
-      "polygon_coordinates": [
-        [
-          72.855,
-          18.888
-        ],
-        [
-          72.865,
-          18.898
-        ],
-        [
-          72.876,
-          18.902
-        ],
-        [
-          72.886,
-          18.899
-        ],
-        [
-          72.888,
-          18.892
-        ],
-        [
-          72.878,
-          18.886
-        ],
-        [
-          72.864,
-          18.884
-        ],
-        [
-          72.855,
-          18.888
-        ]
-      ]
-    },
-    {
-      "id": "INC-MUM-2024-03",
-      "name": "Prongs Reef Anchorage - Bunker Fuel Leak",
-      "detection_timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "area_sq_km": 1.95,
-      "perimeter_km": 6.2,
-      "confidence_score": 0.942,
-      "source_scene": "S1A_IW_GRDH_1SDV_PRONGS_REEF",
-      "status": "ACTIVE",
-      "center": [
-        72.795,
-        18.905
-      ],
-      "estimated_discharge_liters": 18500,
-      "slick_type": "Intermediate Fuel Oil (IFO-180)",
-      "polygon_coordinates": [
-        [
-          72.782,
-          18.898
-        ],
-        [
-          72.79,
-          18.908
-        ],
-        [
-          72.8,
-          18.911
-        ],
-        [
-          72.808,
-          18.907
-        ],
-        [
-          72.806,
-          18.901
-        ],
-        [
-          72.798,
-          18.897
-        ],
-        [
-          72.788,
-          18.895
-        ],
-        [
-          72.782,
-          18.898
-        ]
-      ]
-    },
-    {
-      "id": "INC-MUM-2024-04",
-      "name": "Neelam South Offshore - Condensate Sheen",
-      "detection_timestamp": "2026-08-31T17:59:24.743617+00:00",
-      "area_sq_km": 3.6,
-      "perimeter_km": 10.4,
-      "confidence_score": 0.958,
-      "source_scene": "S1A_IW_GRDH_1SDV_NEELAM_SOUTH",
-      "status": "ACTIVE",
-      "center": [
-        71.985,
-        19.245
-      ],
-      "estimated_discharge_liters": 42000,
-      "slick_type": "Condensate & Light Crude Sheen",
-      "polygon_coordinates": [
-        [
-          71.968,
-          19.236
-        ],
-        [
-          71.978,
-          19.249
-        ],
-        [
-          71.992,
-          19.254
-        ],
-        [
-          72.002,
-          19.25
-        ],
-        [
-          72.004,
-          19.241
-        ],
-        [
-          71.994,
-          19.236
-        ],
-        [
-          71.978,
-          19.233
-        ],
-        [
-          71.968,
-          19.236
+          33.032,
+          33.245
         ]
       ]
     }
   ],
   "correlations": [
     {
-      "spill_id": "INC-MUM-2024-01",
-      "mmsi": 419000123,
-      "vessel_name": "MT DESH SHANTI",
-      "probability_score": 98.4,
-      "distance_meters": 0.0,
-      "trajectory_delta_time_min": -42.3,
-      "drift_alignment_pct": 97.5
-    },
-    {
-      "spill_id": "INC-MUM-2024-02",
-      "mmsi": 255806000,
-      "vessel_name": "MSC KANOKO",
-      "probability_score": 94.8,
-      "distance_meters": 0.0,
-      "trajectory_delta_time_min": -30.0,
-      "drift_alignment_pct": 94.2
-    },
-    {
-      "spill_id": "INC-MUM-2024-03",
-      "mmsi": 419000789,
-      "vessel_name": "MT SWARNA SINDHU",
-      "probability_score": 91.2,
-      "distance_meters": 0.0,
-      "trajectory_delta_time_min": -25.0,
-      "drift_alignment_pct": 91.8
-    },
-    {
-      "spill_id": "INC-MUM-2024-04",
-      "mmsi": 563032000,
-      "vessel_name": "CHEMBULK GIBRALTAR",
-      "probability_score": 89.6,
-      "distance_meters": 0.0,
-      "trajectory_delta_time_min": -20.0,
-      "drift_alignment_pct": 89.5
+      "spill_id": "DARTIS-ow-0001",
+      "vessel_mmsi": 212000001,
+      "vessel_name": "MEDITERRANEAN TRADER",
+      "correlation_score": 0.984,
+      "cpa_distance_nm": 0.12,
+      "time_discrepancy_minutes": 8.0,
+      "speed_profile_drop_detected": true,
+      "ais_gap_detected": true,
+      "anomaly_reasons": [
+        "Kinematic back-projection intercept at discharge origin (CPA 0.12 NM)",
+        "Transit speed anomaly: dropped from 13.8 kts to 5.4 kts inside benchmark polygon",
+        "AIS gap detected during passage through radar dark-spot origin"
+      ],
+      "risk_level": "CRITICAL"
     }
   ]
 }

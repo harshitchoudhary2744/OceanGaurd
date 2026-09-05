@@ -36,10 +36,10 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
   const [isDragging, setIsDragging] = useState(false);
 
   // Custom coordinate and scene state
-  const [centerLon, setCenterLon] = useState<string>('72.1450');
-  const [centerLat, setCenterLat] = useState<string>('19.0480');
-  const [sceneId, setSceneId] = useState<string>('S1A_IW_GRDH_1SDV_USER_ACQUISITION');
-  const [selectedPreset, setSelectedPreset] = useState('scene-mumbai-alpha');
+  const [centerLon, setCenterLon] = useState<string>('33.05775642');
+  const [centerLat, setCenterLat] = useState<string>('33.25902604');
+  const [sceneId, setSceneId] = useState<string>('DARTIS_ow-0001');
+  const [selectedPreset, setSelectedPreset] = useState('scene-dartis-ow-0001');
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<SARInferenceResponse | null>(null);
@@ -49,41 +49,32 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
 
   const presets = [
     {
-      id: 'scene-mumbai-alpha',
-      title: 'Sentinel-1A Mumbai High Sector Alpha',
-      sceneId: 'S1A_IW_GRDH_1SDV_MUMBAI_HIGH_ALPHA',
-      coords: [72.150, 19.050] as [number, number],
-      timestampIst: '2024-10-18 16:14:00 IST',
-      timestampUtc: '2024-10-18 10:44:00 UTC',
-      desc: 'Offshore Tanker Fairway - Heavy Crude discharge detection'
+      id: 'scene-dartis-ow-0001',
+      title: 'Copernicus Sentinel-1 SAR ow-0001.jpg (Benchmark)',
+      sceneId: 'DARTIS_ow-0001',
+      coords: [33.05775642, 33.25902604] as [number, number],
+      timestampIst: '2024-09-01 16:14:00 IST',
+      timestampUtc: '2024-09-01 10:44:00 UTC',
+      desc: 'Eastern Mediterranean Basin • Cyprus Offshore (33.25902604° N, 33.05775642° E)'
     },
     {
-      id: 'scene-jnpt-channel',
-      title: 'Sentinel-1A JNPT Access Channel Approach',
-      sceneId: 'S1A_IW_GRDH_1SDV_JNPT_CHANNEL',
-      coords: [72.870, 18.895] as [number, number],
-      timestampIst: '2024-10-18 16:18:00 IST',
-      timestampUtc: '2024-10-18 10:48:00 UTC',
-      desc: 'Deep Water Approach - Bilge sludge flush'
+      id: 'scene-cyprus-limassol',
+      title: 'Copernicus Sentinel-1 Limassol Approach (ow-0002.jpg)',
+      sceneId: 'ow-0002.jpg',
+      coords: [33.0417, 34.5000] as [number, number],
+      timestampIst: '2024-09-02 18:20:00 IST',
+      timestampUtc: '2024-09-02 12:50:00 UTC',
+      desc: 'Limassol Fairway Transit Corridor'
     },
     {
-      id: 'scene-prongs-reef',
-      title: 'Sentinel-1A Mumbai Outer Anchorage / Prongs Reef',
-      sceneId: 'S1A_IW_GRDH_1SDV_PRONGS_REEF',
-      coords: [72.795, 18.905] as [number, number],
-      timestampIst: '2024-10-18 16:20:00 IST',
-      timestampUtc: '2024-10-18 10:50:00 UTC',
-      desc: 'Anchorage Bunkering Zone - Intermediate Fuel Oil breach'
-    },
-    {
-      id: 'scene-dartis-med',
-      title: 'Copernicus S1B DARTIS Mediterranean (ow-0001)',
-      sceneId: 'DARTIS_OW_0001_CYPRUS_LEVANTINE',
-      coords: [33.0417, 33.2708] as [number, number],
-      timestampIst: '2019-01-01 09:12:35 IST',
-      timestampUtc: '2019-01-01 03:42:35 UTC',
-      desc: 'Eastern Mediterranean Basin - Benchmark SAR oil spill with Copernicus ocean reanalysis currents'
-    },
+      id: 'scene-cyprus-larnaca',
+      title: 'Copernicus Sentinel-1 Larnaca Bay (ow-0003.jpg)',
+      sceneId: 'ow-0003.jpg',
+      coords: [33.6850, 34.8500] as [number, number],
+      timestampIst: '2024-09-03 14:15:00 IST',
+      timestampUtc: '2024-09-03 08:45:00 UTC',
+      desc: 'Larnaca Offshore Anchorage Zone'
+    }
   ];
 
   const handleFileChange = (file: File) => {
@@ -133,7 +124,7 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
       }
       formData.append('center_lon', centerLon);
       formData.append('center_lat', centerLat);
-      formData.append('scene_id', sceneId || 'S1A_IW_GRDH_CUSTOM_ACQUISITION');
+      formData.append('scene_id', sceneId || 'DARTIS_ow-0001');
     } else {
       const preset = presets.find((p) => p.id === selectedPreset) || presets[0];
       formData.append('center_lon', preset.coords[0].toString());
@@ -276,25 +267,25 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-[10px]">
                   <button
-                    onClick={() => handleLoadSample('Mumbai High Oil Slick', '19.0480', '72.1450')}
+                    onClick={() => handleLoadSample('ow-0001.jpg Benchmark', '33.25902604', '33.05775642')}
                     className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left hover:border-cyan-500/50 text-slate-300 transition-all"
                   >
-                    <span className="text-white font-bold block">⚡ Mumbai High SAR</span>
-                    <span className="text-[9px] text-slate-400">19.048°N, 72.145°E</span>
+                    <span className="text-white font-bold block">⚡ ow-0001.jpg</span>
+                    <span className="text-[9px] text-slate-400">33.259°N, 33.058°E</span>
                   </button>
                   <button
-                    onClick={() => handleLoadSample('JNPT Bilge Discharge', '18.8950', '72.8700')}
+                    onClick={() => handleLoadSample('Limassol Offshore', '34.5000', '33.0417')}
                     className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left hover:border-cyan-500/50 text-slate-300 transition-all"
                   >
-                    <span className="text-white font-bold block">⚡ JNPT Channel</span>
-                    <span className="text-[9px] text-slate-400">18.895°N, 72.870°E</span>
+                    <span className="text-white font-bold block">⚡ Limassol Fairway</span>
+                    <span className="text-[9px] text-slate-400">34.500°N, 33.042°E</span>
                   </button>
                   <button
-                    onClick={() => handleLoadSample('Prongs Reef Anchorage Dump', '18.9050', '72.7950')}
+                    onClick={() => handleLoadSample('Larnaca Bay', '34.8500', '33.6850')}
                     className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-left hover:border-cyan-500/50 text-slate-300 transition-all"
                   >
-                    <span className="text-white font-bold block">⚡ Prongs Reef</span>
-                    <span className="text-[9px] text-slate-400">18.905°N, 72.795°E</span>
+                    <span className="text-white font-bold block">⚡ Larnaca Bay</span>
+                    <span className="text-[9px] text-slate-400">34.850°N, 33.685°E</span>
                   </button>
                 </div>
               </div>
@@ -313,7 +304,7 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
                       value={centerLat}
                       onChange={(e) => setCenterLat(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-cyan-400"
-                      placeholder="e.g. 19.0480"
+                      placeholder="e.g. 33.2590"
                     />
                   </div>
                   <div>
@@ -323,7 +314,7 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
                       value={centerLon}
                       onChange={(e) => setCenterLon(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-cyan-400"
-                      placeholder="e.g. 72.1450"
+                      placeholder="e.g. 33.0578"
                     />
                   </div>
                   <div>
@@ -333,7 +324,7 @@ export const UploadSarModal: React.FC<UploadSarModalProps> = ({
                       value={sceneId}
                       onChange={(e) => setSceneId(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-white font-mono text-xs focus:outline-none focus:border-cyan-400"
-                      placeholder="Scene ID"
+                      placeholder="e.g. ow-0001.jpg"
                     />
                   </div>
                 </div>
