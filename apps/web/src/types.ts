@@ -142,6 +142,15 @@ export interface EnvironmentalThreat {
   coastal_threat_risk: 'HIGH' | 'MEDIUM' | 'LOW';
   projected_impact_zone: string;
   active_advisories?: string[];
+  // Dynamic geospatial calculation metrics
+  fishing_fleet_count?: number;
+  harbour_vessel_count?: number;
+  aquaculture_economic_cr?: number;
+  community_population?: number;
+  fishing_zone_distance_km?: number;
+  fishing_harbour_distance_km?: number;
+  aquaculture_distance_km?: number;
+  community_distance_km?: number;
 }
 
 export interface HindcastPoint {

@@ -31,6 +31,12 @@ from geoalchemy2.shape import to_shape
 
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+try:
+    from apps.api.services.synthetic_ais import generate_synthetic_ais
+except ImportError:
+    from services.synthetic_ais import generate_synthetic_ais
 
 from apps.api.db.session import get_db, is_db_available, get_db_info
 from apps.api.db.models import Vessel, AISTelemetry, OilSpill, Correlation
@@ -397,11 +403,24 @@ async def detect_spill_from_sar_image(
     feature = pipeline_result["feature"]
     metrics = pipeline_result["metrics"]
     new_spill_id = feature["properties"]["id"]
+    
+    is_dartis = scene_id and scene_id.startswith("DARTIS")
+
+    detection_time = (
+    "2019-01-01T03:42:35+00:00"
+    if is_dartis
+    else datetime.utcnow().isoformat() + "Z"
+    )
 
     new_spill_obj = {
     "id": new_spill_id,
     "detection_timestamp": detection_time,
     "acquisition_timestamp_utc": acquisition_time,
+    "acquisition_timestamp_utc": (
+        "2019-01-01 03:42:35 UTC"
+        if is_dartis
+        else datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    ),
     "area_sq_km": metrics["area_sq_km"],
     "perimeter_km": metrics["perimeter_km"],
     "confidence_score": metrics["confidence"],
@@ -493,21 +512,26 @@ def download_forensic_audit_pdf(spill_id: str):
 @app.get("/api/v1/vessels")
 def get_vessels_fleet():
     """Returns list of monitored vessels with latest telemetry state"""
-    vessels = _FIXTURE_DATA.get("vessels", [])
-    telemetry = _FIXTURE_DATA.get("telemetry", [])
+    merged_vessels = {}
+    for v in SYNTHETIC_AIS.get("vessels", []):
+        merged_vessels[v["mmsi"]] = dict(v)
+    for v in _FIXTURE_DATA.get("vessels", []):
+        merged_vessels[v["mmsi"]] = {**merged_vessels.get(v["mmsi"], {}), **v}
+
+    telemetry = SYNTHETIC_AIS.get("telemetry", []) + _FIXTURE_DATA.get("telemetry", [])
 
     results = []
-    for v in vessels:
-        v_points = [t for t in telemetry if t["mmsi"] == v["mmsi"]]
+    for mmsi, v in merged_vessels.items():
+        v_points = [t for t in telemetry if t["mmsi"] == mmsi]
         latest_point = v_points[-1] if v_points else None
         results.append({
             **v,
             "current_position": {
-                "latitude": latest_point["latitude"] if latest_point else 2.75,
-                "longitude": latest_point["longitude"] if latest_point else 101.35,
-                "speed_knots": latest_point["speed_knots"] if latest_point else 14.0,
-                "heading_degrees": latest_point["heading_degrees"] if latest_point else 128.0,
-                "timestamp": latest_point["timestamp"] if latest_point else None,
+                "latitude": latest_point.get("latitude", 19.05) if latest_point else 19.05,
+                "longitude": latest_point.get("longitude", 72.15) if latest_point else 72.15,
+                "speed_knots": latest_point.get("speed", latest_point.get("speed_knots", 14.0)) if latest_point else 14.0,
+                "heading_degrees": latest_point.get("heading", latest_point.get("heading_degrees", 128.0)) if latest_point else 128.0,
+                "timestamp": latest_point.get("timestamp") if latest_point else None,
             }
         })
     return {"vessels": results}
@@ -614,19 +638,28 @@ def get_spill_hindcast_backtrace(
 
 
 @app.get("/api/v1/vessels/{mmsi}/anomalies")
-def get_vessel_anomaly_profile(mmsi: int, spill_id: Optional[str] = "INC-IND-2024-01"):
+def get_vessel_anomaly_profile(mmsi: int, spill_id: Optional[str] = "INC-MUM-2024-01"):
     """
     Returns granular anomaly profile (speed drops, AIS gaps, loitering, hindcast CPA) for a target vessel.
     """
-    vessels = _FIXTURE_DATA.get("vessels", [])
-    telemetry = _FIXTURE_DATA.get("telemetry", [])
+    merged_vessels = {}
+    for v in SYNTHETIC_AIS.get("vessels", []):
+        merged_vessels[v["mmsi"]] = dict(v)
+    for v in _FIXTURE_DATA.get("vessels", []):
+        merged_vessels[v["mmsi"]] = {**merged_vessels.get(v["mmsi"], {}), **v}
 
-    target_vessel = next((v for v in vessels if v["mmsi"] == mmsi), None)
+    target_vessel = merged_vessels.get(mmsi)
     if not target_vessel:
         raise HTTPException(status_code=404, detail="Vessel not found")
 
-    points = [t for t in telemetry if t["mmsi"] == mmsi]
-    points = sorted(points, key=lambda x: x.get("timestamp", ""))
+    telemetry = SYNTHETIC_AIS.get("telemetry", []) + _FIXTURE_DATA.get("telemetry", [])
+    raw_points = [dict(t) for t in telemetry if t["mmsi"] == mmsi]
+    for pt in raw_points:
+        if "speed" in pt and "speed_knots" not in pt:
+            pt["speed_knots"] = pt["speed"]
+        if "heading" in pt and "heading_degrees" not in pt:
+            pt["heading_degrees"] = pt["heading"]
+    points = sorted(raw_points, key=lambda x: x.get("timestamp", ""))
 
     target_spill = next((s for s in _FIXTURE_DATA.get("spills", []) if s["id"].lower() == (spill_id or "").lower()), None)
     if not target_spill and _FIXTURE_DATA.get("spills"):
