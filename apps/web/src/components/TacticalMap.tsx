@@ -172,7 +172,7 @@ interface TacticalMapProps {
   selectedVesselMmsi?: number | null;
   onSelectSpill: (id: string) => void;
   onSelectVessel: (mmsi: number) => void;
-  scrubbedVessels?: { mmsi: number; lon: number; lat: number; heading: number; speed?: number }[];
+  scrubbedVessels?: { mmsi: number; lon: number; lat: number; heading: number; speed?: number; isAisDark?: boolean }[];
   centerCoordinates?: [number, number];
   timeOffsetMinutes?: number;
   metocean?: MetoceanData;
@@ -1355,27 +1355,45 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       if (ring && path && label) {
         const displayShortName = name.length > 15 ? name.split(' ').slice(0, 2).join(' ') : name;
+        const isAisDark = !!(v as any).isAisDark;
+
         if (isSelected) {
-          ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-rose-500 bg-rose-500/20 animate-ping pointer-events-none';
-          path.setAttribute('fill', '#f43f5e');
-          path.setAttribute('stroke', '#ffffff');
-          path.setAttribute('stroke-width', '2');
-          label.className = 'marker-label absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-md bg-slate-950/95 border-2 border-rose-500 text-[10px] font-mono font-bold text-rose-300 whitespace-nowrap shadow-2xl z-30 flex items-center gap-1.5 backdrop-blur-sm';
-          label.innerText = `🎯 ${name} (${v.speed ? v.speed.toFixed(1) : '14.8'} kts)`;
+          if (isAisDark) {
+            ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-amber-500 bg-amber-500/30 animate-ping pointer-events-none';
+            path.setAttribute('fill', '#f59e0b');
+            path.setAttribute('stroke', '#ffffff');
+            path.setAttribute('stroke-width', '2');
+            label.className = 'marker-label absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-md bg-amber-950/95 border-2 border-amber-500 text-[10px] font-mono font-bold text-amber-300 whitespace-nowrap shadow-2xl z-30 flex items-center gap-1.5 backdrop-blur-sm animate-pulse';
+            label.innerText = `📡 AIS DARK: ${name} (${v.speed ? v.speed.toFixed(1) : '5.4'} kts)`;
+          } else {
+            ring.className = 'marker-ring absolute inset-0 rounded-full border-2 border-rose-500 bg-rose-500/20 animate-ping pointer-events-none';
+            path.setAttribute('fill', '#f43f5e');
+            path.setAttribute('stroke', '#ffffff');
+            path.setAttribute('stroke-width', '2');
+            label.className = 'marker-label absolute -top-8 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-md bg-slate-950/95 border-2 border-rose-500 text-[10px] font-mono font-bold text-rose-300 whitespace-nowrap shadow-2xl z-30 flex items-center gap-1.5 backdrop-blur-sm';
+            label.innerText = `🎯 ${name} (${v.speed ? v.speed.toFixed(1) : '14.8'} kts)`;
+          }
+        } else if (isAisDark) {
+          ring.className = 'marker-ring absolute inset-0 rounded-full border border-amber-500/60 bg-amber-500/20 animate-pulse pointer-events-none';
+          path.setAttribute('fill', '#d97706');
+          path.setAttribute('stroke', '#0f172a');
+          path.setAttribute('stroke-width', '1.5');
+          label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/70 text-[9px] font-mono text-amber-300 whitespace-nowrap pointer-events-none z-30 animate-pulse';
+          label.innerText = `⚠️ AIS DARK (${v.speed ? v.speed.toFixed(1) : '5.4'} kts)`;
         } else if (isCoastGuard || v.mmsi === 212000005) {
           ring.className = 'marker-ring absolute inset-1 rounded-full border border-cyan-500/40 pointer-events-none';
           path.setAttribute('fill', '#06b6d4');
           path.setAttribute('stroke', '#020617');
           path.setAttribute('stroke-width', '1.5');
           label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-cyan-700/70 text-[9px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-1';
-          label.innerText = '🛡️ CYPRUS CG PATROL';
+          label.innerText = `🛡️ CYPRUS CG PATROL (${v.speed ? v.speed.toFixed(1) : '22.0'} kts)`;
         } else {
           ring.className = 'marker-ring hidden';
           path.setAttribute('fill', '#64748b');
           path.setAttribute('stroke', '#0f172a');
           path.setAttribute('stroke-width', '1.5');
           label.className = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-400 whitespace-nowrap pointer-events-none z-30';
-          label.innerText = displayShortName;
+          label.innerText = `${displayShortName} (${v.speed ? v.speed.toFixed(1) : '14.0'} kts)`;
         }
       }
     });

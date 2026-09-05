@@ -43,6 +43,7 @@ interface InspectorPanelProps {
   isMobileModal?: boolean;
   metocean?: MetoceanData;
   timeOffsetMinutes?: number;
+  scrubbedVessels?: { mmsi: number; lon: number; lat: number; heading: number; speed?: number; isAisDark?: boolean }[];
   scenario?: string;
   initialTab?: InspectorTabType;
   onFocusLocation?: (coords: [number, number], title: string, category?: string) => void;
@@ -59,6 +60,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   isMobileModal,
   metocean,
   timeOffsetMinutes = 0,
+  scrubbedVessels,
   initialTab = 'overview',
   onFocusLocation,
 }) => {
@@ -206,6 +208,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             suspects={suspects}
             onSelectVessel={onSelectVessel}
             currentIncident={currentIncident}
+            timeOffsetMinutes={timeOffsetMinutes}
+            scrubbedVessels={scrubbedVessels}
           />
         )}
 
@@ -560,15 +564,35 @@ interface CulpritTabProps {
   suspects: SuspectVessel[];
   onSelectVessel: (mmsi: number) => void;
   currentIncident: any;
+  timeOffsetMinutes?: number;
+  scrubbedVessels?: { mmsi: number; lon: number; lat: number; heading: number; speed?: number; isAisDark?: boolean }[];
 }
 
-const CulpritTab: React.FC<CulpritTabProps> = ({ activeVessel, suspects, onSelectVessel, currentIncident }) => {
+const CulpritTab: React.FC<CulpritTabProps> = ({
+  activeVessel,
+  suspects,
+  onSelectVessel,
+  currentIncident,
+  timeOffsetMinutes = 0,
+  scrubbedVessels,
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [riskFilter, setRiskFilter] = useState<'all' | 'critical' | 'moderate' | 'low'>('all');
 
   if (!activeVessel) {
     return <div className="text-slate-400 text-center py-6 font-mono text-xs">No suspect vessels detected in EEZ corridor.</div>;
   }
+
+  const scrubbedActive = scrubbedVessels?.find((s) => s.mmsi === activeVessel.mmsi);
+  const currentSpeed = scrubbedActive?.speed ?? activeVessel.speed_knots ?? 14.8;
+  const currentLon = scrubbedActive?.lon ?? activeVessel.last_lon ?? 33.0578;
+  const currentLat = scrubbedActive?.lat ?? activeVessel.last_lat ?? 33.2590;
+
+  const dLon = (currentLon - currentIncident.originCoords[0]) * 111.139 * Math.cos((currentIncident.originCoords[1] * Math.PI) / 180);
+  const dLat = (currentLat - currentIncident.originCoords[1]) * 111.139;
+  const currentDistKm = Math.sqrt(dLon * dLon + dLat * dLat);
+  const isOverpassLocus = currentDistKm < 0.25;
+  const isAisDarkWindow = !!(scrubbedActive?.isAisDark || (activeVessel.mmsi === 212000001 && timeOffsetMinutes >= -42 && timeOffsetMinutes <= -12));
 
   const anomalyBreakdown = activeVessel.anomaly_breakdown ||
     calculateVesselKinematicAnomaly(activeVessel, currentIncident.originCoords, currentIncident.dischargeOffsetMinutes);
@@ -667,23 +691,36 @@ const CulpritTab: React.FC<CulpritTabProps> = ({ activeVessel, suspects, onSelec
           </div>
         </div>
 
+        {/* Replay Synchronized Telemetry Clock Bar */}
+        <div className="flex items-center justify-between px-2 py-1 rounded-md bg-slate-950/80 border border-slate-800 text-[9.5px]">
+          <span className="text-slate-400 font-mono flex items-center gap-1.5">
+            <Clock className="w-3 h-3 text-cyan-400" />
+            <span>Replay Clock: <b className="text-cyan-300">{timeOffsetMinutes === 0 ? 'LIVE (T-0)' : `T${timeOffsetMinutes}m`}</b></span>
+          </span>
+          <span className={`font-mono font-bold ${isAisDarkWindow ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`}>
+            {isAisDarkWindow ? '📡 AIS DARK WINDOW ACTIVE' : '📶 AIS BROADCASTING'}
+          </span>
+        </div>
+
         {/* Breakdown of Anomaly Factors */}
         <div className="flex flex-col gap-1.5 pt-0.5 text-[10.5px]">
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Kinematic Speed Delta:</span>
-            <strong className={speedDropDelta > 3.0 ? "text-amber-300" : "text-slate-300"}>
-              {activeVessel.speed_knots || 14.8} kts (Δ {speedDropDelta.toFixed(1)} kts drop)
+            <span className="text-slate-400">Replay Speed (Instant):</span>
+            <strong className={currentSpeed <= 6.0 && speedDropDelta > 3.0 ? "text-rose-400 animate-pulse" : speedDropDelta > 3.0 ? "text-amber-300" : "text-slate-300"}>
+              {currentSpeed.toFixed(1)} kts {currentSpeed <= 6.0 && speedDropDelta > 3.0 ? '(🚨 Discharging at Slow Ahead)' : `(Voyage cruise: ${activeVessel.speed_knots || 14.8} kts)`}
             </strong>
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">AIS Blackout Gap:</span>
-            <strong className={maxAisGap > 15 ? "text-rose-400" : "text-emerald-400"}>
-              {maxAisGap.toFixed(0)} Minutes {maxAisGap > 15 ? '(Dark Window)' : '(Nominal Transmission)'}
+            <span className="text-slate-400">Current Distance to Origin:</span>
+            <strong className={isOverpassLocus ? "text-rose-400 animate-pulse font-bold" : "text-cyan-300"}>
+              {currentDistKm < 1.0 ? `${(currentDistKm * 1000).toFixed(0)} meters` : `${currentDistKm.toFixed(2)} km`} {isOverpassLocus ? '(🚨 OVERPASS LOCUS)' : `(Hindcast CPA: ${hindcastCpa})`}
             </strong>
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Hindcast CPA to Origin:</span>
-            <strong className="text-cyan-300">{hindcastCpa}</strong>
+            <span className="text-slate-400">AIS Status at T{timeOffsetMinutes}m:</span>
+            <strong className={isAisDarkWindow ? "text-amber-400 font-bold animate-pulse" : maxAisGap > 15 ? "text-amber-300" : "text-emerald-400"}>
+              {isAisDarkWindow ? '🚨 DARK WINDOW ACTIVE (Silent)' : maxAisGap > 15 ? `Nominal (${maxAisGap.toFixed(0)}m dark gap recorded)` : 'Nominal Transmission (0m gap)'}
+            </strong>
           </div>
           <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
             <span className="text-slate-400">Vessel Class & Hazard:</span>
@@ -960,12 +997,26 @@ const CulpritTab: React.FC<CulpritTabProps> = ({ activeVessel, suspects, onSelec
                     isCrit ? 'text-rose-400' : isMod ? 'text-amber-400' : 'text-slate-500'
                   }`} />
 
-                  <div className="min-w-0">
-                    <span className="text-white font-bold text-[11px] block truncate">{vessel.name}</span>
-                    <span className="text-[9px] text-slate-400 block truncate">
-                      {vessel.vessel_type || 'Cargo'} • {vessel.speed_knots || 14.5} kts • MMSI: {vessel.mmsi}
-                    </span>
-                  </div>
+                  {(() => {
+                    const sv = scrubbedVessels?.find((s) => s.mmsi === vessel.mmsi);
+                    const liveSpd = sv?.speed ?? vessel.speed_knots ?? 14.0;
+                    const curShipLon = sv?.lon ?? vessel.last_lon ?? 33.0;
+                    const curShipLat = sv?.lat ?? vessel.last_lat ?? 33.0;
+                    const curDistKm = Math.sqrt(
+                      Math.pow((curShipLon - currentIncident.originCoords[0]) * 111.139 * Math.cos((currentIncident.originCoords[1] * Math.PI) / 180), 2) +
+                      Math.pow((curShipLat - currentIncident.originCoords[1]) * 111.139, 2)
+                    );
+                    const isDark = sv?.isAisDark || (vessel.mmsi === 212000001 && timeOffsetMinutes >= -42 && timeOffsetMinutes <= -12);
+
+                    return (
+                      <div className="min-w-0">
+                        <span className="text-white font-bold text-[11px] block truncate">{vessel.name}</span>
+                        <span className="text-[9px] text-slate-400 block truncate">
+                          {vessel.vessel_type || 'Cargo'} • {liveSpd.toFixed(1)} kts • {curDistKm < 1.0 ? `${(curDistKm * 1000).toFixed(0)}m` : `${curDistKm.toFixed(1)}km`} to origin {isDark ? '• ⚠️ AIS DARK' : ''}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="text-right shrink-0 ml-2">

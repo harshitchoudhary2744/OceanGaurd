@@ -1528,17 +1528,19 @@ function generateShipWaypoints(ship: {
 
 // Deterministic Timed Waypoint Tracks for Eastern Mediterranean Fleet
 export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: boolean; linkedSpillId?: string; waypoints: TimedWaypoint[] }[] = [
-  // 1. MEDITERRANEAN TRADER (VLCC Crude Tanker - Transits ESE 095° off Southern Cyprus across ow-0001.jpg locus)
+  // 1. MEDITERRANEAN TRADER (VLCC Crude Tanker - Transits ESE 095° off Southern Cyprus across breach origin [33.0421, 33.2684])
   {
     mmsi: 212000001,
     name: "MEDITERRANEAN TRADER",
     isCulprit: true,
     linkedSpillId: "DARTIS-ow-0001",
     waypoints: [
-      { tMinutes: -360, lon: 32.850, lat: 33.230, heading: 95, speed: 13.8 },
-      { tMinutes: -180, lon: 32.950, lat: 33.245, heading: 95, speed: 13.8 },
-      { tMinutes: -42,  lon: 33.05775642, lat: 33.25902604, heading: 95, speed: 5.4 }, // DARTIS ow-0001 Discharge Point
-      { tMinutes: 0,    lon: 33.150, lat: 33.275, heading: 95, speed: 13.5 },
+      { tMinutes: -360, lon: 32.820, lat: 33.248, heading: 95, speed: 13.8 },
+      { tMinutes: -180, lon: 32.930, lat: 33.258, heading: 95, speed: 13.8 },
+      { tMinutes: -65,  lon: 33.010, lat: 33.265, heading: 95, speed: 12.0 },
+      { tMinutes: -42,  lon: 33.0421, lat: 33.2684, heading: 95, speed: 5.4 }, // DARTIS ow-0001 Discharge Point (CPA 0.00 km, Speed drop -8.4 kts)
+      { tMinutes: -15,  lon: 33.085, lat: 33.270, heading: 98, speed: 6.2 }, // Loitering / slow ahead during illicit ballast wash
+      { tMinutes: 0,    lon: 33.150, lat: 33.275, heading: 95, speed: 13.5 }, // Accelerates back up to cruising transit
       { tMinutes: 180,  lon: 33.240, lat: 33.290, heading: 95, speed: 13.5 },
     ],
   },
@@ -1549,41 +1551,45 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
     waypoints: [
       { tMinutes: -360, lon: 33.300, lat: 33.180, heading: 35, speed: 14.2 },
       { tMinutes: -180, lon: 33.220, lat: 33.230, heading: 35, speed: 14.2 },
+      { tMinutes: -42,  lon: 33.160, lat: 33.268, heading: 35, speed: 14.2 },
       { tMinutes: 0,    lon: 33.140, lat: 33.280, heading: 35, speed: 14.2 },
       { tMinutes: 180,  lon: 33.060, lat: 33.330, heading: 35, speed: 14.2 },
     ],
   },
-  // 3. AEGEAN VOYAGER (Bulk Carrier - Transits ESE 110° towards Port Said)
+  // 3. AEGEAN VOYAGER (Bulk Carrier - Transits ESE 110° towards Port Said, Rank #2 suspect with minor deceleration)
   {
     mmsi: 212000003,
     name: "AEGEAN VOYAGER",
     waypoints: [
       { tMinutes: -360, lon: 32.980, lat: 33.350, heading: 110, speed: 12.5 },
       { tMinutes: -180, lon: 33.100, lat: 33.300, heading: 110, speed: 12.5 },
+      { tMinutes: -42,  lon: 33.185, lat: 33.270, heading: 110, speed: 7.1 }, // 16.6 km CPA distance, speed drop to 7.1 kts
       { tMinutes: 0,    lon: 33.220, lat: 33.250, heading: 110, speed: 12.5 },
       { tMinutes: 180,  lon: 33.340, lat: 33.200, heading: 110, speed: 12.5 },
     ],
   },
-  // 4. AKROTIRI BREEZE (LPG Tanker - Transits SW 220° towards Alexandria)
+  // 4. AKROTIRI BREEZE (LPG Tanker - Transits SW 220° towards Alexandria, Rank #3 suspect)
   {
     mmsi: 212000004,
     name: "AKROTIRI BREEZE",
     waypoints: [
       { tMinutes: -360, lon: 33.200, lat: 33.380, heading: 220, speed: 11.8 },
       { tMinutes: -180, lon: 33.120, lat: 33.320, heading: 220, speed: 11.8 },
+      { tMinutes: -42,  lon: 33.060, lat: 33.275, heading: 220, speed: 11.8 }, // 55.0 km CPA
       { tMinutes: 0,    lon: 33.040, lat: 33.260, heading: 220, speed: 11.8 },
       { tMinutes: 180,  lon: 32.960, lat: 33.200, heading: 220, speed: 11.8 },
     ],
   },
-  // 5. CYPRUS POLICE PATROL / EMSA (Coast Guard Fast Intercept Patrol WSW 245°)
+  // 5. CYPRUS POLICE PATROL / EMSA (Coast Guard Fast Intercept Patrol WSW 245°, Rank #4 response vessel)
   {
     mmsi: 212000005,
     name: "CYPRUS POLICE PATROL / EMSA",
     waypoints: [
-      { tMinutes: -360, lon: 33.350, lat: 33.380, heading: 245, speed: 22.0 },
-      { tMinutes: -180, lon: 33.200, lat: 33.320, heading: 245, speed: 22.0 },
-      { tMinutes: 0,    lon: 33.05775642, lat: 33.25902604, heading: 245, speed: 22.0 },
-      { tMinutes: 180,  lon: 32.920, lat: 33.200, heading: 245, speed: 22.0 },
+      { tMinutes: -360, lon: 33.380, lat: 33.420, heading: 245, speed: 14.0 }, // Coastline patrol base
+      { tMinutes: -180, lon: 33.300, lat: 33.360, heading: 245, speed: 22.0 }, // Inbound emergency transit
+      { tMinutes: -42,  lon: 33.180, lat: 33.300, heading: 245, speed: 22.0 }, // High speed sprint
+      { tMinutes: 0,    lon: 33.05775642, lat: 33.25902604, heading: 245, speed: 6.0 }, // Arrives at oil slick locus for containment boom deployment
+      { tMinutes: 180,  lon: 33.065, lat: 33.255, heading: 245, speed: 4.5 }, // Station keeping / skimming operations
     ],
   },
   // 6–30. Authentic Mediterranean Commercial Fleet Corridor Waypoints
@@ -1602,18 +1608,31 @@ export function interpolateVesselPosition(
   timeOffsetMinutes: number,
   _scenario: string = 'mediterranean_dartis',
   vesselCurrentPos?: { longitude: number; latitude: number; heading_degrees: number; speed_knots: number }
-): { lon: number; lat: number; heading: number; speed: number } {
+): { lon: number; lat: number; heading: number; speed: number; isAisDark?: boolean } {
+  const isAisDarkWindow = (mmsi === 212000001 && timeOffsetMinutes >= -42 && timeOffsetMinutes <= -12);
   const vesselTrack = MUMBAI_VESSEL_WAYPOINTS.find((t) => t.mmsi === mmsi);
 
   if (vesselTrack && vesselTrack.waypoints.length) {
     const wps = vesselTrack.waypoints;
 
     if (timeOffsetMinutes <= wps[0].tMinutes) {
-      return { lon: wps[0].lon, lat: wps[0].lat, heading: wps[0].heading, speed: wps[0].speed };
+      return {
+        lon: wps[0].lon,
+        lat: wps[0].lat,
+        heading: wps[0].heading,
+        speed: wps[0].speed,
+        isAisDark: isAisDarkWindow,
+      };
     }
     if (timeOffsetMinutes >= wps[wps.length - 1].tMinutes) {
       const last = wps[wps.length - 1];
-      return { lon: last.lon, lat: last.lat, heading: last.heading, speed: last.speed };
+      return {
+        lon: last.lon,
+        lat: last.lat,
+        heading: last.heading,
+        speed: last.speed,
+        isAisDark: isAisDarkWindow,
+      };
     }
 
     for (let i = 0; i < wps.length - 1; i++) {
@@ -1625,14 +1644,22 @@ export function interpolateVesselPosition(
 
         const lon = w1.lon + (w2.lon - w1.lon) * progress;
         const lat = w1.lat + (w2.lat - w1.lat) * progress;
-        const heading = w1.heading;
-        const speed = w1.speed;
+
+        // Smooth heading angular interpolation with wrap-around
+        let angleDiff = (w2.heading - w1.heading) % 360;
+        if (angleDiff > 180) angleDiff -= 360;
+        if (angleDiff < -180) angleDiff += 360;
+        const heading = Math.round((w1.heading + angleDiff * progress + 360) % 360);
+
+        // Smooth speed interpolation
+        const speed = Number((w1.speed + (w2.speed - w1.speed) * progress).toFixed(1));
 
         return {
           lon: Number(lon.toFixed(6)),
           lat: Number(lat.toFixed(6)),
           heading,
           speed,
+          isAisDark: isAisDarkWindow,
         };
       }
     }
@@ -1649,7 +1676,13 @@ export function interpolateVesselPosition(
   const distanceKm = (curSpeed * 1.852) * elapsedHours;
   const [lon, lat] = moveCoordinate(curLon, curLat, reverseHeading, distanceKm);
 
-  return { lon, lat, heading: curHeading, speed: curSpeed };
+  return {
+    lon,
+    lat,
+    heading: curHeading,
+    speed: curSpeed,
+    isAisDark: isAisDarkWindow,
+  };
 }
 
 // Calculate oil slick center and polygon for any spill (built-in or custom uploaded) at any timeline offset

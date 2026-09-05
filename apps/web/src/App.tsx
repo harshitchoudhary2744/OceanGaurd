@@ -345,10 +345,8 @@ export function App() {
     return () => clearInterval(interval);
   }, [isPlaying, playbackSpeed]);
 
-  // Interpolated Vessel Positions: ONLY the selected anomaly's culprit vessel replays along its trajectory
+  // Interpolated Vessel Positions: All 30 corridor and culprit vessels replay dynamically along their kinematic tracks
   const scrubbedVessels = useMemo(() => {
-    const activeCulpritMmsi = MUMBAI_INCIDENTS[selectedSpillId]?.culpritMmsi || selectedVesselMmsi;
-
     return vessels.map((v) => {
       const curPos = v.current_position ? {
         longitude: v.current_position.longitude,
@@ -357,18 +355,17 @@ export function App() {
         speed_knots: v.current_position.speed_knots,
       } : undefined;
 
-      // Replay only the active anomaly suspect; background traffic stays static at live (t=0)
-      const offsetForThisVessel = (v.mmsi === activeCulpritMmsi) ? timeOffsetMinutes : 0;
-      const interp = interpolateVesselPosition(v.mmsi, offsetForThisVessel, 'mediterranean_dartis', curPos);
+      const interp = interpolateVesselPosition(v.mmsi, timeOffsetMinutes, 'mediterranean_dartis', curPos);
       return {
         mmsi: v.mmsi,
         lon: interp.lon,
         lat: interp.lat,
         heading: interp.heading,
         speed: interp.speed,
+        isAisDark: interp.isAisDark,
       };
     });
-  }, [timeOffsetMinutes, vessels, selectedSpillId, selectedVesselMmsi]);
+  }, [timeOffsetMinutes, vessels]);
 
   // Selected Spill Feature
   const selectedSpillFeature = useMemo<SpillGeoFeature | null>(() => {
@@ -535,6 +532,7 @@ export function App() {
             onSelectVessel={handleSelectVessel}
             metocean={metocean}
             timeOffsetMinutes={timeOffsetMinutes}
+            scrubbedVessels={scrubbedVessels}
             onFocusLocation={handleFocusLocation}
           />
         </div>
@@ -626,6 +624,7 @@ export function App() {
               isMobileModal={true}
               metocean={metocean}
               timeOffsetMinutes={timeOffsetMinutes}
+              scrubbedVessels={scrubbedVessels}
               initialTab={mobileActiveTab === 'map' ? 'overview' : mobileActiveTab}
               onFocusLocation={handleFocusLocation}
             />
