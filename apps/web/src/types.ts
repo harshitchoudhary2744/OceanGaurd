@@ -1,18 +1,46 @@
+export interface BayesianClassLogitDetail {
+  logit: number;
+  formula: string;
+  probability_pct: number;
+  physics_explanation: string;
+}
+
+export interface BayesianClassificationCalculation {
+  formula: string;
+  inputs: {
+    damping_ratio_db: number;
+    wind_speed_kts: number;
+    wind_speed_ms: number;
+    wind_in_bragg_damping_window: boolean;
+    eccentricity: number;
+    compactness: number;
+  };
+  logits: {
+    oil: BayesianClassLogitDetail;
+    calm_water: BayesianClassLogitDetail;
+    natural_film: BayesianClassLogitDetail;
+    wake: BayesianClassLogitDetail;
+    rain_artifact: BayesianClassLogitDetail;
+    unknown: BayesianClassLogitDetail;
+  };
+}
+
 export interface FalsePositiveBreakdown {
-  likely_oil_pct: number; // e.g. 94.0
-  lookalike_pct: number; // e.g. 6.0
+  likely_oil_pct: number; // e.g. 98.2
+  lookalike_pct: number; // e.g. 1.8
   dominant_class: 'Oil' | 'Calm water' | 'Natural film' | 'Wake' | 'Rain-related artifact' | 'Unknown';
   classes: {
-    'Oil': number; // e.g. 94.0%
-    'Calm water': number; // e.g. 2.1%
-    'Natural film': number; // e.g. 1.8%
-    'Wake': number; // e.g. 1.2%
-    'Rain-related artifact': number; // e.g. 0.6%
-    'Unknown': number; // e.g. 0.3%
+    'Oil': number; // e.g. 98.2%
+    'Calm water': number; // e.g. 0.8%
+    'Natural film': number; // e.g. 0.5%
+    'Wake': number; // e.g. 0.3%
+    'Rain-related artifact': number; // e.g. 0.1%
+    'Unknown': number; // e.g. 0.1%
   };
   marangoni_damping_db: number;
   wind_threshold_valid: boolean;
   sar_physics_reasoning: string;
+  calculation_details?: BayesianClassificationCalculation;
 }
 
 export interface SpillProperties {
