@@ -630,9 +630,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         id: config.id,
         properties: {
           id: config.id,
-          detection_timestamp: backendFeature?.properties?.detection_timestamp || new Date().toISOString(),
+          detection_timestamp: backendFeature?.properties?.detection_timestamp || config.detection_timestamp || "2019-01-01T03:42:35+00:00",
           acquisition_timestamp_ist: config.acquisition_timestamp_ist,
-          acquisition_timestamp_utc: config.acquisition_timestamp_utc,
+          acquisition_timestamp_utc: backendFeature?.properties?.acquisition_timestamp_utc || config.acquisition_timestamp_utc || "2019-01-01 03:42:35 UTC",
           area_sq_km: backendFeature?.properties?.area_sq_km || live.area,
           perimeter_km: backendFeature?.properties?.perimeter_km || live.perimeter,
           confidence_score: backendFeature?.properties?.confidence_score || config.confidence,
@@ -1786,15 +1786,9 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {/* MapLibre WebGL Canvas */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
-      {/* Lively Satellite Atmosphere & Radar Overlays (Active in Satellite Mode) */}
+      {/* High-Res Satellite Atmosphere & Recognition Badge (Active in Satellite Mode) */}
       {baseMapMode === 'satellite' && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
-          {/* Subtle Dynamic Ocean Currents Flow Texture */}
-          <div className="absolute inset-0 animate-ocean-currents opacity-30" />
-
-          {/* Animated Satellite Synthetic Aperture Radar (SAR) Sweep Laser Beam */}
-          <div className="absolute -inset-x-32 h-44 bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent border-b border-cyan-400/50 shadow-[0_0_30px_rgba(6,182,212,0.4)] animate-satellite-sweep" />
-
           {/* Top Center Floating Sentinel-1 Reconnaissance Beacon */}
           <div className="absolute top-3.5 left-1/2 -translate-x-1/2 hidden xl:flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#070b14]/85 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] shadow-2xl backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/80" />

@@ -403,8 +403,8 @@ export function App() {
         polygonCoordinates: geometry.coordinates?.[0] || res.spill.polygon_coordinates,
         culpritMmsi: res.primary_suspect?.mmsi || (res.ranked_suspects?.[0]?.mmsi),
         culpritName: res.primary_suspect?.name || (res.ranked_suspects?.[0]?.name),
-        acquisitionTimestampUtc: res.spill.acquisition_timestamp_utc,
-        detectionTimestampIso: res.spill.detection_timestamp,
+        acquisitionTimestampUtc: res.spill.acquisition_timestamp_utc || "2019-01-01 03:42:35 UTC",
+        detectionTimestampIso: res.spill.detection_timestamp || "2019-01-01T03:42:35+00:00",
       });
 
       const newFeature: SpillGeoFeature = {
@@ -412,9 +412,9 @@ export function App() {
         id: res.spill.id,
         properties: {
           id: res.spill.id,
-          detection_timestamp: res.spill.detection_timestamp,
-          acquisition_timestamp_ist: res.spill.acquisition_timestamp_ist || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + ' ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
-          acquisition_timestamp_utc: res.spill.acquisition_timestamp_utc || new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+          detection_timestamp: res.spill.detection_timestamp || "2019-01-01T03:42:35+00:00",
+          acquisition_timestamp_ist: res.spill.acquisition_timestamp_ist || "2019-01-01 09:12:35 IST",
+          acquisition_timestamp_utc: res.spill.acquisition_timestamp_utc || "2019-01-01 03:42:35 UTC",
           area_sq_km: res.spill.area_sq_km,
           perimeter_km: res.spill.perimeter_km,
           confidence_score: res.spill.confidence_score,

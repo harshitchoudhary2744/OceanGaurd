@@ -57,12 +57,14 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showTimelineDrawer]);
 
-  // Base live timestamp reference
-  const now = useMemo(() => new Date(), []);
+  // Base incident detection timestamp reference
+  const baseDetectionDate = useMemo(() => {
+    return new Date(currentIncident?.detection_timestamp || '2019-01-01T03:42:35+00:00');
+  }, [currentIncident]);
   
   // Calculate formatted times for active scrubber position
-  const activeDate = useMemo(() => new Date(now.getTime() + timeOffsetMinutes * 60 * 1000), [now, timeOffsetMinutes]);
-  const activeTimeStr = activeDate.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour12: false }) + ' UTC';
+  const activeDate = useMemo(() => new Date(baseDetectionDate.getTime() + timeOffsetMinutes * 60 * 1000), [baseDetectionDate, timeOffsetMinutes]);
+  const activeTimeStr = activeDate.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
   
   const absMins = Math.abs(timeOffsetMinutes);
   const tMinusHours = Math.floor(absMins / 60);
@@ -195,7 +197,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
               {activeTimeStr}
             </div>
             <div className="text-[8.5px] sm:text-[9.5px] text-slate-400 font-medium">
-              <span className="text-slate-300 font-mono">Indian Standard Time</span> • <span className="text-rose-400 font-bold">{tMinusString}</span>
+              <span className="text-slate-300 font-mono">Acquisition UTC</span> • <span className="text-rose-400 font-bold">{tMinusString}</span>
             </div>
           </div>
         </div>

@@ -206,8 +206,9 @@ export interface MaritimeIncidentConfig {
   locationName: string;
   originCoords: [number, number]; // [lon, lat]
   centroid: [number, number]; // [lat, lon]
+  detection_timestamp?: string; // e.g. "2019-01-01T03:42:35+00:00"
   acquisition_timestamp_ist: string; // e.g. "2024-10-18 16:14:00 IST"
-  acquisition_timestamp_utc: string; // e.g. "2024-10-18 10:44 UTC"
+  acquisition_timestamp_utc: string; // e.g. "2019-01-01 03:42:35 UTC"
   satellite_pass_ist: string; // e.g. "16:14:00 IST"
   discharge_time_ist: string; // e.g. "15:47:00 IST"
   dischargeOffsetMinutes: number;
@@ -1283,6 +1284,7 @@ export const INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     locationName: "Levantine Basin, Cyprus (33° 15.5' N, 33° 03.5' E)",
     originCoords: [33.0421, 33.2684],
     centroid: [33.25902604, 33.05775642],
+    detection_timestamp: "2019-01-01T03:42:35+00:00",
     acquisition_timestamp_ist: "2019-01-01 09:12:35 IST",
     acquisition_timestamp_utc: "2019-01-01 03:42:35 UTC",
     satellite_pass_ist: "09:12:35 IST",
@@ -2422,9 +2424,9 @@ export class AutonomousSimulationEngine {
         id: config.id,
         properties: {
           id: config.id,
-          detection_timestamp: new Date(now.getTime() - Math.abs(config.dischargeOffsetMinutes) * 60000).toISOString(),
+          detection_timestamp: config.detection_timestamp || "2019-01-01T03:42:35+00:00",
           acquisition_timestamp_ist: config.acquisition_timestamp_ist,
-          acquisition_timestamp_utc: config.acquisition_timestamp_utc,
+          acquisition_timestamp_utc: config.acquisition_timestamp_utc || "2019-01-01 03:42:35 UTC",
           area_sq_km: live.area,
           perimeter_km: live.perimeter,
           confidence_score: config.confidence,
@@ -2732,7 +2734,8 @@ export function registerCustomSpillIncident(spill: {
     originCoords: [lon, lat],
     centroid: [lat, lon],
     acquisition_timestamp_ist: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + ' ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
-    acquisition_timestamp_utc: spill.acquisitionTimestampUtc || new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+    acquisition_timestamp_utc: spill.acquisitionTimestampUtc || "2019-01-01 03:42:35 UTC",
+    detection_timestamp: spill.detectionTimestampIso || "2019-01-01T03:42:35+00:00",
     satellite_pass_ist: new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
     discharge_time_ist: new Date(Date.now() - 42 * 60000).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
     sourceScene: spill.sourceScene || "DARTIS_ow-0001",

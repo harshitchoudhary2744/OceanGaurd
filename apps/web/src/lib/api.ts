@@ -105,7 +105,7 @@ export async function fetchHindcastData(
     const origin = hindcast_track[hindcast_track.length - 1];
     return {
       spill_id: spillId,
-      detection_timestamp: new Date().toISOString(),
+      detection_timestamp: "2019-01-01T03:42:35+00:00",
       detection_center: [centerLon, centerLat],
       lookback_hours: lookbackHours,
       sector: 'mediterranean_dartis',
@@ -226,9 +226,9 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       windSpeedKts: 16.2,
     });
 
-    const nowIso = new Date().toISOString();
-    const nowIst = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + ' ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST';
-    const nowUtc = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    const nowIso = "2019-01-01T03:42:35+00:00";
+    const nowIst = "2019-01-01 09:12:35 IST";
+    const nowUtc = "2019-01-01 03:42:35 UTC";
 
     const spillObj = {
       id: mockId,
@@ -253,7 +253,11 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
     const geojsonFeature: SpillGeoFeature = {
       type: "Feature",
       id: mockId,
-      properties: spillObj,
+      properties: {
+        ...spillObj,
+        detection_timestamp: "2019-01-01T03:42:35+00:00",
+        acquisition_timestamp_utc: "2019-01-01 03:42:35 UTC",
+      },
       geometry: {
         type: "Polygon",
         coordinates: [polygon]

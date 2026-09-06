@@ -862,6 +862,7 @@ class SARSegmentationPipeline:
                 "oil_likelihood_score": metrics["oil_likelihood_score"],
                 "damping_ratio_db": metrics["damping_ratio_db"],
                 "class_probabilities": metrics.get("class_probabilities", {}),
+                "detection_timestamp": "2019-01-01T03:42:35+00:00",
                 "acquisition_timestamp_utc": acquisition_timestamp_utc or "2019-01-01 03:42:35 UTC",
                 "status": "ACTIVE" if spill_detected else "NO_SPILL_DETECTED",
                 "center": [center_lon, center_lat],
