@@ -1491,8 +1491,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "3FVR2",
     destination: "ROTTERDAM COMMERCIAL GATEWAY",
     cargo_type: "Containerized Consumer Goods (19,224 TEU)",
-    lat: 33.540,
-    lon: 32.720,
+    lat: 33.520,
+    lon: 32.670,
     heading_degrees: 284,
     speed_knots: 18.2,
   },
@@ -1507,8 +1507,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "9HA3812",
     destination: "PORT SAID ANCHORAGE",
     cargo_type: "Manufactured Goods & Electronics (10,622 TEU)",
-    lat: 33.120,
-    lon: 32.850,
+    lat: 32.850,
+    lon: 32.600,
     heading_degrees: 102,
     speed_knots: 17.6,
   },
@@ -1523,8 +1523,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "3EPA7",
     destination: "PIRAEUS CONTAINER TERMINAL",
     cargo_type: "General High-Value Freight (20,124 TEU)",
-    lat: 33.410,
-    lon: 33.480,
+    lat: 33.720,
+    lon: 33.250,
     heading_degrees: 286,
     speed_knots: 18.8,
   },
@@ -1539,8 +1539,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "OZHC2",
     destination: "SUEZ CANAL SOUTHBOUND CONVOY",
     cargo_type: "Refrigerated & Dry Containers (18,270 TEU)",
-    lat: 33.080,
-    lon: 33.320,
+    lat: 32.700,
+    lon: 32.700,
     heading_degrees: 104,
     speed_knots: 16.9,
   },
@@ -1555,8 +1555,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "DGDH2",
     destination: "VALENCIA COMMERCIAL PORT",
     cargo_type: "Automotive Freight & Machinery (14,993 TEU)",
-    lat: 33.380,
-    lon: 33.820,
+    lat: 33.600,
+    lon: 33.100,
     heading_degrees: 285,
     speed_knots: 17.2,
   },
@@ -1571,8 +1571,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "VRTY5",
     destination: "SINGAPORE PSA TERMINAL",
     cargo_type: "Industrial Equipment & Solar Modules (21,237 TEU)",
-    lat: 32.950,
-    lon: 32.610,
+    lat: 32.550,
+    lon: 32.550,
     heading_degrees: 101,
     speed_knots: 18.4,
   },
@@ -1587,8 +1587,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "V7HJ3",
     destination: "TRIESTE OIL DOCKS",
     cargo_type: "Arabian Light Crude Oil (300,000 DWT)",
-    lat: 33.210,
-    lon: 32.450,
+    lat: 33.450,
+    lon: 32.800,
     heading_degrees: 282,
     speed_knots: 13.6,
   },
@@ -1603,8 +1603,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "A8ZZ9",
     destination: "SIDI KERIR OIL TERMINAL",
     cargo_type: "Segregated Ballast (158,000 DWT)",
-    lat: 32.980,
-    lon: 33.650,
+    lat: 32.900,
+    lon: 32.750,
     heading_degrees: 98,
     speed_knots: 13.1,
   },
@@ -1619,10 +1619,10 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "SVBG4",
     destination: "VASILIKO OIL TERMINAL",
     cargo_type: "Low-Sulphur Marine Gasoil (115,000 DWT)",
-    lat: 34.520,
+    lat: 34.230,
     lon: 33.150,
-    heading_degrees: 78,
-    speed_knots: 12.4,
+    heading_degrees: 75,
+    speed_knots: 8.5,
   },
   {
     mmsi: 500100010,
@@ -1635,8 +1635,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "ONCV",
     destination: "FOS SUR MER REFINERY",
     cargo_type: "Basrah Heavy Crude Oil (156,000 DWT)",
-    lat: 33.480,
-    lon: 32.950,
+    lat: 33.800,
+    lon: 33.000,
     heading_degrees: 287,
     speed_knots: 14.0,
   },
@@ -1651,8 +1651,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "ZCEQ5",
     destination: "DAMIETTA LNG EXPORT TERMINAL",
     cargo_type: "Liquefied Natural Gas (155,000 m³)",
-    lat: 33.020,
-    lon: 32.980,
+    lat: 32.620,
+    lon: 32.750,
     heading_degrees: 105,
     speed_knots: 16.4,
   },
@@ -1667,8 +1667,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "V7TR4",
     destination: "BARCELONA REGASIFICATION TERMINAL",
     cargo_type: "Liquefied Methane Gas (160,000 m³)",
-    lat: 33.450,
-    lon: 33.620,
+    lat: 33.660,
+    lon: 33.150,
     heading_degrees: 283,
     speed_knots: 15.7,
   },
@@ -1683,8 +1683,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "MDYJ8",
     destination: "PORT SAID ANCHORAGE",
     cargo_type: "Iron Ore Pellets (211,000 DWT)",
-    lat: 33.020,
-    lon: 33.780,
+    lat: 32.450,
+    lon: 32.850,
     heading_degrees: 100,
     speed_knots: 12.2,
   },
@@ -1699,10 +1699,10 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "V7PL2",
     destination: "BEIRUT COMMERCIAL HARBOUR",
     cargo_type: "Feed Grain & Sunflower Seeds (82,000 DWT)",
-    lat: 33.620,
-    lon: 34.120,
+    lat: 33.580,
+    lon: 34.160,
     heading_degrees: 34,
-    speed_knots: 12.6,
+    speed_knots: 11.5,
   },
   {
     mmsi: 500100015,
@@ -1715,8 +1715,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "D5MK8",
     destination: "ALEXANDRIA GRAIN TERMINAL",
     cargo_type: "Dry Bulk Fertilizer (105,000 DWT)",
-    lat: 33.850,
-    lon: 34.420,
+    lat: 33.120,
+    lon: 33.750,
     heading_degrees: 212,
     speed_knots: 11.8,
   },
@@ -1731,10 +1731,10 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "9V8432",
     destination: "LARNACA BULK WHARF",
     cargo_type: "Cement Clinker & Mineral Aggregate (63,500 DWT)",
-    lat: 34.780,
-    lon: 33.720,
-    heading_degrees: 88,
-    speed_knots: 12.0,
+    lat: 34.300,
+    lon: 33.300,
+    heading_degrees: 82,
+    speed_knots: 9.0,
   },
   {
     mmsi: 500100017,
@@ -1747,8 +1747,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "IBLC",
     destination: "SALERNO COMMERCIAL PORT",
     cargo_type: "Commercial Trucks & Wheeled Heavy Cargo",
-    lat: 33.520,
-    lon: 33.180,
+    lat: 33.480,
+    lon: 33.050,
     heading_degrees: 280,
     speed_knots: 15.4,
   },
@@ -1763,8 +1763,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "SLWD",
     destination: "AQABA CAR TERMINAL",
     cargo_type: "Automobiles & Electric Vehicles (6,500 CEU)",
-    lat: 33.050,
-    lon: 33.450,
+    lat: 32.780,
+    lon: 32.850,
     heading_degrees: 106,
     speed_knots: 16.2,
   },
@@ -1779,10 +1779,10 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "V2FP8",
     destination: "LIMASSOL COMMERCIAL PORT",
     cargo_type: "Offshore Wind Turbine Generators & Steel",
-    lat: 34.610,
-    lon: 33.240,
-    heading_degrees: 262,
-    speed_knots: 11.4,
+    lat: 34.350,
+    lon: 33.000,
+    heading_degrees: 260,
+    speed_knots: 7.0,
   },
   {
     mmsi: 500100020,
@@ -1795,10 +1795,10 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "5BLN3",
     destination: "TRIPOLI COMMERCIAL BERTH",
     cargo_type: "Inter-Levant Heavy Freight Trailers",
-    lat: 34.150,
-    lon: 34.420,
+    lat: 33.820,
+    lon: 34.220,
     heading_degrees: 38,
-    speed_knots: 15.0,
+    speed_knots: 14.2,
   },
   {
     mmsi: 500100021,
@@ -1811,8 +1811,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "D5NX4",
     destination: "GENOA MULTIEID OIL JETTY",
     cargo_type: "Heavy Fuel Oil IFO-380 (157,500 DWT)",
-    lat: 33.360,
-    lon: 33.550,
+    lat: 33.760,
+    lon: 33.200,
     heading_degrees: 285,
     speed_knots: 13.5,
   },
@@ -1827,10 +1827,10 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "V7KJ9",
     destination: "APHRODITE GAS FIELD DRILL PLATFORM",
     cargo_type: "Subsea Drilling Mud & Drill Collars",
-    lat: 33.100,
+    lat: 33.080,
     lon: 33.820,
     heading_degrees: 180,
-    speed_knots: 10.4,
+    speed_knots: 6.5,
   },
   {
     mmsi: 500100023,
@@ -1843,8 +1843,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "SVAX8",
     destination: "IDKU LNG LIQUEFACTION PLANT",
     cargo_type: "Clean LNG Cryogenic Tanks (162,000 m³)",
-    lat: 32.920,
-    lon: 33.150,
+    lat: 32.500,
+    lon: 32.650,
     heading_degrees: 96,
     speed_knots: 16.5,
   },
@@ -1859,10 +1859,10 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "5BCR4",
     destination: "MONI MULTIBUOY MOORING",
     cargo_type: "Aviation Turbine Fuel Jet A-1 (49,900 DWT)",
-    lat: 34.680,
-    lon: 33.380,
+    lat: 34.260,
+    lon: 33.180,
     heading_degrees: 75,
-    speed_knots: 12.8,
+    speed_knots: 7.8,
   },
   {
     mmsi: 500100025,
@@ -1875,14 +1875,192 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "SYGF",
     destination: "AUGUSTA REFINERY ANCHORAGE",
     cargo_type: "Basrah Light Crude (159,000 DWT)",
-    lat: 33.200,
-    lon: 32.600,
+    lat: 33.420,
+    lon: 33.150,
     heading_degrees: 283,
     speed_knots: 13.8,
   },
 ];
 
-// Helper to compute course-aligned timed waypoints for corridor traffic with distinct trajectory behaviors
+export const CORRIDOR_VESSEL_WAYPOINTS_MAP: Record<number, TimedWaypoint[]> = {
+  500100001: [
+      { tMinutes: -360, lon: 34.15, lat: 33.48, heading: 284, speed: 18.2 },
+      { tMinutes: -180, lon: 33.45, lat: 33.5, heading: 284, speed: 18.2 },
+      { tMinutes: -42, lon: 32.95, lat: 33.51, heading: 284, speed: 18.2 },
+      { tMinutes: 0, lon: 32.67, lat: 33.52, heading: 284, speed: 18.2 },
+      { tMinutes: 180, lon: 32.05, lat: 33.54, heading: 284, speed: 18.2 },
+  ],
+  500100002: [
+      { tMinutes: -360, lon: 31.0, lat: 32.95, heading: 102, speed: 17.6 },
+      { tMinutes: -180, lon: 31.75, lat: 32.9, heading: 102, speed: 17.6 },
+      { tMinutes: -42, lon: 32.35, lat: 32.87, heading: 102, speed: 17.6 },
+      { tMinutes: 0, lon: 32.6, lat: 32.85, heading: 102, speed: 17.6 },
+      { tMinutes: 180, lon: 33.35, lat: 32.8, heading: 102, speed: 17.6 },
+  ],
+  500100003: [
+      { tMinutes: -360, lon: 34.25, lat: 33.68, heading: 286, speed: 18.8 },
+      { tMinutes: -180, lon: 33.8, lat: 33.7, heading: 286, speed: 18.8 },
+      { tMinutes: -42, lon: 33.48, lat: 33.71, heading: 286, speed: 18.8 },
+      { tMinutes: 0, lon: 33.25, lat: 33.72, heading: 286, speed: 18.8 },
+      { tMinutes: 180, lon: 32.6, lat: 33.74, heading: 286, speed: 18.8 },
+  ],
+  500100004: [
+      { tMinutes: -360, lon: 31.1, lat: 32.8, heading: 104, speed: 16.9 },
+      { tMinutes: -180, lon: 31.85, lat: 32.75, heading: 104, speed: 16.9 },
+      { tMinutes: -42, lon: 32.45, lat: 32.72, heading: 104, speed: 16.9 },
+      { tMinutes: 0, lon: 32.7, lat: 32.7, heading: 104, speed: 16.9 },
+      { tMinutes: 180, lon: 33.45, lat: 32.65, heading: 104, speed: 16.9 },
+  ],
+  500100005: [
+      { tMinutes: -360, lon: 34.15, lat: 33.56, heading: 285, speed: 17.2 },
+      { tMinutes: -180, lon: 33.7, lat: 33.58, heading: 285, speed: 17.2 },
+      { tMinutes: -42, lon: 33.35, lat: 33.59, heading: 285, speed: 17.2 },
+      { tMinutes: 0, lon: 33.1, lat: 33.6, heading: 285, speed: 17.2 },
+      { tMinutes: 180, lon: 32.45, lat: 33.62, heading: 285, speed: 17.2 },
+  ],
+  500100006: [
+      { tMinutes: -360, lon: 30.9, lat: 32.65, heading: 101, speed: 18.4 },
+      { tMinutes: -180, lon: 31.7, lat: 32.6, heading: 101, speed: 18.4 },
+      { tMinutes: -42, lon: 32.3, lat: 32.57, heading: 101, speed: 18.4 },
+      { tMinutes: 0, lon: 32.55, lat: 32.55, heading: 101, speed: 18.4 },
+      { tMinutes: 180, lon: 33.3, lat: 32.5, heading: 101, speed: 18.4 },
+  ],
+  500100007: [
+      { tMinutes: -360, lon: 33.6, lat: 33.42, heading: 282, speed: 13.6 },
+      { tMinutes: -180, lon: 33.25, lat: 33.43, heading: 282, speed: 13.6 },
+      { tMinutes: -42, lon: 32.98, lat: 33.44, heading: 282, speed: 13.6 },
+      { tMinutes: 0, lon: 32.8, lat: 33.45, heading: 282, speed: 13.6 },
+      { tMinutes: 180, lon: 32.28, lat: 33.47, heading: 282, speed: 13.6 },
+  ],
+  500100008: [
+      { tMinutes: -360, lon: 31.5, lat: 32.96, heading: 98, speed: 13.1 },
+      { tMinutes: -180, lon: 32.1, lat: 32.93, heading: 98, speed: 13.1 },
+      { tMinutes: -42, lon: 32.55, lat: 32.91, heading: 98, speed: 13.1 },
+      { tMinutes: 0, lon: 32.75, lat: 32.9, heading: 98, speed: 13.1 },
+      { tMinutes: 180, lon: 33.35, lat: 32.87, heading: 98, speed: 13.1 },
+  ],
+  500100009: [
+      { tMinutes: -360, lon: 32.3, lat: 34.14, heading: 75, speed: 14.5 },
+      { tMinutes: -180, lon: 32.68, lat: 34.18, heading: 75, speed: 14.5 },
+      { tMinutes: -42, lon: 32.98, lat: 34.21, heading: 75, speed: 11.2 },
+      { tMinutes: 0, lon: 33.15, lat: 34.23, heading: 75, speed: 8.5 },
+      { tMinutes: 180, lon: 33.3, lat: 34.25, heading: 65, speed: 4.2 },
+  ],
+  500100010: [
+      { tMinutes: -360, lon: 33.9, lat: 33.76, heading: 287, speed: 14.0 },
+      { tMinutes: -180, lon: 33.5, lat: 33.78, heading: 287, speed: 14.0 },
+      { tMinutes: -42, lon: 33.2, lat: 33.79, heading: 287, speed: 14.0 },
+      { tMinutes: 0, lon: 33.0, lat: 33.8, heading: 287, speed: 14.0 },
+      { tMinutes: 180, lon: 32.42, lat: 33.82, heading: 287, speed: 14.0 },
+  ],
+  500100011: [
+      { tMinutes: -360, lon: 31.25, lat: 32.72, heading: 105, speed: 16.4 },
+      { tMinutes: -180, lon: 31.95, lat: 32.67, heading: 105, speed: 16.4 },
+      { tMinutes: -42, lon: 32.5, lat: 32.64, heading: 105, speed: 16.4 },
+      { tMinutes: 0, lon: 32.75, lat: 32.62, heading: 105, speed: 16.4 },
+      { tMinutes: 180, lon: 33.5, lat: 32.57, heading: 105, speed: 16.4 },
+  ],
+  500100012: [
+      { tMinutes: -360, lon: 34.2, lat: 33.62, heading: 283, speed: 15.7 },
+      { tMinutes: -180, lon: 33.75, lat: 33.64, heading: 283, speed: 15.7 },
+      { tMinutes: -42, lon: 33.4, lat: 33.65, heading: 283, speed: 15.7 },
+      { tMinutes: 0, lon: 33.15, lat: 33.66, heading: 283, speed: 15.7 },
+      { tMinutes: 180, lon: 32.5, lat: 33.68, heading: 283, speed: 15.7 },
+  ],
+  500100013: [
+      { tMinutes: -360, lon: 31.7, lat: 32.5, heading: 100, speed: 12.2 },
+      { tMinutes: -180, lon: 32.25, lat: 32.48, heading: 100, speed: 12.2 },
+      { tMinutes: -42, lon: 32.65, lat: 32.46, heading: 100, speed: 12.2 },
+      { tMinutes: 0, lon: 32.85, lat: 32.45, heading: 100, speed: 12.2 },
+      { tMinutes: 180, lon: 33.4, lat: 32.42, heading: 100, speed: 12.2 },
+  ],
+  500100014: [
+      { tMinutes: -360, lon: 33.8, lat: 32.8, heading: 34, speed: 12.6 },
+      { tMinutes: -180, lon: 33.95, lat: 33.15, heading: 34, speed: 12.6 },
+      { tMinutes: -42, lon: 34.08, lat: 33.42, heading: 34, speed: 12.0 },
+      { tMinutes: 0, lon: 34.16, lat: 33.58, heading: 34, speed: 11.5 },
+      { tMinutes: 180, lon: 34.28, lat: 33.85, heading: 34, speed: 9.8 },
+  ],
+  500100015: [
+      { tMinutes: -360, lon: 34.25, lat: 33.95, heading: 212, speed: 11.8 },
+      { tMinutes: -180, lon: 34.05, lat: 33.6, heading: 212, speed: 11.8 },
+      { tMinutes: -42, lon: 33.88, lat: 33.32, heading: 212, speed: 11.8 },
+      { tMinutes: 0, lon: 33.75, lat: 33.12, heading: 212, speed: 11.8 },
+      { tMinutes: 180, lon: 33.52, lat: 32.75, heading: 212, speed: 11.8 },
+  ],
+  500100016: [
+      { tMinutes: -360, lon: 32.45, lat: 34.2, heading: 82, speed: 12.0 },
+      { tMinutes: -180, lon: 32.8, lat: 34.24, heading: 82, speed: 12.0 },
+      { tMinutes: -42, lon: 33.1, lat: 34.27, heading: 82, speed: 10.5 },
+      { tMinutes: 0, lon: 33.3, lat: 34.3, heading: 82, speed: 9.0 },
+      { tMinutes: 180, lon: 33.55, lat: 34.34, heading: 75, speed: 5.0 },
+  ],
+  500100017: [
+      { tMinutes: -360, lon: 34.05, lat: 33.44, heading: 280, speed: 15.4 },
+      { tMinutes: -180, lon: 33.6, lat: 33.46, heading: 280, speed: 15.4 },
+      { tMinutes: -42, lon: 33.28, lat: 33.47, heading: 280, speed: 15.4 },
+      { tMinutes: 0, lon: 33.05, lat: 33.48, heading: 280, speed: 15.4 },
+      { tMinutes: 180, lon: 32.4, lat: 33.5, heading: 280, speed: 15.4 },
+  ],
+  500100018: [
+      { tMinutes: -360, lon: 31.35, lat: 32.88, heading: 106, speed: 16.2 },
+      { tMinutes: -180, lon: 32.05, lat: 32.83, heading: 106, speed: 16.2 },
+      { tMinutes: -42, lon: 32.6, lat: 32.8, heading: 106, speed: 16.2 },
+      { tMinutes: 0, lon: 32.85, lat: 32.78, heading: 106, speed: 16.2 },
+      { tMinutes: 180, lon: 33.6, lat: 32.72, heading: 106, speed: 16.2 },
+  ],
+  500100019: [
+      { tMinutes: -360, lon: 33.8, lat: 34.38, heading: 260, speed: 11.4 },
+      { tMinutes: -180, lon: 33.45, lat: 34.37, heading: 260, speed: 11.4 },
+      { tMinutes: -42, lon: 33.18, lat: 34.36, heading: 260, speed: 9.0 },
+      { tMinutes: 0, lon: 33.0, lat: 34.35, heading: 260, speed: 7.0 },
+      { tMinutes: 180, lon: 32.85, lat: 34.34, heading: 260, speed: 4.0 },
+  ],
+  500100020: [
+      { tMinutes: -360, lon: 33.85, lat: 33.1, heading: 38, speed: 15.0 },
+      { tMinutes: -180, lon: 34.02, lat: 33.42, heading: 38, speed: 15.0 },
+      { tMinutes: -42, lon: 34.15, lat: 33.68, heading: 38, speed: 15.0 },
+      { tMinutes: 0, lon: 34.22, lat: 33.82, heading: 38, speed: 14.2 },
+      { tMinutes: 180, lon: 34.3, lat: 34.05, heading: 32, speed: 13.0 },
+  ],
+  500100021: [
+      { tMinutes: -360, lon: 34.1, lat: 33.72, heading: 285, speed: 13.5 },
+      { tMinutes: -180, lon: 33.7, lat: 33.74, heading: 285, speed: 13.5 },
+      { tMinutes: -42, lon: 33.4, lat: 33.75, heading: 285, speed: 13.5 },
+      { tMinutes: 0, lon: 33.2, lat: 33.76, heading: 285, speed: 13.5 },
+      { tMinutes: 180, lon: 32.65, lat: 33.78, heading: 285, speed: 13.5 },
+  ],
+  500100022: [
+      { tMinutes: -360, lon: 33.82, lat: 33.25, heading: 180, speed: 10.4 },
+      { tMinutes: -180, lon: 33.82, lat: 33.18, heading: 180, speed: 10.4 },
+      { tMinutes: -42, lon: 33.82, lat: 33.12, heading: 180, speed: 8.2 },
+      { tMinutes: 0, lon: 33.82, lat: 33.08, heading: 180, speed: 6.5 },
+      { tMinutes: 180, lon: 33.8, lat: 33.02, heading: 175, speed: 5.0 },
+  ],
+  500100023: [
+      { tMinutes: -360, lon: 31.15, lat: 32.56, heading: 96, speed: 16.5 },
+      { tMinutes: -180, lon: 31.85, lat: 32.53, heading: 96, speed: 16.5 },
+      { tMinutes: -42, lon: 32.4, lat: 32.51, heading: 96, speed: 16.5 },
+      { tMinutes: 0, lon: 32.65, lat: 32.5, heading: 96, speed: 16.5 },
+      { tMinutes: 180, lon: 33.4, lat: 32.47, heading: 96, speed: 16.5 },
+  ],
+  500100024: [
+      { tMinutes: -360, lon: 32.35, lat: 34.2, heading: 80, speed: 12.8 },
+      { tMinutes: -180, lon: 32.7, lat: 34.22, heading: 80, speed: 12.8 },
+      { tMinutes: -42, lon: 33.0, lat: 34.24, heading: 80, speed: 10.0 },
+      { tMinutes: 0, lon: 33.18, lat: 34.26, heading: 75, speed: 7.8 },
+      { tMinutes: 180, lon: 33.35, lat: 34.28, heading: 65, speed: 4.0 },
+  ],
+  500100025: [
+      { tMinutes: -360, lon: 34.05, lat: 33.38, heading: 283, speed: 13.8 },
+      { tMinutes: -180, lon: 33.65, lat: 33.4, heading: 283, speed: 13.8 },
+      { tMinutes: -42, lon: 33.35, lat: 33.41, heading: 283, speed: 13.8 },
+      { tMinutes: 0, lon: 33.15, lat: 33.42, heading: 283, speed: 13.8 },
+      { tMinutes: 180, lon: 32.55, lat: 33.44, heading: 283, speed: 13.8 },
+  ],
+};
+
+// Helper to return realistic IMO TSS Fairway waypoints for corridor traffic
 function generateShipWaypoints(ship: {
   mmsi?: number;
   name?: string;
@@ -1894,158 +2072,76 @@ function generateShipWaypoints(ship: {
   vessel_type?: string;
 }): TimedWaypoint[] {
   const mmsi = ship.mmsi || 0;
-
-  // 1. MINERVA ELEONORA (500100009): Aframax Tanker heading to VASILIKO OIL TERMINAL
-  // Maneuvering arrival route: turns northeast from cruising lane into pilot fairway
-  if (mmsi === 500100009) {
-    return [
-      { tMinutes: -360, lon: 32.52, lat: 34.46, heading: 84, speed: 14.5 },
-      { tMinutes: -180, lon: 32.84, lat: 34.49, heading: 84, speed: 14.5 },
-      { tMinutes: -42,  lon: 33.08, lat: 34.51, heading: 80, speed: 11.2 },
-      { tMinutes: 0,    lon: 33.15, lat: 34.52, heading: 78, speed: 8.5 },
-      { tMinutes: 180,  lon: 33.26, lat: 34.62, heading: 42, speed: 4.2 },
-    ];
+  if (CORRIDOR_VESSEL_WAYPOINTS_MAP[mmsi]) {
+    return CORRIDOR_VESSEL_WAYPOINTS_MAP[mmsi];
   }
-
-  // 2. SEACOR BRAVE (500100022): Offshore Supply Vessel at APHRODITE GAS FIELD DRILL PLATFORM
-  // Offshore support trajectory: dynamic positioning and platform survey pattern
-  if (mmsi === 500100022) {
-    return [
-      { tMinutes: -360, lon: 33.75, lat: 33.45, heading: 195, speed: 10.4 },
-      { tMinutes: -180, lon: 33.78, lat: 33.28, heading: 195, speed: 10.4 },
-      { tMinutes: -42,  lon: 33.82, lat: 33.15, heading: 180, speed: 8.2 },
-      { tMinutes: 0,    lon: 33.82, lat: 33.10, heading: 180, speed: 6.5 },
-      { tMinutes: 180,  lon: 33.80, lat: 33.02, heading: 175, speed: 5.0 },
-    ];
-  }
-
-  // 3. STENA PROMETHEUS (500100024): Product Tanker heading to MONI MULTIBUOY MOORING
-  // Coastal passage rounding Cape Gata, banking towards Moni offshore buoy
-  if (mmsi === 500100024) {
-    return [
-      { tMinutes: -360, lon: 33.05, lat: 34.62, heading: 85, speed: 12.8 },
-      { tMinutes: -180, lon: 33.22, lat: 34.65, heading: 80, speed: 12.8 },
-      { tMinutes: -42,  lon: 33.32, lat: 34.67, heading: 65, speed: 10.5 },
-      { tMinutes: 0,    lon: 33.38, lat: 34.68, heading: 50, speed: 7.8 },
-      { tMinutes: 180,  lon: 33.46, lat: 34.72, heading: 45, speed: 4.0 },
-    ];
-  }
-
-  // 4. STAR BULK GEMINI (500100014): Handymax Bulker heading to BEIRUT COMMERCIAL HARBOUR
-  // Levant shelf northbound corridor, turning towards Lebanese port fairways
-  if (mmsi === 500100014) {
-    return [
-      { tMinutes: -360, lon: 33.85, lat: 33.20, heading: 34, speed: 12.6 },
-      { tMinutes: -180, lon: 33.98, lat: 33.41, heading: 34, speed: 12.6 },
-      { tMinutes: -42,  lon: 34.08, lat: 33.56, heading: 42, speed: 12.0 },
-      { tMinutes: 0,    lon: 34.12, lat: 33.62, heading: 48, speed: 11.5 },
-      { tMinutes: 180,  lon: 34.25, lat: 33.80, heading: 52, speed: 9.8 },
-    ];
-  }
-
-  // 5. ARK FORWARDER (500100020): Ro-Ro Cargo heading to TRIPOLI COMMERCIAL BERTH
-  // Inter-Levant rolling freight passage
-  if (mmsi === 500100020) {
-    return [
-      { tMinutes: -360, lon: 34.10, lat: 33.72, heading: 38, speed: 15.0 },
-      { tMinutes: -180, lon: 34.26, lat: 33.94, heading: 38, speed: 15.0 },
-      { tMinutes: -42,  lon: 34.38, lat: 34.09, heading: 36, speed: 15.0 },
-      { tMinutes: 0,    lon: 34.42, lat: 34.15, heading: 32, speed: 14.2 },
-      { tMinutes: 180,  lon: 34.54, lat: 34.32, heading: 28, speed: 13.0 },
-    ];
-  }
-
-  // 6. Generic Corridor Traffic: Realistic IMO TSS Fairway Waypoint Transitions
-  const revHeading = (ship.heading_degrees + 180) % 360;
-  const isEastbound = ship.heading_degrees >= 45 && ship.heading_degrees <= 135;
-  const turnDelta = isEastbound ? 3.5 : -4.0;
-
-  const dist360 = (ship.speed_knots * 1.852) * 6.0;
-  const [lon360, lat360] = moveCoordinate(ship.lon, ship.lat, (revHeading - turnDelta + 360) % 360, dist360);
-
-  const dist180 = (ship.speed_knots * 1.852) * 3.0;
-  const [lon180, lat180] = moveCoordinate(ship.lon, ship.lat, revHeading, dist180);
-
-  const dist42 = (ship.speed_knots * 1.852) * (42.0 / 60.0);
-  const [lon42, lat42] = moveCoordinate(ship.lon, ship.lat, revHeading, dist42);
-
-  const distFuture = (ship.speed_knots * 1.852) * 3.0;
-  const [lonFuture, latFuture] = moveCoordinate(ship.lon, ship.lat, (ship.heading_degrees + turnDelta + 360) % 360, distFuture);
-
   return [
-    { tMinutes: -360, lon: lon360, lat: lat360, heading: (ship.heading_degrees - turnDelta + 360) % 360, speed: ship.speed_knots },
-    { tMinutes: -180, lon: lon180, lat: lat180, heading: ship.heading_degrees, speed: ship.speed_knots },
-    { tMinutes: -42,  lon: lon42,  lat: lat42,  heading: ship.heading_degrees, speed: ship.speed_knots },
-    { tMinutes: 0,    lon: ship.lon, lat: ship.lat, heading: ship.heading_degrees, speed: ship.speed_knots },
-    { tMinutes: 180,  lon: lonFuture, lat: latFuture, heading: (ship.heading_degrees + turnDelta + 360) % 360, speed: ship.speed_knots },
+    { tMinutes: -360, lon: ship.lon, lat: ship.lat, heading: ship.heading_degrees, speed: ship.speed_knots },
+    { tMinutes: 0, lon: ship.lon, lat: ship.lat, heading: ship.heading_degrees, speed: ship.speed_knots },
+    { tMinutes: 180, lon: ship.lon, lat: ship.lat, heading: ship.heading_degrees, speed: ship.speed_knots },
   ];
 }
 
 // Deterministic Timed Waypoint Tracks for Eastern Mediterranean Fleet
 export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: boolean; linkedSpillId?: string; waypoints: TimedWaypoint[] }[] = [
-  // 1. MEDITERRANEAN TRADER (VLCC Crude Tanker - Transits ESE 095° off Southern Cyprus across breach origin [33.0421, 33.2684])
   {
     mmsi: 212000001,
     name: "MEDITERRANEAN TRADER",
     isCulprit: true,
     linkedSpillId: "DARTIS-ow-0001",
     waypoints: [
-      { tMinutes: -360, lon: 32.820, lat: 33.248, heading: 95, speed: 13.8 },
-      { tMinutes: -180, lon: 32.930, lat: 33.258, heading: 95, speed: 13.8 },
-      { tMinutes: -65,  lon: 33.010, lat: 33.265, heading: 95, speed: 12.0 },
-      { tMinutes: -42,  lon: 33.0421, lat: 33.2684, heading: 95, speed: 5.4 }, // DARTIS ow-0001 Discharge Point (CPA 0.00 km, Speed drop -8.4 kts)
-      { tMinutes: -15,  lon: 33.085, lat: 33.270, heading: 98, speed: 6.2 }, // Loitering / slow ahead during illicit ballast wash
-      { tMinutes: 0,    lon: 33.150, lat: 33.275, heading: 95, speed: 13.5 }, // Accelerates back up to cruising transit
-      { tMinutes: 180,  lon: 33.240, lat: 33.290, heading: 95, speed: 13.5 },
+      { tMinutes: -360, lon: 32.4, lat: 33.23, heading: 95, speed: 13.8 },
+      { tMinutes: -180, lon: 32.72, lat: 33.25, heading: 95, speed: 13.8 },
+      { tMinutes: -65, lon: 32.95, lat: 33.262, heading: 95, speed: 12.0 },
+      { tMinutes: -42, lon: 33.0421, lat: 33.2684, heading: 95, speed: 5.4 },
+      { tMinutes: -15, lon: 33.085, lat: 33.27, heading: 98, speed: 6.2 },
+      { tMinutes: 0, lon: 33.15, lat: 33.275, heading: 95, speed: 13.5 },
+      { tMinutes: 180, lon: 33.52, lat: 33.29, heading: 95, speed: 13.5 },
     ],
   },
-  // 2. LEVANT STAR (Container Ship - Transits NE 031° towards Limassol)
   {
     mmsi: 212000002,
     name: "LEVANT STAR",
     waypoints: [
-      { tMinutes: -360, lon: 33.040, lat: 33.050, heading: 31, speed: 14.2 },
-      { tMinutes: -180, lon: 33.120, lat: 33.165, heading: 31, speed: 14.2 },
-      { tMinutes: -42,  lon: 33.175, lat: 33.245, heading: 31, speed: 14.2 },
-      { tMinutes: 0,    lon: 33.200, lat: 33.280, heading: 31, speed: 14.2 },
-      { tMinutes: 180,  lon: 33.280, lat: 33.395, heading: 31, speed: 14.2 },
+      { tMinutes: -360, lon: 32.85, lat: 32.6, heading: 31, speed: 14.2 },
+      { tMinutes: -180, lon: 32.96, lat: 32.88, heading: 31, speed: 14.2 },
+      { tMinutes: -42, lon: 33.12, lat: 33.18, heading: 31, speed: 14.2 },
+      { tMinutes: 0, lon: 33.2, lat: 33.28, heading: 31, speed: 14.2 },
+      { tMinutes: 180, lon: 33.32, lat: 33.55, heading: 31, speed: 14.2 },
     ],
   },
-  // 3. AEGEAN VOYAGER (Bulk Carrier - Transits ESE 114° towards Port Said, Rank #2 suspect with minor deceleration)
   {
     mmsi: 212000003,
     name: "AEGEAN VOYAGER",
     waypoints: [
-      { tMinutes: -360, lon: 33.020, lat: 33.350, heading: 114, speed: 12.5 },
-      { tMinutes: -180, lon: 33.140, lat: 33.300, heading: 111, speed: 12.5 },
-      { tMinutes: -42,  lon: 33.235, lat: 33.265, heading: 121, speed: 7.1 },
-      { tMinutes: 0,    lon: 33.275, lat: 33.245, heading: 114, speed: 12.5 },
-      { tMinutes: 180,  lon: 33.400, lat: 33.190, heading: 114, speed: 12.5 },
+      { tMinutes: -360, lon: 32.5, lat: 33.45, heading: 114, speed: 12.5 },
+      { tMinutes: -180, lon: 32.85, lat: 33.35, heading: 111, speed: 12.5 },
+      { tMinutes: -42, lon: 33.15, lat: 33.29, heading: 121, speed: 7.1 },
+      { tMinutes: 0, lon: 33.275, lat: 33.245, heading: 114, speed: 12.5 },
+      { tMinutes: 180, lon: 33.65, lat: 33.12, heading: 114, speed: 12.5 },
     ],
   },
-  // 4. AKROTIRI BREEZE (LPG Tanker - Transits SW 242° along Northern Fairway towards Alexandria, Rank #3 suspect)
   {
     mmsi: 212000004,
     name: "AKROTIRI BREEZE",
     waypoints: [
-      { tMinutes: -360, lon: 33.240, lat: 33.480, heading: 242, speed: 11.8 },
-      { tMinutes: -180, lon: 33.160, lat: 33.430, heading: 242, speed: 11.8 },
-      { tMinutes: -42,  lon: 33.090, lat: 33.390, heading: 242, speed: 11.8 },
-      { tMinutes: 0,    lon: 33.060, lat: 33.375, heading: 242, speed: 11.8 },
-      { tMinutes: 180,  lon: 32.950, lat: 33.320, heading: 242, speed: 11.8 },
+      { tMinutes: -360, lon: 33.65, lat: 33.85, heading: 242, speed: 11.8 },
+      { tMinutes: -180, lon: 33.35, lat: 33.72, heading: 242, speed: 11.8 },
+      { tMinutes: -42, lon: 33.09, lat: 33.58, heading: 242, speed: 11.8 },
+      { tMinutes: 0, lon: 32.95, lat: 33.5, heading: 242, speed: 11.8 },
+      { tMinutes: 180, lon: 32.55, lat: 33.35, heading: 242, speed: 11.8 },
     ],
   },
-  // 5. CYPRUS POLICE PATROL / EMSA (Coast Guard Fast Intercept Patrol WSW, Rank #4 response vessel)
   {
     mmsi: 212000005,
     name: "CYPRUS POLICE PATROL / EMSA",
     waypoints: [
-      { tMinutes: -360, lon: 33.380, lat: 33.420, heading: 231, speed: 14.0 }, // Coastline patrol base
-      { tMinutes: -180, lon: 33.300, lat: 33.370, heading: 241, speed: 22.0 }, // Inbound emergency transit
-      { tMinutes: -42,  lon: 33.180, lat: 33.340, heading: 249, speed: 22.0 }, // High speed sprint
-      { tMinutes: -15,  lon: 33.095, lat: 33.315, heading: 240, speed: 18.0 }, // Tactical approach vector maintaining safe distance from transit
-      { tMinutes: 0,    lon: 33.05775642, lat: 33.25902604, heading: 215, speed: 6.0 }, // Arrives at oil slick locus for containment boom deployment
-      { tMinutes: 180,  lon: 33.065, lat: 33.255, heading: 124, speed: 4.5 }, // Station keeping / skimming operations
+      { tMinutes: -360, lon: 33.02, lat: 34.35, heading: 180, speed: 14.0 },
+      { tMinutes: -180, lon: 33.03, lat: 33.95, heading: 180, speed: 22.0 },
+      { tMinutes: -42, lon: 33.045, lat: 33.52, heading: 180, speed: 22.0 },
+      { tMinutes: -15, lon: 33.052, lat: 33.32, heading: 180, speed: 18.0 },
+      { tMinutes: 0, lon: 33.05775642, lat: 33.25902604, heading: 180, speed: 6.0 },
+      { tMinutes: 180, lon: 33.065, lat: 33.255, heading: 124, speed: 4.5 },
     ],
   },
   // 6–30. Authentic Mediterranean Commercial Fleet Corridor Waypoints
@@ -2432,8 +2528,8 @@ export class AutonomousSimulationEngine {
         cargo_type: "Liquefied Gas (LPG)",
         anomaly_score: 12.7,
         current_position: {
-          latitude: 33.375,
-          longitude: 33.060,
+          latitude: 33.500,
+          longitude: 32.950,
           speed_knots: 11.8,
           heading_degrees: 242,
           rate_of_turn: 0.0,
@@ -2457,7 +2553,7 @@ export class AutonomousSimulationEngine {
           latitude: 33.25902604,
           longitude: 33.05775642,
           speed_knots: 6.0,
-          heading_degrees: 215,
+          heading_degrees: 180,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
