@@ -149,7 +149,7 @@ export const TimeScrubber: React.FC<TimeScrubberProps> = ({
   }, [events]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto pointer-events-auto tactical-glass rounded-2xl flex flex-col p-2.5 sm:p-3.5 gap-2 shadow-2xl border border-slate-700/80 select-none backdrop-blur-md relative">
+    <div className="w-full max-w-4xl mx-auto pointer-events-auto bg-[#0b101b] tactical-glass rounded-2xl flex flex-col p-2.5 sm:p-3.5 gap-2 shadow-[0_12px_40px_rgba(0,0,0,0.95)] border border-slate-700/80 select-none backdrop-blur-md relative z-50">
       
       {/* Top Status & Anomaly Event HUD Banner */}
       <div className="flex items-center justify-between px-1.5 sm:px-2 gap-2 text-xs font-mono border-b border-slate-800/80 pb-1.5">

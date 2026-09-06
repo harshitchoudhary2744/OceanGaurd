@@ -713,6 +713,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       zoom: 11.2,
       duration: 1400,
       essential: true,
+      padding: { top: 60, bottom: 150, left: 20, right: 20 },
     });
   }, [selectedSpillId, mapLoaded]);
 
@@ -954,6 +955,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     });
 
     mapRef.current = map;
+    map.setPadding({ top: 60, bottom: 150, left: 20, right: 20 });
 
     map.on('load', () => {
       setMapLoaded(true);
@@ -1547,6 +1549,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       zoom: focusTarget.zoom || 11.8,
       duration: 1400,
       essential: true,
+      padding: { top: 60, bottom: 150, left: 20, right: 20 },
     });
 
     // 3. Remove existing locator beacon and popup
@@ -1629,6 +1632,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       zoom: 10.4,
       duration: 1200,
       essential: true,
+      padding: { top: 60, bottom: 150, left: 20, right: 20 },
     });
   }, [selectedSpillId, selectedVesselMmsi, mapLoaded, baseOrigin, activeSuspect, focusTarget]);
 
@@ -1782,7 +1786,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   }, [mapLoaded, vessels, scrubbedVessels, activeSuspect, currentIncident]);
 
   return (
-    <div className="relative w-full h-full bg-[#0b0f19] overflow-hidden select-none">
+    <div className="relative w-full h-full bg-[#0b0f19] overflow-hidden select-none isolate z-0">
       {/* MapLibre WebGL Canvas */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
@@ -2087,7 +2091,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </button>
         <button
           onClick={() => {
-            mapRef.current?.flyTo({ center: [slickCentroid[0], slickCentroid[1]], zoom: 11.2, duration: 1200 });
+            mapRef.current?.flyTo({ center: [slickCentroid[0], slickCentroid[1]], zoom: 11.2, duration: 1200, padding: { top: 60, bottom: 150, left: 20, right: 20 } });
           }}
           className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-cyan-400 hover:text-cyan-300 hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
           title="Recenter on Active Oil Spill"

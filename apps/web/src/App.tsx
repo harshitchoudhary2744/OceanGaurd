@@ -327,20 +327,14 @@ export function App() {
     }
   };
 
-  // Synchronized Replay Timer Loop with Adaptive Clear Pacing
+  // Synchronized Replay Timer Loop: Constant steady pace throughout the entire replay
   useEffect(() => {
     let interval: any = null;
     if (isPlaying) {
       interval = setInterval(() => {
         setTimeOffsetMinutes((prev) => {
-          // Normal transit: advance at steady pace.
-          // Critical Breach & Post-Discharge Zone (-60m to 0m):
-          // Slow down timestep so the illicit discharge, vessel evasion, and slick expansion
-          // can be clearly and deliberately observed without rushing through.
-          const isSpillObservationZone = prev >= -60 && prev < 0;
-          const advanceStep = isSpillObservationZone
-            ? Math.max(0.35, playbackSpeed * 0.45) // Smooth ~16 seconds of clear post-spill observation
-            : playbackSpeed * 2.0;
+          // Constant uniform speed throughout the replay (no sudden slowing down after discharge)
+          const advanceStep = playbackSpeed * 1.0;
 
           const next = prev + advanceStep;
           if (next >= 0) {
@@ -349,7 +343,7 @@ export function App() {
           }
           return Number(next.toFixed(2));
         });
-      }, 120);
+      }, 100);
     }
     return () => clearInterval(interval);
   }, [isPlaying, playbackSpeed]);
@@ -519,7 +513,7 @@ export function App() {
           />
 
           {/* Time-Scrubber Timeline (-360m to 0) */}
-          <div className="absolute bottom-20 sm:bottom-4 left-3 right-3 z-20 pointer-events-none flex justify-center">
+          <div className="absolute bottom-20 sm:bottom-4 left-3 right-3 z-50 pointer-events-none flex justify-center">
             <TimeScrubber
               timeOffsetMinutes={timeOffsetMinutes}
               onChangeTimeOffset={setTimeOffsetMinutes}
