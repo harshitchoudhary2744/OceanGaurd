@@ -1491,7 +1491,7 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "3FVR2",
     destination: "ROTTERDAM COMMERCIAL GATEWAY",
     cargo_type: "Containerized Consumer Goods (19,224 TEU)",
-    lat: 33.340,
+    lat: 33.540,
     lon: 32.720,
     heading_degrees: 284,
     speed_knots: 18.2,
@@ -1683,7 +1683,7 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "MDYJ8",
     destination: "PORT SAID ANCHORAGE",
     cargo_type: "Iron Ore Pellets (211,000 DWT)",
-    lat: 33.150,
+    lat: 33.020,
     lon: 33.780,
     heading_degrees: 100,
     speed_knots: 12.2,
@@ -1716,7 +1716,7 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     destination: "ALEXANDRIA GRAIN TERMINAL",
     cargo_type: "Dry Bulk Fertilizer (105,000 DWT)",
     lat: 33.850,
-    lon: 34.280,
+    lon: 34.420,
     heading_degrees: 212,
     speed_knots: 11.8,
   },
@@ -1828,8 +1828,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     destination: "APHRODITE GAS FIELD DRILL PLATFORM",
     cargo_type: "Subsea Drilling Mud & Drill Collars",
     lat: 33.100,
-    lon: 33.880,
-    heading_degrees: 195,
+    lon: 33.820,
+    heading_degrees: 180,
     speed_knots: 10.4,
   },
   {
@@ -1875,8 +1875,8 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     call_sign: "SYGF",
     destination: "AUGUSTA REFINERY ANCHORAGE",
     cargo_type: "Basrah Light Crude (159,000 DWT)",
-    lat: 33.420,
-    lon: 32.550,
+    lat: 33.200,
+    lon: 32.600,
     heading_degrees: 283,
     speed_knots: 13.8,
   },
@@ -1911,11 +1911,11 @@ function generateShipWaypoints(ship: {
   // Offshore support trajectory: dynamic positioning and platform survey pattern
   if (mmsi === 500100022) {
     return [
-      { tMinutes: -360, lon: 33.95, lat: 33.45, heading: 195, speed: 10.4 },
-      { tMinutes: -180, lon: 33.91, lat: 33.28, heading: 195, speed: 10.4 },
-      { tMinutes: -42,  lon: 33.88, lat: 33.15, heading: 215, speed: 8.2 },
-      { tMinutes: 0,    lon: 33.88, lat: 33.10, heading: 180, speed: 6.5 },
-      { tMinutes: 180,  lon: 33.86, lat: 33.02, heading: 175, speed: 5.0 },
+      { tMinutes: -360, lon: 33.75, lat: 33.45, heading: 195, speed: 10.4 },
+      { tMinutes: -180, lon: 33.78, lat: 33.28, heading: 195, speed: 10.4 },
+      { tMinutes: -42,  lon: 33.82, lat: 33.15, heading: 180, speed: 8.2 },
+      { tMinutes: 0,    lon: 33.82, lat: 33.10, heading: 180, speed: 6.5 },
+      { tMinutes: 180,  lon: 33.80, lat: 33.02, heading: 175, speed: 5.0 },
     ];
   }
 
@@ -2004,11 +2004,11 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
     mmsi: 212000002,
     name: "LEVANT STAR",
     waypoints: [
-      { tMinutes: -360, lon: 32.980, lat: 33.050, heading: 31, speed: 14.2 },
-      { tMinutes: -180, lon: 33.060, lat: 33.165, heading: 31, speed: 14.2 },
-      { tMinutes: -42,  lon: 33.115, lat: 33.245, heading: 31, speed: 14.2 },
-      { tMinutes: 0,    lon: 33.140, lat: 33.280, heading: 31, speed: 14.2 },
-      { tMinutes: 180,  lon: 33.220, lat: 33.395, heading: 31, speed: 14.2 },
+      { tMinutes: -360, lon: 33.040, lat: 33.050, heading: 31, speed: 14.2 },
+      { tMinutes: -180, lon: 33.120, lat: 33.165, heading: 31, speed: 14.2 },
+      { tMinutes: -42,  lon: 33.175, lat: 33.245, heading: 31, speed: 14.2 },
+      { tMinutes: 0,    lon: 33.200, lat: 33.280, heading: 31, speed: 14.2 },
+      { tMinutes: 180,  lon: 33.280, lat: 33.395, heading: 31, speed: 14.2 },
     ],
   },
   // 3. AEGEAN VOYAGER (Bulk Carrier - Transits ESE 114° towards Port Said, Rank #2 suspect with minor deceleration)
@@ -2016,34 +2016,35 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
     mmsi: 212000003,
     name: "AEGEAN VOYAGER",
     waypoints: [
-      { tMinutes: -360, lon: 32.980, lat: 33.350, heading: 114, speed: 12.5 },
-      { tMinutes: -180, lon: 33.100, lat: 33.300, heading: 111, speed: 12.5 },
-      { tMinutes: -42,  lon: 33.185, lat: 33.270, heading: 121, speed: 7.1 }, // 16.6 km CPA distance, speed drop to 7.1 kts
-      { tMinutes: 0,    lon: 33.220, lat: 33.250, heading: 114, speed: 12.5 },
-      { tMinutes: 180,  lon: 33.340, lat: 33.200, heading: 114, speed: 12.5 },
+      { tMinutes: -360, lon: 33.020, lat: 33.350, heading: 114, speed: 12.5 },
+      { tMinutes: -180, lon: 33.140, lat: 33.300, heading: 111, speed: 12.5 },
+      { tMinutes: -42,  lon: 33.235, lat: 33.265, heading: 121, speed: 7.1 },
+      { tMinutes: 0,    lon: 33.275, lat: 33.245, heading: 114, speed: 12.5 },
+      { tMinutes: 180,  lon: 33.400, lat: 33.190, heading: 114, speed: 12.5 },
     ],
   },
-  // 4. AKROTIRI BREEZE (LPG Tanker - Transits SW 228° towards Alexandria, Rank #3 suspect)
+  // 4. AKROTIRI BREEZE (LPG Tanker - Transits SW 242° along Northern Fairway towards Alexandria, Rank #3 suspect)
   {
     mmsi: 212000004,
     name: "AKROTIRI BREEZE",
     waypoints: [
-      { tMinutes: -360, lon: 33.200, lat: 33.380, heading: 228, speed: 11.8 },
-      { tMinutes: -180, lon: 33.120, lat: 33.320, heading: 228, speed: 11.8 },
-      { tMinutes: -42,  lon: 33.060, lat: 33.275, heading: 228, speed: 11.8 }, // 55.0 km CPA
-      { tMinutes: 0,    lon: 33.040, lat: 33.260, heading: 228, speed: 11.8 },
-      { tMinutes: 180,  lon: 32.960, lat: 33.200, heading: 228, speed: 11.8 },
+      { tMinutes: -360, lon: 33.240, lat: 33.480, heading: 242, speed: 11.8 },
+      { tMinutes: -180, lon: 33.160, lat: 33.430, heading: 242, speed: 11.8 },
+      { tMinutes: -42,  lon: 33.090, lat: 33.390, heading: 242, speed: 11.8 },
+      { tMinutes: 0,    lon: 33.060, lat: 33.375, heading: 242, speed: 11.8 },
+      { tMinutes: 180,  lon: 32.950, lat: 33.320, heading: 242, speed: 11.8 },
     ],
   },
-  // 5. CYPRUS POLICE PATROL / EMSA (Coast Guard Fast Intercept Patrol WSW 245°, Rank #4 response vessel)
+  // 5. CYPRUS POLICE PATROL / EMSA (Coast Guard Fast Intercept Patrol WSW, Rank #4 response vessel)
   {
     mmsi: 212000005,
     name: "CYPRUS POLICE PATROL / EMSA",
     waypoints: [
       { tMinutes: -360, lon: 33.380, lat: 33.420, heading: 231, speed: 14.0 }, // Coastline patrol base
-      { tMinutes: -180, lon: 33.300, lat: 33.360, heading: 241, speed: 22.0 }, // Inbound emergency transit
-      { tMinutes: -42,  lon: 33.180, lat: 33.300, heading: 249, speed: 22.0 }, // High speed sprint
-      { tMinutes: 0,    lon: 33.05775642, lat: 33.25902604, heading: 245, speed: 6.0 }, // Arrives at oil slick locus for containment boom deployment
+      { tMinutes: -180, lon: 33.300, lat: 33.370, heading: 241, speed: 22.0 }, // Inbound emergency transit
+      { tMinutes: -42,  lon: 33.180, lat: 33.340, heading: 249, speed: 22.0 }, // High speed sprint
+      { tMinutes: -15,  lon: 33.095, lat: 33.315, heading: 240, speed: 18.0 }, // Tactical approach vector maintaining safe distance from transit
+      { tMinutes: 0,    lon: 33.05775642, lat: 33.25902604, heading: 215, speed: 6.0 }, // Arrives at oil slick locus for containment boom deployment
       { tMinutes: 180,  lon: 33.065, lat: 33.255, heading: 124, speed: 4.5 }, // Station keeping / skimming operations
     ],
   },
@@ -2388,7 +2389,7 @@ export class AutonomousSimulationEngine {
         anomaly_score: 4.0,
         current_position: {
           latitude: 33.280,
-          longitude: 33.140,
+          longitude: 33.200,
           speed_knots: 14.2,
           heading_degrees: 31,
           rate_of_turn: 0.0,
@@ -2409,8 +2410,8 @@ export class AutonomousSimulationEngine {
         cargo_type: "Dry Bulk Minerals",
         anomaly_score: 29.2,
         current_position: {
-          latitude: 33.250,
-          longitude: 33.220,
+          latitude: 33.245,
+          longitude: 33.275,
           speed_knots: 12.5,
           heading_degrees: 114,
           rate_of_turn: 0.0,
@@ -2431,10 +2432,10 @@ export class AutonomousSimulationEngine {
         cargo_type: "Liquefied Gas (LPG)",
         anomaly_score: 12.7,
         current_position: {
-          latitude: 33.260,
-          longitude: 33.040,
+          latitude: 33.375,
+          longitude: 33.060,
           speed_knots: 11.8,
-          heading_degrees: 228,
+          heading_degrees: 242,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2455,8 +2456,8 @@ export class AutonomousSimulationEngine {
         current_position: {
           latitude: 33.25902604,
           longitude: 33.05775642,
-          speed_knots: 22.0,
-          heading_degrees: 245,
+          speed_knots: 6.0,
+          heading_degrees: 215,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
