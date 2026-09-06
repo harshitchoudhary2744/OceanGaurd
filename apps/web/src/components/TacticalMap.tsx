@@ -598,6 +598,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [showCpaVector, setShowCpaVector] = useState(true);
   const [showLegend, setShowLegend] = useState(true);
   const [baseMapMode, setBaseMapMode] = useState<'dark' | 'satellite'>('satellite');
+  const [isEezRadarCollapsed, setIsEezRadarCollapsed] = useState<boolean>(false);
 
   // Active Incident Config
   const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["DARTIS-ow-0001"] || Object.values(MUMBAI_INCIDENTS)[0];
@@ -1787,12 +1788,14 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
   return (
     <div className="relative w-full h-full bg-[#0b0f19] overflow-hidden select-none isolate z-0">
-      {/* MapLibre WebGL Canvas */}
-      <div ref={mapContainerRef} className="w-full h-full" />
+      {/* MapLibre WebGL Canvas & DOM Markers (Strictly Isolated Stacking Context at z-0) */}
+      <div className="absolute inset-0 z-0 overflow-hidden isolate pointer-events-auto">
+        <div ref={mapContainerRef} className="w-full h-full" />
+      </div>
 
       {/* High-Res Satellite Atmosphere & Recognition Badge (Active in Satellite Mode) */}
       {baseMapMode === 'satellite' && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
           {/* Top Center Floating Sentinel-1 Reconnaissance Beacon */}
           <div className="absolute top-3.5 left-1/2 -translate-x-1/2 hidden xl:flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#070b14]/85 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] shadow-2xl backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/80" />
@@ -1806,7 +1809,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {/* ============================================================== */}
       {/* 5-CATEGORY TACTICAL LAYER SELECTOR & LEGEND (TOP LEFT) */}
       {/* ============================================================== */}
-      <div className="absolute top-3.5 left-3 sm:left-4 z-20 flex flex-col font-mono text-xs select-none max-w-xs">
+      <div className="absolute top-3.5 left-3 sm:left-4 z-30 flex flex-col font-mono text-xs select-none max-w-xs">
         <button
           onClick={() => setShowLayerDrawer(!showLayerDrawer)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b0f19]/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-800/90 shadow-xl backdrop-blur-md transition-all active:scale-95"
@@ -1818,7 +1821,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </button>
 
         {showLayerDrawer && (
-          <div className="mt-2 bg-[#070b14]/95 border border-slate-800 rounded-xl p-3 flex flex-col gap-2 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2 w-64 ring-1 ring-slate-800">
+          <div className="mt-2 bg-[#070b14]/95 border border-slate-800 rounded-xl p-3 flex flex-col gap-2 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2 w-64 ring-1 ring-slate-800 z-40">
             {/* Basemap Mode Segmented Switcher in Drawer */}
             <div className="p-2 bg-slate-950/90 rounded-xl border border-slate-800 flex flex-col gap-1.5 shadow-inner">
               <div className="flex items-center justify-between">
@@ -2032,10 +2035,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       </div>
 
       {/* Floating Basemap Mode Switcher: High-Res Satellite vs Dark Bathymetry */}
-      <div className="absolute top-3.5 right-14 sm:right-16 z-20 hidden sm:flex items-center bg-[#070b14]/90 border border-slate-800 rounded-xl p-0.5 shadow-2xl backdrop-blur-md select-none font-mono text-xs ring-1 ring-slate-800">
+      <div className="absolute top-3.5 right-14 sm:right-16 z-30 hidden sm:flex items-center bg-[#070b14]/90 border border-slate-800 rounded-xl p-0.5 shadow-2xl backdrop-blur-md select-none font-mono text-xs ring-1 ring-slate-800">
         <button
           onClick={() => setBaseMapMode('satellite')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
             baseMapMode === 'satellite'
               ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -2043,12 +2046,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           title="Default: High-Resolution Satellite Imagery (Sentinel-1 SAR + World Imagery)"
         >
           <Satellite className="w-3.5 h-3.5" />
-          <span>🛰️ Satellite (Default)</span>
+          <span>🛰️ Satellite</span>
         </button>
 
         <button
           onClick={() => setBaseMapMode('dark')}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
             baseMapMode === 'dark'
               ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
               : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -2056,14 +2059,14 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           title="Dark Tactical Bathymetry & GEBCO Depth View"
         >
           <Waves className="w-3.5 h-3.5" />
-          <span>🌊 Dark Bathymetry</span>
+          <span>🌊 Bathymetry</span>
         </button>
       </div>
 
       {/* ============================================================== */}
       {/* MAP ZOOM, BASEMAP & CENTER CONTROLS (TOP RIGHT) */}
       {/* ============================================================== */}
-      <div className="absolute top-3.5 right-3 sm:right-4 flex flex-col gap-1.5 z-20 select-none">
+      <div className="absolute top-3.5 right-3 sm:right-4 flex flex-col gap-1.5 z-30 select-none">
         <button
           onClick={() => setBaseMapMode((prev) => (prev === 'dark' ? 'satellite' : 'dark'))}
           className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-all ${
@@ -2091,7 +2094,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </button>
         <button
           onClick={() => {
-            mapRef.current?.flyTo({ center: [slickCentroid[0], slickCentroid[1]], zoom: 11.2, duration: 1200, padding: { top: 60, bottom: 150, left: 20, right: 20 } });
+            mapRef.current?.flyTo({ center: [slickCentroid[0], slickCentroid[1]], zoom: 11.2, duration: 1200, padding: { top: 60, bottom: 150, left: 20, right: 60 } });
           }}
           className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-cyan-400 hover:text-cyan-300 hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
           title="Recenter on Active Oil Spill"
@@ -2101,35 +2104,48 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       </div>
 
       {/* ============================================================== */}
-      {/* TOP-RIGHT DOCKED TELEMETRY CAPSULE (NON-OVERLAPPING) */}
+      {/* TOP-LEFT DOCKED TELEMETRY CAPSULE (NON-OVERLAPPING) */}
       {/* ============================================================== */}
-      <div className="absolute top-28 right-3 sm:right-4 z-10 hidden md:flex flex-col gap-1 p-2.5 bg-[#111622]/95 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-2xl max-w-[240px] ring-1 ring-slate-800/80">
+      <div className="absolute top-14 left-3 sm:left-4 z-30 hidden md:flex flex-col gap-1 p-2.5 bg-[#0b0f19]/95 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-2xl max-w-[240px] ring-1 ring-slate-800/80 transition-all">
         <div className="flex items-center justify-between font-bold text-white border-b border-slate-800 pb-1">
           <span className="flex items-center gap-1.5 text-cyan-400">
             <Compass className="w-3.5 h-3.5" />
             CYPRUS EEZ RADAR
           </span>
-          <span className="text-rose-400 font-bold">{timeOffsetMinutes === 0 ? 'LIVE' : `T${timeOffsetMinutes}m`}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-rose-400 font-bold">{timeOffsetMinutes === 0 ? 'LIVE' : `T${timeOffsetMinutes}m`}</span>
+            <button
+              onClick={() => setIsEezRadarCollapsed(!isEezRadarCollapsed)}
+              className="text-slate-400 hover:text-white transition-colors p-0.5 rounded hover:bg-slate-800 cursor-pointer"
+              title={isEezRadarCollapsed ? 'Expand Telemetry Capsule' : 'Minimize Telemetry Capsule'}
+            >
+              {isEezRadarCollapsed ? <ChevronUp className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+            </button>
+          </div>
         </div>
-        <div className="flex justify-between items-center text-[10px] pt-0.5">
-          <span className="text-slate-400">Incident:</span>
-          <strong className="text-white truncate max-w-[130px]">{currentIncident.name}</strong>
-        </div>
-        <div className="flex justify-between items-center text-[10px]">
-          <span className="text-slate-400">Centroid:</span>
-          <strong className="text-cyan-300">{currentIncident.centroid[0].toFixed(3)}°N, {currentIncident.centroid[1].toFixed(3)}°E</strong>
-        </div>
-        <div className="flex justify-between items-center text-[10px]">
-          <span className="text-slate-400">Culprit:</span>
-          <strong className="text-rose-400">{activeSuspect?.name || 'Inspecting...'}</strong>
-        </div>
-        <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-800/80">
-          <span className="text-slate-400">Threat Level:</span>
-          <span className="flex items-center gap-1 text-rose-400 font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-            {currentIncident.threat.overall_severity_score}/100 ({currentIncident.threat.overall_severity_level})
-          </span>
-        </div>
+        {!isEezRadarCollapsed && (
+          <>
+            <div className="flex justify-between items-center text-[10px] pt-0.5">
+              <span className="text-slate-400">Incident:</span>
+              <strong className="text-white truncate max-w-[130px]">{currentIncident.name}</strong>
+            </div>
+            <div className="flex justify-between items-center text-[10px]">
+              <span className="text-slate-400">Centroid:</span>
+              <strong className="text-cyan-300">{currentIncident.centroid[0].toFixed(3)}°N, {currentIncident.centroid[1].toFixed(3)}°E</strong>
+            </div>
+            <div className="flex justify-between items-center text-[10px]">
+              <span className="text-slate-400">Culprit:</span>
+              <strong className="text-rose-400">{activeSuspect?.name || 'Inspecting...'}</strong>
+            </div>
+            <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-800/80">
+              <span className="text-slate-400">Threat Level:</span>
+              <span className="flex items-center gap-1 text-rose-400 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                {currentIncident.threat.overall_severity_score}/100 ({currentIncident.threat.overall_severity_level})
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
