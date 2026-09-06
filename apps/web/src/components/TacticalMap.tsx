@@ -597,7 +597,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [showSarSwath, setShowSarSwath] = useState(true);
   const [showCpaVector, setShowCpaVector] = useState(true);
   const [showLegend, setShowLegend] = useState(true);
-  const [baseMapMode, setBaseMapMode] = useState<'dark' | 'satellite'>('dark');
+  const [baseMapMode, setBaseMapMode] = useState<'dark' | 'satellite'>('satellite');
 
   // Active Incident Config
   const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["DARTIS-ow-0001"] || Object.values(MUMBAI_INCIDENTS)[0];
@@ -931,7 +931,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             minzoom: 0,
             maxzoom: 20,
             layout: {
-              visibility: 'none',
+              visibility: 'visible',
             },
           },
           {
@@ -1773,6 +1773,25 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {/* MapLibre WebGL Canvas */}
       <div ref={mapContainerRef} className="w-full h-full" />
 
+      {/* Lively Satellite Atmosphere & Radar Overlays (Active in Satellite Mode) */}
+      {baseMapMode === 'satellite' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
+          {/* Subtle Dynamic Ocean Currents Flow Texture */}
+          <div className="absolute inset-0 animate-ocean-currents opacity-30" />
+
+          {/* Animated Satellite Synthetic Aperture Radar (SAR) Sweep Laser Beam */}
+          <div className="absolute -inset-x-32 h-44 bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent border-b border-cyan-400/50 shadow-[0_0_30px_rgba(6,182,212,0.4)] animate-satellite-sweep" />
+
+          {/* Top Center Floating Sentinel-1 Reconnaissance Beacon */}
+          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 hidden xl:flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#070b14]/85 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] shadow-2xl backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/80" />
+            <span className="font-bold tracking-wider text-white">SENTINEL-1B C-SAR • HIGH-RES SATELLITE IMAGERY</span>
+            <span className="text-slate-600">•</span>
+            <span className="text-cyan-300">LIVE ORBITAL PASS • CYPRUS LEVANTINE BASIN</span>
+          </div>
+        </div>
+      )}
+
       {/* ============================================================== */}
       {/* 5-CATEGORY TACTICAL LAYER SELECTOR & LEGEND (TOP LEFT) */}
       {/* ============================================================== */}
@@ -1789,6 +1808,44 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
         {showLayerDrawer && (
           <div className="mt-2 bg-[#070b14]/95 border border-slate-800 rounded-xl p-3 flex flex-col gap-2 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2 w-64 ring-1 ring-slate-800">
+            {/* Basemap Mode Segmented Switcher in Drawer */}
+            <div className="p-2 bg-slate-950/90 rounded-xl border border-slate-800 flex flex-col gap-1.5 shadow-inner">
+              <div className="flex items-center justify-between">
+                <span className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wider">
+                  Basemap Display Style
+                </span>
+                <span className="text-[8.5px] text-cyan-400 font-mono font-semibold">
+                  {baseMapMode === 'satellite' ? 'HIGH-RES' : 'BATHYMETRY'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
+                <button
+                  onClick={() => setBaseMapMode('satellite')}
+                  className={`py-1.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    baseMapMode === 'satellite'
+                      ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
+                      : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                  title="Default: High-Resolution Satellite Imagery"
+                >
+                  <Satellite className="w-3 h-3" />
+                  <span>Satellite</span>
+                </button>
+                <button
+                  onClick={() => setBaseMapMode('dark')}
+                  className={`py-1.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    baseMapMode === 'dark'
+                      ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
+                      : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                  title="Dark Tactical Bathymetry & GEBCO Depth View"
+                >
+                  <Waves className="w-3 h-3" />
+                  <span>Dark Sea</span>
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
               <span className="text-[10px] text-cyan-400 font-extrabold uppercase tracking-wider">
                 Coastal & Threat Layers
@@ -1961,6 +2018,35 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Floating Basemap Mode Switcher: High-Res Satellite vs Dark Bathymetry */}
+      <div className="absolute top-3.5 right-14 sm:right-16 z-20 hidden sm:flex items-center bg-[#070b14]/90 border border-slate-800 rounded-xl p-0.5 shadow-2xl backdrop-blur-md select-none font-mono text-xs ring-1 ring-slate-800">
+        <button
+          onClick={() => setBaseMapMode('satellite')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+            baseMapMode === 'satellite'
+              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+          title="Default: High-Resolution Satellite Imagery (Sentinel-1 SAR + World Imagery)"
+        >
+          <Satellite className="w-3.5 h-3.5" />
+          <span>🛰️ Satellite (Default)</span>
+        </button>
+
+        <button
+          onClick={() => setBaseMapMode('dark')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+            baseMapMode === 'dark'
+              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+          title="Dark Tactical Bathymetry & GEBCO Depth View"
+        >
+          <Waves className="w-3.5 h-3.5" />
+          <span>🌊 Dark Bathymetry</span>
+        </button>
       </div>
 
       {/* ============================================================== */}

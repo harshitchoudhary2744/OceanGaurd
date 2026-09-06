@@ -71,3 +71,93 @@
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* ============================================================================
+   LIVELY SATELLITE MAP & RADAR ANIMATIONS
+   ============================================================================ */
+@keyframes satelliteRadarSweep {
+  0% {
+    transform: translateY(-120%) rotate(25deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateY(220%) rotate(25deg);
+    opacity: 0;
+  }
+}
+
+.animate-satellite-sweep {
+  animation: satelliteRadarSweep 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes oceanCurrentStream {
+  0% {
+    background-position: 0px 0px;
+  }
+  100% {
+    background-position: 180px 60px;
+  }
+}
+
+.animate-ocean-currents {
+  background-image: radial-gradient(circle, rgba(34, 211, 238, 0.12) 1px, transparent 1px);
+  background-size: 32px 32px;
+  animation: oceanCurrentStream 14s linear infinite;
+}
+
+@keyframes slickAuraPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 12px rgba(225, 29, 72, 0.65));
+    opacity: 0.95;
+  }
+  50% {
+    filter: drop-shadow(0 0 24px rgba(244, 63, 94, 0.95)) drop-shadow(0 0 6px rgba(251, 113, 133, 0.8));
+    opacity: 1;
+  }
+}
+
+.animate-slick-pulse {
+  animation: slickAuraPulse 3.5s ease-in-out infinite;
+}
+
+@keyframes radarReticleSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-spin {
+  animation: radarReticleSpin 12s linear infinite;
+}
+
+@keyframes waveParticleFloat {
+  0% {
+    transform: translate(0, 0) scale(0.95);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate(15px, 8px) scale(1.05);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(30px, 16px) scale(0.95);
+    opacity: 0.2;
+  }
+}
+
+.animate-wave-drift {
+  animation: waveParticleFloat 6s ease-in-out infinite;
+}
+
