@@ -1726,6 +1726,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         el.dataset.renderedState = stateKey;
 
         applyMarkerDimensions(el);
+        el.dataset.currentRotation = `${v.heading}`;
         el.innerHTML = getShipMarkerHtml(shipType, isSelected, isAisDark, name, v.speed || 0, v.heading);
 
         el.addEventListener('click', (ev) => {
@@ -1745,11 +1746,23 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         if (el.dataset.renderedState !== stateKey) {
           el.dataset.renderedState = stateKey;
           applyMarkerDimensions(el);
-          el.innerHTML = getShipMarkerHtml(shipType, isSelected, isAisDark, name, v.speed || 0, v.heading);
+          let currentRot = parseFloat(el.dataset.currentRotation || `${v.heading}`);
+          let diff = (v.heading - currentRot) % 360;
+          if (diff > 180) diff -= 360;
+          if (diff < -180) diff += 360;
+          currentRot += diff;
+          el.dataset.currentRotation = `${currentRot}`;
+          el.innerHTML = getShipMarkerHtml(shipType, isSelected, isAisDark, name, v.speed || 0, currentRot);
         } else {
           const svgContainer = el.querySelector('.marker-icon-container') as HTMLElement;
           if (svgContainer) {
-            svgContainer.style.transform = `rotate(${v.heading}deg)`;
+            let currentRot = parseFloat(el.dataset.currentRotation || `${v.heading}`);
+            let diff = (v.heading - currentRot) % 360;
+            if (diff > 180) diff -= 360;
+            if (diff < -180) diff += 360;
+            currentRot += diff;
+            el.dataset.currentRotation = `${currentRot}`;
+            svgContainer.style.transform = `rotate(${currentRot}deg)`;
           }
           const speedEl = el.querySelector('.marker-speed-val') as HTMLElement;
           if (speedEl) {

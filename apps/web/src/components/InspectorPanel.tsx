@@ -292,6 +292,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
   onOpenDiceModal,
   onOpenSeverityModal,
 }) => {
+  const [overviewSection, setOverviewSection] = useState<'briefing' | 'geometry' | 'timeline' | 'telemetry'>('briefing');
   const centroidCoords = `${currentIncident.centroid[0].toFixed(4)}°N, ${currentIncident.centroid[1].toFixed(4)}°E`;
   const originCoords = `${currentIncident.originCoords[1].toFixed(4)}°N, ${currentIncident.originCoords[0].toFixed(4)}°E`;
 
@@ -336,174 +337,302 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
             {threat.overall_severity_score}/100
           </span>
-          <span className="text-[8.5px] text-rose-400/80 font-mono block mt-0.5">Explain Math</span>
+          <span className="text-[8.5px] text-rose-400/80 font-mono block mt-0.5">View Details</span>
         </button>
       </div>
 
-      {/* Plain-English Executive Incident Briefing */}
-      <div className="p-3 bg-gradient-to-r from-slate-900/95 via-cyan-950/30 to-slate-900/95 rounded-xl border border-cyan-500/30 shadow-md flex flex-col gap-2">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-          <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            Executive Forensic Briefing (Plain English)
-          </span>
-          <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[9px] font-bold">
-            AI Verified
-          </span>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
-          <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
-            <span className="text-slate-400 font-bold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-              1. Confirmed Discharge
-            </span>
-            <p className="text-slate-300 text-[9.5px] leading-relaxed">
-              <strong className="text-rose-300 font-mono">{spill?.area_sq_km || currentIncident.baseAreaSqKm} km²</strong> ({((currentIncident.volumeLiters || Math.round((spill?.area_sq_km || currentIncident.baseAreaSqKm) * 10740))).toLocaleString()} L) heavy fuel oil detected via Sentinel-1 SAR satellite imagery.
-            </p>
-          </div>
-
-          <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
-            <span className="text-slate-400 font-bold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-              2. Radar Fingerprint
-            </span>
-            <p className="text-slate-300 text-[9.5px] leading-relaxed">
-              AI verified <strong className="text-emerald-400 font-mono">{falsePositive.likely_oil_pct}%</strong> true mineral oil. The slick suppressed ocean micro-ripples by <strong className="text-cyan-300 font-mono">-8.9 dB</strong> under 12.8 kt wind.
-            </p>
-          </div>
-
-          <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
-            <span className="text-slate-400 font-bold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-              3. Culprit Ship Match
-            </span>
-            <p className="text-slate-300 text-[9.5px] leading-relaxed">
-              <strong className="text-amber-300">{currentIncident.culpritName || "Mediterranean Trader"}</strong> traversed within 0.12 km of release origin at breach time with AIS transponder dark.
-            </p>
-          </div>
-
-          <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
-            <span className="text-slate-400 font-bold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-              4. Ocean Drift & Risk
-            </span>
-            <p className="text-slate-300 text-[9.5px] leading-relaxed">
-              Displacing <strong className="text-purple-300 font-mono">1.78 km ESE</strong> under combined 1.1 kt currents and wind drift. Coastal severity rated <strong className="text-rose-400 font-mono">{threat.overall_severity_score}/100</strong>.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Primary Oil Slick Spec Card */}
-      <div className="p-3 bg-slate-900/95 rounded-xl border border-slate-800 flex flex-col gap-2 shadow-md">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
-          <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <Target className="w-3.5 h-3.5 text-cyan-400" />
-            Slick Characterization
-          </span>
-          <span className="px-2 py-0.5 rounded bg-rose-950/80 text-rose-300 font-bold border border-rose-500/40 text-[9.5px]">
-            {spill?.slick_type || "Confirmed Heavy Fuel Oil"}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-[10.5px]">
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400 text-[9.5px]">Slick Centroid</span>
-              <span className="text-[8.5px] text-cyan-400 font-semibold">T+0 Center</span>
-            </div>
-            <strong className="text-cyan-200">{centroidCoords}</strong>
-          </div>
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-400 text-[9.5px]">Breach Origin</span>
-              <span className="text-[8.5px] text-rose-400 font-semibold">T-42m Hindcast</span>
-            </div>
-            <strong className="text-rose-300">{originCoords}</strong>
-          </div>
-
-          {/* Hydrodynamic Drift Offset Indicator */}
-          <div className="col-span-2 px-2.5 py-1.5 bg-slate-950/90 rounded border border-cyan-500/30 text-[9.5px] flex items-center justify-between">
-            <span className="text-slate-400">Hydrodynamic Drift Offset:</span>
-            <span className="text-cyan-300 font-bold">~1.78 km SE displacement (42m drift @ 1.1 kts ENE + 16.2 kts WNW)</span>
-          </div>
-
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
-            <span className="text-slate-400 text-[9.5px]">Estimated Volume</span>
-            <strong className="text-white">
-              {(currentIncident.volumeLiters || Math.round((spill?.area_sq_km || currentIncident.baseAreaSqKm) * 10740)).toLocaleString()} L
-            </strong>
-          </div>
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
-            <span className="text-slate-400 text-[9.5px]">Coast Distance</span>
-            <strong className="text-amber-300">
-              {threat.coast_distance_km} km ({threat.predicted_arrival_hours || 11.5}h ETA)
-            </strong>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Summary Teasers for other tabs */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Sub-Tab Module Switcher (Prevents Downward Scrolling) */}
+      <div className="grid grid-cols-4 gap-1 p-1 bg-slate-950/90 rounded-xl border border-slate-800 text-[10px] font-bold">
         <button
-          onClick={() => onSwitchTab('sar_physics')}
-          className="p-2.5 bg-slate-900/80 hover:bg-slate-800 rounded-xl border border-cyan-500/30 text-left transition-all group cursor-pointer"
+          onClick={() => setOverviewSection('briefing')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            overviewSection === 'briefing'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
         >
-          <div className="flex items-center justify-between text-cyan-300 text-[10.5px] font-bold mb-1">
-            <span className="flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-cyan-400" /> SAR Analysis
-            </span>
-            <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-          </div>
-          <div className="text-[10px] text-emerald-400 font-bold">Likely Oil: {falsePositive.likely_oil_pct}%</div>
-          <div className="text-[9px] text-slate-400">Marangoni: {falsePositive.marangoni_damping_db || 8.4} dB</div>
+          📋 Briefing
         </button>
-
         <button
-          onClick={() => onSwitchTab('culprit')}
-          className="p-2.5 bg-slate-900/80 hover:bg-slate-800 rounded-xl border border-rose-500/30 text-left transition-all group cursor-pointer"
+          onClick={() => setOverviewSection('geometry')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            overviewSection === 'geometry'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
         >
-          <div className="flex items-center justify-between text-rose-300 text-[10.5px] font-bold mb-1">
-            <span className="flex items-center gap-1">
-              <Ship className="w-3 h-3 text-rose-400" /> Primary Culprit
-            </span>
-            <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-          </div>
-          <div className="text-[10px] text-rose-400 font-bold">Anomaly: {currentIncident.culpritAnomalyScore || 98.4}/100</div>
-          <div className="text-[9px] text-slate-400 truncate">{currentIncident.culpritName}</div>
+          📐 Geometry
+        </button>
+        <button
+          onClick={() => setOverviewSection('timeline')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            overviewSection === 'timeline'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          ⏱️ Timeline
+        </button>
+        <button
+          onClick={() => setOverviewSection('telemetry')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            overviewSection === 'telemetry'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          🛰️ Telemetry
         </button>
       </div>
 
-      {/* Satellite Metadata Box */}
-      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-[10px] flex flex-col gap-1.5 text-slate-400">
-        <div className="text-slate-300 font-bold uppercase text-[9.5px] border-b border-slate-900 pb-1 flex items-center justify-between">
-          <span>Satellite Ingestion Metadata</span>
-          <span className="text-emerald-400 font-semibold text-[9px]">CALIBRATED</span>
+      {/* MODULE 1: Executive Incident Briefing */}
+      {overviewSection === 'briefing' && (
+        <div className="flex flex-col gap-3">
+          <div className="p-3 bg-gradient-to-r from-slate-900/95 via-cyan-950/30 to-slate-900/95 rounded-xl border border-cyan-500/30 shadow-md flex flex-col gap-2">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                Executive Incident Briefing
+              </span>
+              <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[9px] font-bold">
+                AI Verified
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+              <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
+                <span className="text-slate-400 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                  1. Confirmed Discharge
+                </span>
+                <p className="text-slate-300 text-[9.5px] leading-relaxed">
+                  <strong className="text-rose-300 font-mono">{spill?.area_sq_km || currentIncident.baseAreaSqKm} km²</strong> ({((currentIncident.volumeLiters || Math.round((spill?.area_sq_km || currentIncident.baseAreaSqKm) * 10740))).toLocaleString()} L) heavy fuel oil detected via Sentinel-1 SAR satellite imagery.
+                </p>
+              </div>
+
+              <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
+                <span className="text-slate-400 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  2. Radar Fingerprint
+                </span>
+                <p className="text-slate-300 text-[9.5px] leading-relaxed">
+                  Verified <strong className="text-emerald-400 font-mono">{falsePositive.likely_oil_pct}%</strong> true mineral oil. Micro-ripples suppressed by <strong className="text-cyan-300 font-mono">-8.9 dB</strong> under 12.8 kt wind.
+                </p>
+              </div>
+
+              <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
+                <span className="text-slate-400 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  3. Suspect Vessel Match
+                </span>
+                <p className="text-slate-300 text-[9.5px] leading-relaxed">
+                  <strong className="text-amber-300">{currentIncident.culpritName || "Mediterranean Trader"}</strong> traversed within 0.12 km of release origin at breach time with AIS dark.
+                </p>
+              </div>
+
+              <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
+                <span className="text-slate-400 font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                  4. Ocean Drift & Risk
+                </span>
+                <p className="text-slate-300 text-[9.5px] leading-relaxed">
+                  Displacing <strong className="text-purple-300 font-mono">1.78 km ESE</strong> under combined 1.1 kt currents and wind drift. Coastal severity rated <strong className="text-rose-400 font-mono">{threat.overall_severity_score}/100</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Nav Shortcuts */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => onSwitchTab('sar_physics')}
+              className="p-2.5 bg-slate-900/80 hover:bg-slate-800 rounded-xl border border-cyan-500/30 text-left transition-all group cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-cyan-300 text-[10.5px] font-bold mb-1">
+                <span className="flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-cyan-400" /> SAR Analysis
+                </span>
+                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <div className="text-[10px] text-emerald-400 font-bold">Likely Oil: {falsePositive.likely_oil_pct}%</div>
+              <div className="text-[9px] text-slate-400">Marangoni: {falsePositive.marangoni_damping_db || 8.4} dB</div>
+            </button>
+
+            <button
+              onClick={() => onSwitchTab('culprit')}
+              className="p-2.5 bg-slate-900/80 hover:bg-slate-800 rounded-xl border border-rose-500/30 text-left transition-all group cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-rose-300 text-[10.5px] font-bold mb-1">
+                <span className="flex items-center gap-1">
+                  <Ship className="w-3 h-3 text-rose-400" /> Primary Culprit
+                </span>
+                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <div className="text-[10px] text-rose-400 font-bold">Anomaly: {currentIncident.culpritAnomalyScore || 98.4}/100</div>
+              <div className="text-[9px] text-slate-400 truncate">{currentIncident.culpritName}</div>
+            </button>
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span>Sensor Platform:</span>
-          <strong className="text-white">Sentinel-1 C-SAR</strong>
+      )}
+
+      {/* MODULE 2: Slick Spatial Geometry */}
+      {overviewSection === 'geometry' && (
+        <div className="p-3 bg-slate-900/95 rounded-xl border border-slate-800 flex flex-col gap-2 shadow-md">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+            <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <Target className="w-3.5 h-3.5 text-cyan-400" />
+              Slick Characterization & Spatial Geometry
+            </span>
+            <span className="px-2 py-0.5 rounded bg-rose-950/80 text-rose-300 font-bold border border-rose-500/40 text-[9.5px]">
+              {spill?.slick_type || "Confirmed Heavy Fuel Oil"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+            <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[9.5px]">Slick Centroid</span>
+                <span className="text-[8.5px] text-cyan-400 font-semibold">T+0 Center</span>
+              </div>
+              <strong className="text-cyan-200">{centroidCoords}</strong>
+            </div>
+            <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 text-[9.5px]">Breach Origin</span>
+                <span className="text-[8.5px] text-rose-400 font-semibold">T-42m Hindcast</span>
+              </div>
+              <strong className="text-rose-300">{originCoords}</strong>
+            </div>
+
+            {/* Hydrodynamic Drift Offset Indicator */}
+            <div className="col-span-2 px-2.5 py-1.5 bg-slate-950/90 rounded border border-cyan-500/30 text-[9.5px] flex items-center justify-between">
+              <span className="text-slate-400">Hydrodynamic Drift Offset:</span>
+              <span className="text-cyan-300 font-bold">~1.78 km SE displacement (42m drift @ 1.1 kts ENE)</span>
+            </div>
+
+            <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
+              <span className="text-slate-400 text-[9.5px]">Estimated Volume</span>
+              <strong className="text-white">
+                {(currentIncident.volumeLiters || Math.round((spill?.area_sq_km || currentIncident.baseAreaSqKm) * 10740)).toLocaleString()} L
+              </strong>
+            </div>
+            <div className="p-2 bg-slate-950/70 rounded border border-slate-800/90 flex flex-col gap-0.5">
+              <span className="text-slate-400 text-[9.5px]">Coast Distance</span>
+              <strong className="text-amber-300">
+                {threat.coast_distance_km} km ({threat.predicted_arrival_hours || 11.5}h ETA)
+              </strong>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span>Acquisition Time:</span>
-          <strong className="text-cyan-300">{currentIncident.satellite_pass_ist || "16:14:00 IST"}</strong>
+      )}
+
+      {/* MODULE 3: Incident Timeline & Drift Evolution */}
+      {overviewSection === 'timeline' && (
+        <div className="p-3 bg-slate-900/95 rounded-xl border border-slate-800 flex flex-col gap-2.5 shadow-md">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+            <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              Discharge & Drift Sequence
+            </span>
+            <span className="text-[9.5px] text-cyan-400 font-mono">Hindcast Model</span>
+          </div>
+
+          <div className="flex flex-col gap-2 text-[10px]">
+            <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 flex items-start gap-2">
+              <span className="px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 font-bold text-[9px] border border-rose-500/40 shrink-0">
+                T-42m
+              </span>
+              <div>
+                <strong className="text-white block">Suspect Vessel Overpass & Release</strong>
+                <span className="text-slate-400 text-[9px]">
+                  Suspect VLCC crossed release origin at {originCoords}, decelerating from 14.8 to 5.6 kts with AIS transponder dark.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 flex items-start gap-2">
+              <span className="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 font-bold text-[9px] border border-amber-500/40 shrink-0">
+                T-30m
+              </span>
+              <div>
+                <strong className="text-white block">Advective Dispersion Initiation</strong>
+                <span className="text-slate-400 text-[9px]">
+                  Slick began expanding radially under 16.2 kts WNW wind and 1.1 kts ENE current advection.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 flex items-start gap-2">
+              <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold text-[9px] border border-emerald-500/40 shrink-0">
+                T-0m
+              </span>
+              <div>
+                <strong className="text-white block">Sentinel-1 Satellite SAR Acquisition</strong>
+                <span className="text-slate-400 text-[9px]">
+                  C-band SAR captured 7.61 km² surface slick at {centroidCoords} with -8.9 dB damping contrast.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 flex items-start gap-2">
+              <span className="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 font-bold text-[9px] border border-purple-500/40 shrink-0">
+                T+6h
+              </span>
+              <div>
+                <strong className="text-white block">Hydrodynamic Forecast Horizon</strong>
+                <span className="text-slate-400 text-[9px]">
+                  Projected drift towards Vasiliko / Limassol offshore sector with 154 km coastal buffer.
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span>Polarization Mode:</span>
-          <strong className="text-white">VV + VH (IW Mode)</strong>
+      )}
+
+      {/* MODULE 4: Satellite Telemetry */}
+      {overviewSection === 'telemetry' && (
+        <div className="p-3 bg-slate-950/90 rounded-xl border border-slate-800 text-[10px] flex flex-col gap-2 text-slate-400 shadow-md">
+          <div className="text-slate-300 font-bold uppercase text-[9.5px] border-b border-slate-900 pb-1.5 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              Sensor Platform & Ingestion Telemetry
+            </span>
+            <span className="text-emerald-400 font-semibold text-[9px]">CALIBRATED</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div className="p-2 bg-slate-900/60 rounded border border-slate-800 flex flex-col">
+              <span className="text-slate-500 text-[9px]">Sensor Platform:</span>
+              <strong className="text-white">Sentinel-1 C-SAR</strong>
+            </div>
+            <div className="p-2 bg-slate-900/60 rounded border border-slate-800 flex flex-col">
+              <span className="text-slate-500 text-[9px]">Acquisition Time:</span>
+              <strong className="text-cyan-300">{currentIncident.satellite_pass_ist || "16:14:00 IST"}</strong>
+            </div>
+            <div className="p-2 bg-slate-900/60 rounded border border-slate-800 flex flex-col">
+              <span className="text-slate-500 text-[9px]">Polarization:</span>
+              <strong className="text-white">VV + VH (IW Mode)</strong>
+            </div>
+            <div className="p-2 bg-slate-900/60 rounded border border-slate-800 flex flex-col">
+              <span className="text-slate-500 text-[9px]">Boundary Extraction:</span>
+              <strong className="text-cyan-200">Moore-Neighbor 2D</strong>
+            </div>
+            <div className="p-2 bg-slate-900/60 rounded border border-slate-800 flex flex-col">
+              <span className="text-slate-500 text-[9px]">Validation Dice:</span>
+              <strong className="text-emerald-400">71.30% (val_dice)</strong>
+            </div>
+            <div className="p-2 bg-slate-900/60 rounded border border-slate-800 flex flex-col">
+              <span className="text-slate-500 text-[9px]">Peak Pixel Confidence:</span>
+              <strong className="text-amber-300">0.982257 (98.2%)</strong>
+            </div>
+          </div>
         </div>
-        <div className="flex justify-between">
-          <span>Boundary Extraction:</span>
-          <strong className="text-cyan-200">Moore-Neighbor 2D Contour</strong>
-        </div>
-      </div>
+      )}
 
       {/* PDF Export Button */}
       <button
         onClick={onExportPdf}
         disabled={isExporting}
-        className="w-full mt-1 py-2.5 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.99] cursor-pointer disabled:opacity-50"
+        className="w-full mt-0.5 py-2.5 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.99] cursor-pointer disabled:opacity-50"
       >
         <FileDown className="w-4 h-4" />
         <span>{isExporting ? 'Compiling Legal Report...' : 'Generate Legal Forensic PDF Dossier'}</span>
@@ -524,8 +653,10 @@ interface SarPhysicsTabProps {
 }
 
 const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ currentIncident, falsePositive, spill, metocean, onOpenBayesianModal }) => {
+  const [sarSection, setSarSection] = useState<'neural' | 'evidence' | 'classifier'>('neural');
   const [showInlineCalc, setShowInlineCalc] = useState(false);
-  const [inlineMode, setInlineMode] = useState<'simple' | 'math'>('simple');
+  const [showNeuralMath, setShowNeuralMath] = useState(false);
+  const [calcViewMode, setCalcViewMode] = useState<'breakdown' | 'math'>('breakdown');
   const dampingRatio = (falsePositive?.marangoni_damping_db || spill?.damping_ratio_db || 8.9).toFixed(1);
   const rawDice = spill?.segmentation_dice_score || currentIncident?.segmentation_dice_score || 0.7130;
   const diceScorePct = (rawDice <= 1.0 ? rawDice * 100 : rawDice).toFixed(2);
@@ -543,271 +674,358 @@ const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ currentIncident, falsePos
 
   return (
     <div className="flex flex-col gap-3 font-mono text-xs">
-      {/* Neural Pipeline Architecture Banner */}
-      <div className="p-2.5 bg-slate-950/90 rounded-xl border border-cyan-500/40 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-bold text-[10px]">
-            AI
-          </div>
-          <div>
-            <span className="text-white font-bold text-[10.5px] block">{modelArch}</span>
-            <span className="text-[9px] text-slate-400 block">{modelEngine}</span>
-          </div>
-        </div>
-        <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-500/30 text-[9.5px]">
-          {modelBadge}
-        </span>
+      {/* Sub-Tabs Module Switcher (Prevents Downward Scrolling) */}
+      <div className="grid grid-cols-3 gap-1 p-1 bg-slate-950/90 rounded-xl border border-slate-800 text-[10px] font-bold">
+        <button
+          onClick={() => setSarSection('neural')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            sarSection === 'neural'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          🧠 Neural Model
+        </button>
+        <button
+          onClick={() => setSarSection('evidence')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            sarSection === 'evidence'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          🔬 Physical Evidence
+        </button>
+        <button
+          onClick={() => setSarSection('classifier')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            sarSection === 'classifier'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          📊 Bayesian Classifier
+        </button>
       </div>
 
-      {/* Plain-English AI Verification (3-Step Guide) */}
-      <div className="p-3 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-cyan-950/40 rounded-xl border border-cyan-500/40 flex flex-col gap-2 shadow-lg">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
-          <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            Plain-English AI Verification (3 Steps)
-          </span>
-          <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold border border-emerald-500/40 text-[9px]">
-            {falsePositive.likely_oil_pct}% OIL CONFIRMED
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-1.5 text-[10px]">
-          <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/90 flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">1</span>
-            <div>
-              <strong className="text-white block text-[10px]">Radar Surface Flattening Test: PASSED</strong>
-              <span className="text-slate-300 text-[9px] leading-relaxed block">
-                Oil flattens water capillary ripples. Smooth surfaces bounce satellite radar away, creating a signature dark patch with an <strong className="text-emerald-400">-{dampingRatio} dB</strong> signal drop (&gt; 5.5 dB threshold for mineral oil).
+      {/* MODULE 1: Physical Evidence Verification */}
+      {sarSection === 'evidence' && (
+        <div className="flex flex-col gap-3">
+          <div className="p-3 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-cyan-950/40 rounded-xl border border-cyan-500/40 flex flex-col gap-2 shadow-lg">
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+              <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                Physical Evidence Verification
               </span>
+              <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold border border-emerald-500/40 text-[9px]">
+                {falsePositive.likely_oil_pct}% OIL CONFIRMED
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1.5 text-[10px]">
+              <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/90 flex items-start gap-2">
+                <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">1</span>
+                <div>
+                  <strong className="text-white block text-[10px]">Radar Surface Flattening: PASSED</strong>
+                  <span className="text-slate-300 text-[9px] leading-relaxed block">
+                    Mineral oil suppresses ocean capillary ripples via Marangoni damping. Backscatter dropped by <strong className="text-emerald-400">-{dampingRatio} dB</strong> (&gt; 5.5 dB threshold for genuine petroleum slicks).
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/90 flex items-start gap-2">
+                <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">2</span>
+                <div>
+                  <strong className="text-white block text-[10px]">Ambient Wind Contrast: PASSED</strong>
+                  <span className="text-slate-300 text-[9px] leading-relaxed block">
+                    Offshore wind is <strong className="text-cyan-300">{windKts} kts</strong> ({windMs} m/s). This activates surface Bragg waves on clean water while the slick remains flattened, <strong className="text-rose-400">ruling out calm water look-alikes</strong>.
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/90 flex items-start gap-2">
+                <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">3</span>
+                <div>
+                  <strong className="text-white block text-[10px]">Morphological Alignment: MATCHED</strong>
+                  <span className="text-slate-300 text-[9px] leading-relaxed block">
+                    High eccentricity (0.88) linear discharge fairway aligns directly with commercial transit heading, <strong className="text-rose-400">ruling out circular biogenic algae or rain</strong>.
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/90 flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">2</span>
-            <div>
-              <strong className="text-white block text-[10px]">Ambient Wind Contrast: PASSED</strong>
-              <span className="text-slate-300 text-[9px] leading-relaxed block">
-                Local wind is <strong className="text-cyan-300">{windKts} kts</strong> ({windMs} m/s). It creates waves across the clean sea, but the thick oil stays smooth. This completely <strong className="text-rose-400">rules out calm water mirrors</strong>.
-              </span>
-            </div>
-          </div>
-
-          <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800/90 flex items-start gap-2">
-            <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">3</span>
-            <div>
-              <strong className="text-white block text-[10px]">Geometry & Ship Alignment: MATCHED</strong>
-              <span className="text-slate-300 text-[9px] leading-relaxed block">
-                The slick is narrow and elongated (eccentricity 0.88), aligning directly with the culprit ship's course. This <strong className="text-rose-400">rules out circular natural algae blooms or rain</strong>.
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 6-Class False Positive Header Card */}
-      <div className="p-3 bg-slate-900/95 rounded-xl border border-cyan-500/30 flex flex-col gap-2.5 shadow-md">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-          <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            6-Class Bayesian Look-Alike Classifier
-          </span>
-          <div className="flex items-center gap-1.5">
-            <span className="px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 font-bold border border-emerald-500/40 text-[9.5px]">
-              Oil: {falsePositive.likely_oil_pct}%
+          {/* Physics Validation Metrics */}
+          <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-2">
+            <span className="text-[10.5px] text-slate-300 font-bold uppercase border-b border-slate-800 pb-1 flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5 text-cyan-400" />
+              Marangoni Radar Backscatter Damping & Geometry
             </span>
-            <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold border border-slate-700 text-[9.5px]">
-              Look-alike: {falsePositive.lookalike_pct}%
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+                <span className="text-slate-400 block">Damping Contrast:</span>
+                <strong className="text-cyan-300 text-xs">{dampingRatio} dB Ratio</strong>
+              </div>
+              <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+                <span className="text-slate-400 block">Continuous Soft-Dice:</span>
+                <strong className="text-emerald-400 text-xs">{diceScorePct}% (0.7130)</strong>
+              </div>
+              <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+                <span className="text-slate-400 block">Jaccard / IoU:</span>
+                <strong className="text-cyan-300 text-xs">{iouScorePct}% (0.5540)</strong>
+              </div>
+              <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
+                <span className="text-slate-400 block">Max Probability:</span>
+                <strong className="text-amber-300 text-xs">{maxProbFormatted} (98.23%)</strong>
+              </div>
+            </div>
+
+            <div className="text-[9.5px] text-slate-400 leading-relaxed bg-slate-950/60 p-2.5 rounded border border-slate-800/80 mt-1">
+              <span className="text-cyan-400 font-semibold">Radar Science: </span>
+              {falsePositive.sar_physics_reasoning}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODULE 2: 6-Class Bayesian Look-Alike Classifier */}
+      {sarSection === 'classifier' && (
+        <div className="p-3 bg-slate-900/95 rounded-xl border border-cyan-500/30 flex flex-col gap-2.5 shadow-md">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              6-Class Bayesian Look-Alike Classifier
             </span>
-            {onOpenBayesianModal && (
-              <button
-                onClick={onOpenBayesianModal}
-                className="px-2 py-0.5 rounded bg-cyan-950/90 text-cyan-300 hover:bg-cyan-900/90 hover:text-white border border-cyan-500/40 text-[9.5px] font-bold cursor-pointer transition-colors flex items-center gap-1"
-                title="View step-by-step mathematical calculation & physics formulas"
-              >
+            <div className="flex items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 font-bold border border-emerald-500/40 text-[9.5px]">
+                Oil: {falsePositive.likely_oil_pct}%
+              </span>
+              <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold border border-slate-700 text-[9.5px]">
+                Look-alike: {falsePositive.lookalike_pct}%
+              </span>
+            </div>
+          </div>
+
+          {/* 6 Classes with dynamic progress bars */}
+          <div className="flex flex-col gap-2 pt-1">
+            {Object.entries(falsePositive.classes).map(([className, pct]) => {
+              const isOil = className === 'Oil';
+              const value = pct as number;
+              return (
+                <div key={className} className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/90 flex flex-col gap-1">
+                  <div className="flex justify-between items-center text-[10.5px]">
+                    <span className={isOil ? 'text-rose-300 font-bold flex items-center gap-1' : 'text-slate-400'}>
+                      {isOil && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
+                      {className}
+                    </span>
+                    <strong className={isOil ? 'text-emerald-400 font-bold text-xs' : 'text-slate-300'}>{value}%</strong>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        isOil ? 'bg-gradient-to-r from-emerald-500 to-rose-500' : 'bg-slate-500'
+                      }`}
+                      style={{ width: `${value}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* On-Demand Calculation Details (Hidden by Default) */}
+          <div className="pt-2 border-t border-slate-800/80">
+            <button
+              onClick={() => setShowInlineCalc(!showInlineCalc)}
+              className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-950/90 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 cursor-pointer transition-colors text-[10px]"
+            >
+              <span className="flex items-center gap-1.5 font-bold">
                 <Calculator className="w-3 h-3 text-cyan-400" />
-                Explain Math
-              </button>
+                {showInlineCalc ? 'Hide Calculation Methodology' : 'View Calculation Methodology'}
+              </span>
+              {showInlineCalc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+
+            {showInlineCalc && (
+              <div className="mt-2 p-2.5 bg-slate-950/95 rounded-lg border border-cyan-500/30 flex flex-col gap-2.5 text-[9.5px]">
+                {/* Switcher: Factor Breakdown vs Mathematical Formulation */}
+                <div className="flex rounded-lg bg-slate-900 p-0.5 border border-slate-800 text-[9.5px]">
+                  <button
+                    onClick={() => setCalcViewMode('breakdown')}
+                    className={`flex-1 py-1 rounded-md font-bold transition-all ${
+                      calcViewMode === 'breakdown' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    📋 Factor Breakdown
+                  </button>
+                  <button
+                    onClick={() => setCalcViewMode('math')}
+                    className={`flex-1 py-1 rounded-md font-bold transition-all ${
+                      calcViewMode === 'math' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🧮 Mathematical Formulation
+                  </button>
+                </div>
+
+                {calcViewMode === 'breakdown' ? (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="p-2 rounded bg-emerald-950/40 border border-emerald-500/30 flex flex-col gap-0.5">
+                      <span className="text-emerald-300 font-bold text-[10px]">1. Mineral Oil (98.2%): CONFIRMED</span>
+                      <p className="text-slate-300 text-[9px]">
+                        Strong Marangoni damping (-{dampingRatio} dB) under {windKts} kts wind generates stark contrast against surrounding wind-roughened sea.
+                      </p>
+                    </div>
+
+                    <div className="p-2 rounded bg-slate-900/80 border border-slate-800 flex flex-col gap-0.5">
+                      <span className="text-slate-300 font-bold text-[10px]">2. Calm Water (0.8%): RULED OUT</span>
+                      <p className="text-slate-400 text-[9px]">
+                        Calm water look-alikes require wind &lt; 3.2 m/s. Ambient wind is {windMs} m/s ({windKts} kts), ruling out specular reflection.
+                      </p>
+                    </div>
+
+                    <div className="p-2 rounded bg-slate-900/80 border border-slate-800 flex flex-col gap-0.5">
+                      <span className="text-slate-300 font-bold text-[10px]">3. Natural Biogenic Film (0.5%): RULED OUT</span>
+                      <p className="text-slate-400 text-[9px]">
+                        Biological algae films break apart in winds &gt; 12 kts and cannot sustain a -{dampingRatio} dB signal drop.
+                      </p>
+                    </div>
+
+                    <div className="p-2 rounded bg-slate-900/80 border border-slate-800 flex flex-col gap-0.5">
+                      <span className="text-slate-300 font-bold text-[10px]">4. Vessel Wake (0.3%): RULED OUT</span>
+                      <p className="text-slate-400 text-[9px]">
+                        Mechanical wash turbulence dissipates within 15–30 minutes without surfactant persistence.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <div className="p-2 bg-slate-900/90 rounded border border-slate-800 text-center font-mono">
+                      <span className="text-[9px] text-slate-400 block mb-0.5">Softmax Equation:</span>
+                      <span className="text-cyan-300 font-bold text-[10.5px]">P(Class_i) = exp(z_i) / ∑ exp(z_j)</span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 text-[9px]">
+                      <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
+                        <span className="text-slate-400 block">Damping (D):</span>
+                        <strong className="text-emerald-400">{dampingRatio} dB (&gt; 5.5 dB)</strong>
+                      </div>
+                      <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
+                        <span className="text-slate-400 block">Wind (W):</span>
+                        <strong className="text-cyan-300">{windMs} m/s ({windKts} kts)</strong>
+                      </div>
+                      <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
+                        <span className="text-slate-400 block">Eccentricity (e):</span>
+                        <strong className="text-amber-300">0.88 (Linear trail)</strong>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1 text-[9px] font-mono">
+                      <div className="p-1.5 rounded bg-emerald-950/40 border border-emerald-500/30 text-slate-300">
+                        <strong className="text-emerald-300">z_oil</strong> = 1.2 · ({dampingRatio} - 5.5) + 1.4 = +5.48 → <strong className="text-emerald-400">P = 98.2%</strong>
+                      </div>
+                      <div className="p-1.5 rounded bg-slate-900/80 border border-slate-800 text-slate-400">
+                        <strong className="text-slate-300">z_calm</strong> = 2.5 · 0 + 0.5 · (6.0 - {dampingRatio}) = -1.45 → P = 0.8%
+                      </div>
+                      <div className="p-1.5 rounded bg-slate-900/80 border border-slate-800 text-slate-400">
+                        <strong className="text-slate-300">z_film</strong> = 1.0 · (6.5 - {dampingRatio}) - 2.0 = -4.40 → P = 0.5%
+                      </div>
+                      <div className="p-1.5 rounded bg-slate-900/80 border border-slate-800 text-slate-400">
+                        <strong className="text-slate-300">z_wake</strong> = 3.0 · (0.88 - 0.75) + 0.5 · ({dampingRatio} - 4.0) = +2.84 → P = 0.3%
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {onOpenBayesianModal && (
+                  <button
+                    onClick={onOpenBayesianModal}
+                    className="w-full py-1.5 mt-1 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-bold cursor-pointer transition-colors text-[9.5px] flex items-center justify-center gap-1.5"
+                  >
+                    <Calculator className="w-3 h-3" />
+                    Open Detailed Mathematical Derivation Modal
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
+      )}
 
-        {/* 6 Classes with dynamic progress bars */}
-        <div className="flex flex-col gap-2 pt-1">
-          {Object.entries(falsePositive.classes).map(([className, pct]) => {
-            const isOil = className === 'Oil';
-            const value = pct as number;
-            return (
-              <div key={className} className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/90 flex flex-col gap-1">
-                <div className="flex justify-between items-center text-[10.5px]">
-                  <span className={isOil ? 'text-rose-300 font-bold flex items-center gap-1' : 'text-slate-400'}>
-                    {isOil && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
-                    {className}
-                  </span>
-                  <strong className={isOil ? 'text-emerald-400 font-bold text-xs' : 'text-slate-300'}>{value}%</strong>
+      {/* MODULE 3: Neural Model Architecture */}
+      {sarSection === 'neural' && (
+        <div className="flex flex-col gap-2.5">
+          <div className="p-3 bg-slate-950/90 rounded-xl border border-cyan-500/40 flex flex-col gap-2 shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-bold text-[10px]">
+                  AI
                 </div>
-                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${
-                      isOil ? 'bg-gradient-to-r from-emerald-500 to-rose-500' : 'bg-slate-500'
-                    }`}
-                    style={{ width: `${value}%` }}
-                  />
+                <div>
+                  <span className="text-white font-bold text-[11px] block">{modelArch}</span>
+                  <span className="text-[9px] text-slate-400 block">{modelEngine}</span>
                 </div>
               </div>
-            );
-          })}
-        </div>
+              <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-500/30 text-[9.5px]">
+                {modelBadge}
+              </span>
+            </div>
 
-        {/* Inline Calculation & Formula Breakdown Toggle */}
-        <div className="pt-2 border-t border-slate-800/80">
-          <button
-            onClick={() => setShowInlineCalc(!showInlineCalc)}
-            className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-950/90 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 cursor-pointer transition-colors text-[10px]"
-          >
-            <span className="flex items-center gap-1.5 font-bold">
-              <Calculator className="w-3 h-3 text-cyan-400" />
-              {showInlineCalc ? 'Hide Calculation Breakdown' : 'Show How We Calculated This (Simple & Math Views)'}
-            </span>
-            {showInlineCalc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
-
-          {showInlineCalc && (
-            <div className="mt-2 p-2.5 bg-slate-950/95 rounded-lg border border-cyan-500/30 flex flex-col gap-2.5 text-[9.5px]">
-              {/* Toggle between Simple View and Math View */}
-              <div className="flex rounded-lg bg-slate-900 p-0.5 border border-slate-800 text-[9.5px]">
-                <button
-                  onClick={() => setInlineMode('simple')}
-                  className={`flex-1 py-1 rounded-md font-bold transition-all ${
-                    inlineMode === 'simple' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  💡 Plain English Summary
-                </button>
-                <button
-                  onClick={() => setInlineMode('math')}
-                  className={`flex-1 py-1 rounded-md font-bold transition-all ${
-                    inlineMode === 'math' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  🧮 Exact Math & Logits
-                </button>
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800 flex flex-col gap-0.5">
+                <span className="text-slate-400 text-[9px]">Backbone Encoder:</span>
+                <strong className="text-white">ResNet-34 Residual</strong>
               </div>
+              <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800 flex flex-col gap-0.5">
+                <span className="text-slate-400 text-[9px]">Decoder Gates:</span>
+                <strong className="text-cyan-300">Spatial Attention Gates</strong>
+              </div>
+              <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800 flex flex-col gap-0.5">
+                <span className="text-slate-400 text-[9px]">Validation Dice:</span>
+                <strong className="text-emerald-400">{diceScorePct}% (0.7130)</strong>
+              </div>
+              <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800 flex flex-col gap-0.5">
+                <span className="text-slate-400 text-[9px]">Validation IoU:</span>
+                <strong className="text-cyan-300">{iouScorePct}% (0.5540)</strong>
+              </div>
+              <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800 flex flex-col gap-0.5">
+                <span className="text-slate-400 text-[9px]">Core Pixel Confidence:</span>
+                <strong className="text-amber-300">{maxProbFormatted} (98.23%)</strong>
+              </div>
+              <div className="p-2 bg-slate-900/80 rounded-lg border border-slate-800 flex flex-col gap-0.5">
+                <span className="text-slate-400 text-[9px]">Contour Extraction:</span>
+                <strong className="text-white">Moore-Neighbor 2D</strong>
+              </div>
+            </div>
 
-              {inlineMode === 'simple' ? (
-                /* Simple Plain English Breakdown */
-                <div className="flex flex-col gap-1.5">
-                  <div className="p-2 rounded bg-emerald-950/40 border border-emerald-500/30 flex flex-col gap-0.5">
-                    <span className="text-emerald-300 font-bold text-[10px]">1. Mineral Oil (98.2%): CONFIRMED</span>
-                    <p className="text-slate-300 text-[9px]">
-                      Thick oil suppresses water ripples. The satellite radar detected an intense <strong className="text-emerald-400">-{dampingRatio} dB</strong> drop in reflection. Because local wind is active ({windKts} kts), surrounding water is rough, providing unmistakable contrast.
-                    </p>
-                  </div>
+            {/* On-Demand Loss Function Formulation Toggle */}
+            <div className="pt-1">
+              <button
+                onClick={() => setShowNeuralMath(!showNeuralMath)}
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 cursor-pointer transition-colors text-[9.5px]"
+              >
+                <span className="flex items-center gap-1.5 font-bold">
+                  <Calculator className="w-3 h-3 text-cyan-400" />
+                  {showNeuralMath ? 'Hide Loss Formulation' : 'View Loss Function & Optimization Mathematics'}
+                </span>
+                {showNeuralMath ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
 
-                  <div className="p-2 rounded bg-slate-900/80 border border-slate-800 flex flex-col gap-0.5">
-                    <span className="text-slate-300 font-bold text-[10px]">2. Calm Water (0.8%): RULED OUT</span>
-                    <p className="text-slate-400 text-[9px]">
-                      Calm water look-alikes only happen when wind &lt; 3.2 m/s (mirror-smooth sea). Real-time wind is {windMs} m/s ({windKts} kts), making calm water physically impossible.
-                    </p>
+              {showNeuralMath && (
+                <div className="mt-2 p-2.5 bg-slate-900/80 rounded-lg border border-cyan-500/30 text-[9.5px] flex flex-col gap-1.5">
+                  <span className="text-cyan-300 font-bold block mb-0.5">Compound Loss Optimization Function:</span>
+                  <div className="p-2 bg-slate-950 rounded border border-slate-800 font-mono text-cyan-200 text-[9px] overflow-x-auto">
+                    ℒ_total = 0.50 · ℒ_BCE + 0.50 · (1 - (2 |Y ∩ Ŷ| + ε) / (|Y| + |Ŷ| + ε))
                   </div>
-
-                  <div className="p-2 rounded bg-slate-900/80 border border-slate-800 flex flex-col gap-0.5">
-                    <span className="text-slate-300 font-bold text-[10px]">3. Natural Algae / Plant Film (0.5%): RULED OUT</span>
-                    <p className="text-slate-400 text-[9px]">
-                      Biological algae films disintegrate in winds &gt; 12 kts and cannot create an {dampingRatio} dB signal drop.
-                    </p>
-                  </div>
-
-                  <div className="p-2 rounded bg-slate-900/80 border border-slate-800 flex flex-col gap-0.5">
-                    <span className="text-slate-300 font-bold text-[10px]">4. Ship Wake Turbulence (0.3%): RULED OUT</span>
-                    <p className="text-slate-400 text-[9px]">
-                      Propeller wash creates bubbles that disappear in 15–30 minutes without long-lasting oil residue.
-                    </p>
-                  </div>
+                  <p className="text-slate-400 text-[8.5px] leading-relaxed">
+                    Jointly minimizes binary cross-entropy on pixel backscatter and maximizes continuous soft-Dice overlap gradient for sharp boundary sheens.
+                  </p>
                 </div>
-              ) : (
-                /* Exact Mathematical Formulation */
-                <div className="flex flex-col gap-2">
-                  <div className="p-2 bg-slate-900/90 rounded border border-slate-800 text-center font-mono">
-                    <span className="text-[9px] text-slate-400 block mb-0.5">Softmax Equation:</span>
-                    <span className="text-cyan-300 font-bold text-[10.5px]">P(Class_i) = exp(z_i) / ∑ exp(z_j)</span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-1.5 text-[9px]">
-                    <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
-                      <span className="text-slate-400 block">Damping (D):</span>
-                      <strong className="text-emerald-400">{dampingRatio} dB (&gt; 5.5 dB)</strong>
-                    </div>
-                    <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
-                      <span className="text-slate-400 block">Wind (W):</span>
-                      <strong className="text-cyan-300">{windMs} m/s ({windKts} kts)</strong>
-                    </div>
-                    <div className="p-1.5 bg-slate-900/80 rounded border border-slate-800">
-                      <span className="text-slate-400 block">Eccentricity (e):</span>
-                      <strong className="text-amber-300">0.88 (Linear trail)</strong>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-1 text-[9px] font-mono">
-                    <div className="p-1.5 rounded bg-emerald-950/40 border border-emerald-500/30 text-slate-300">
-                      <strong className="text-emerald-300">z_oil</strong> = 1.2 · ({dampingRatio} - 5.5) + 1.4 = +5.48 → <strong className="text-emerald-400">P = 98.2%</strong>
-                    </div>
-                    <div className="p-1.5 rounded bg-slate-900/80 border border-slate-800 text-slate-400">
-                      <strong className="text-slate-300">z_calm</strong> = 2.5 · 0 + 0.5 · (6.0 - {dampingRatio}) = -1.45 → P = 0.8%
-                    </div>
-                    <div className="p-1.5 rounded bg-slate-900/80 border border-slate-800 text-slate-400">
-                      <strong className="text-slate-300">z_film</strong> = 1.0 · (6.5 - {dampingRatio}) - 2.0 = -4.40 → P = 0.5%
-                    </div>
-                    <div className="p-1.5 rounded bg-slate-900/80 border border-slate-800 text-slate-400">
-                      <strong className="text-slate-300">z_wake</strong> = 3.0 · (0.88 - 0.75) + 0.5 · ({dampingRatio} - 4.0) = +2.84 → P = 0.3%
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {onOpenBayesianModal && (
-                <button
-                  onClick={onOpenBayesianModal}
-                  className="w-full py-1.5 mt-1 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-bold cursor-pointer transition-colors text-[9.5px] flex items-center justify-center gap-1.5"
-                >
-                  <Calculator className="w-3 h-3" />
-                  Open Full Interactive Mathematical Derivation Modal
-                </button>
               )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Physics Validation Metrics */}
-      <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-2">
-        <span className="text-[10.5px] text-slate-300 font-bold uppercase border-b border-slate-800 pb-1 flex items-center gap-1.5">
-          <Activity className="w-3.5 h-3.5 text-cyan-400" />
-          Marangoni Radar Backscatter Damping & Geometry
-        </span>
-        <div className="grid grid-cols-2 gap-2 text-[10px]">
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400 block">Damping Contrast:</span>
-            <strong className="text-cyan-300 text-xs">{dampingRatio} dB Ratio (Marangoni)</strong>
-          </div>
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400 block">Continuous Soft-Dice:</span>
-            <strong className="text-emerald-400 text-xs">{diceScorePct}% (0.7130)</strong>
-          </div>
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400 block">Jaccard / IoU:</span>
-            <strong className="text-cyan-300 text-xs">{iouScorePct}% (0.5540)</strong>
-          </div>
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400 block">Max Probability:</span>
-            <strong className="text-amber-300 text-xs">{maxProbFormatted} (98.23%)</strong>
           </div>
         </div>
-
-        <div className="text-[9.5px] text-slate-400 leading-relaxed bg-slate-950/60 p-2.5 rounded border border-slate-800/80 mt-1">
-          <span className="text-cyan-400 font-semibold">Radar Science: </span>
-          {falsePositive.sar_physics_reasoning}
-        </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -939,6 +1157,8 @@ const CulpritTab: React.FC<CulpritTabProps> = ({
   timeOffsetMinutes = 0,
   scrubbedVessels,
 }) => {
+  const [culpritSection, setCulpritSection] = useState<'profile' | 'attribution' | 'fleet'>('profile');
+  const [showAttributionCalc, setShowAttributionCalc] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [riskFilter, setRiskFilter] = useState<'all' | 'critical' | 'moderate' | 'low'>('all');
 
@@ -1024,429 +1244,521 @@ const CulpritTab: React.FC<CulpritTabProps> = ({
 
   return (
     <div className="flex flex-col gap-3 font-mono text-xs">
-      {/* Primary Selected Vessel Card */}
-      <div className={`p-3 bg-slate-900/95 rounded-xl border flex flex-col gap-2 shadow-md ${
-        isHighRisk ? 'border-rose-500/50' : isModerateRisk ? 'border-amber-500/40' : 'border-slate-800'
-      }`}>
-        <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-          <div className="flex items-center gap-2">
-            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-              isHighRisk
-                ? 'bg-rose-950/90 text-rose-300 border-rose-500/60'
-                : isModerateRisk
-                ? 'bg-amber-950/90 text-amber-300 border-amber-500/60'
-                : 'bg-slate-800 text-slate-300 border-slate-700'
-            }`}>
-              Rank {rankLabel} of {suspects.length}
-            </span>
-            <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold border ${activeCat.badgeClass}`}>
-              {activeCat.icon} {activeCat.label}
-            </span>
-          </div>
-          <div className="text-right">
-            <span className="text-[9px] text-slate-400 block">ANOMALY SCORE</span>
-            <span className={`font-bold text-sm ${
-              isHighRisk ? 'text-rose-400' : isModerateRisk ? 'text-amber-400' : 'text-emerald-400'
-            }`}>
-              {anomalyScore} / 100
-            </span>
-          </div>
-        </div>
-
-        {/* Vessel Name & Identification */}
-        <div>
-          <span className="text-white font-bold text-xs flex items-center gap-1.5">
-            <span className="text-sm">{activeCat.icon}</span>
-            {activeVessel.name}
-          </span>
-          <span className="text-[9.5px] text-slate-400 block">
-            MMSI: {activeVessel.mmsi} • Flag: {activeVessel.flag} • Type: {activeVessel.vessel_type || 'Cargo'}
-          </span>
-        </div>
-
-        {/* Replay Synchronized Telemetry Clock Bar */}
-        <div className="flex items-center justify-between px-2 py-1 rounded-md bg-slate-950/80 border border-slate-800 text-[9.5px]">
-          <span className="text-slate-400 font-mono flex items-center gap-1.5">
-            <Clock className="w-3 h-3 text-cyan-400" />
-            <span>Replay Clock: <b className="text-cyan-300">{timeOffsetMinutes === 0 ? 'LIVE (T-0)' : `T${timeOffsetMinutes}m`}</b></span>
-          </span>
-          <span className={`font-mono font-bold ${isAisDarkWindow ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`}>
-            {isAisDarkWindow ? '📡 AIS DARK WINDOW ACTIVE' : '📶 AIS BROADCASTING'}
-          </span>
-        </div>
-
-        {/* Vessel Specific Operational Profile Card */}
-        <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/90 flex flex-col gap-1 text-[10px]">
-          <div className="flex justify-between items-start">
-            <span className="text-slate-400">Declared Cargo:</span>
-            <strong className="text-amber-300 text-right max-w-[220px] truncate">
-              {activeVessel.cargo_type || 'Commercial Containerized / General Freight'}
-            </strong>
-          </div>
-          <div className="flex justify-between items-start">
-            <span className="text-slate-400">Destination Port:</span>
-            <strong className="text-cyan-300 text-right max-w-[220px] truncate">
-              {activeVessel.destination || 'International Transit Corridor'}
-            </strong>
-          </div>
-          <div className="flex flex-col gap-0.5 pt-0.5 border-t border-slate-800/80">
-            <span className="text-slate-400 text-[9px]">Trajectory & Maneuver Pattern:</span>
-            <span className="text-white font-mono text-[9.5px] leading-tight">
-              {trajectoryDesc}
-            </span>
-          </div>
-        </div>
-
-        {/* Breakdown of Anomaly Factors */}
-        <div className="flex flex-col gap-1.5 pt-0.5 text-[10.5px]">
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Replay Speed (Instant):</span>
-            <strong className={currentSpeed <= 6.0 && speedDropDelta > 3.0 ? "text-rose-400 animate-pulse" : speedDropDelta > 3.0 ? "text-amber-300" : "text-slate-300"}>
-              {currentSpeed.toFixed(1)} kts {currentSpeed <= 6.0 && speedDropDelta > 3.0 ? '(🚨 Discharging at Slow Ahead)' : `(Voyage cruise: ${activeVessel.speed_knots || 14.8} kts)`}
-            </strong>
-          </div>
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Current Distance to Origin:</span>
-            <strong className={isOverpassLocus ? "text-rose-400 animate-pulse font-bold" : "text-cyan-300"}>
-              {currentDistKm < 1.0 ? `${(currentDistKm * 1000).toFixed(0)} meters` : `${currentDistKm.toFixed(2)} km`} {isOverpassLocus ? '(🚨 OVERPASS LOCUS)' : `(Hindcast CPA: ${hindcastCpa})`}
-            </strong>
-          </div>
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">AIS Status at T{timeOffsetMinutes}m:</span>
-            <strong className={isAisDarkWindow ? "text-amber-400 font-bold animate-pulse" : maxAisGap > 15 ? "text-amber-300" : "text-emerald-400"}>
-              {isAisDarkWindow ? '🚨 DARK WINDOW ACTIVE (Silent)' : maxAisGap > 15 ? `Nominal (${maxAisGap.toFixed(0)}m dark gap recorded)` : 'Nominal Transmission (0m gap)'}
-            </strong>
-          </div>
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Vessel Class & Hazard:</span>
-            <strong className="text-white">
-              {activeVessel.vessel_type || 'Cargo'} • Mult: {cargoMult.toFixed(2)}x
-            </strong>
-          </div>
-        </div>
-
-        {/* Evidence Tags */}
-        <div className="flex flex-wrap gap-1.5 pt-1">
-          {speedDropDelta > 3.0 && (
-            <span className="px-2 py-0.5 rounded bg-amber-950/90 text-amber-300 text-[9.5px] font-bold border border-amber-500/50">
-              🚨 Speed Deceleration Match
-            </span>
-          )}
-          {maxAisGap > 15 && (
-            <span className="px-2 py-0.5 rounded bg-rose-950/90 text-rose-300 text-[9.5px] font-bold border border-rose-500/50">
-              📡 AIS Dark Window
-            </span>
-          )}
-          {(anomalyBreakdown.hindcast_cpa_distance_km || 99) < 2.0 && (
-            <span className="px-2 py-0.5 rounded bg-cyan-950/90 text-cyan-300 text-[9.5px] font-bold border border-cyan-500/50">
-              📍 Origin Intercept CPA
-            </span>
-          )}
-          {cargoMult > 1.0 && (
-            <span className="px-2 py-0.5 rounded bg-purple-950/90 text-purple-300 text-[9.5px] font-bold border border-purple-500/50">
-              🛢️ High-Risk Tanker Class
-            </span>
-          )}
-          {cargoMult < 0.5 && (
-            <span className="px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 text-[9.5px] font-bold border border-emerald-500/50">
-              🛡️ Response / Patrol Vessel Exclusion
-            </span>
-          )}
-        </div>
+      {/* Sub-Tabs Module Switcher (Prevents Downward Scrolling) */}
+      <div className="grid grid-cols-3 gap-1 p-1 bg-slate-950/90 rounded-xl border border-slate-800 text-[10px] font-bold">
+        <button
+          onClick={() => setCulpritSection('profile')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            culpritSection === 'profile'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          🎯 Primary Suspect
+        </button>
+        <button
+          onClick={() => setCulpritSection('attribution')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            culpritSection === 'attribution'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          ⚖️ Attribution Factors
+        </button>
+        <button
+          onClick={() => setCulpritSection('fleet')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            culpritSection === 'fleet'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          🚢 Fleet Radar ({suspects.length})
+        </button>
       </div>
 
-      {/* Explainable Anomaly Calculation Breakdown Card */}
-      <div className="p-3 bg-slate-900/90 rounded-xl border border-cyan-500/30 flex flex-col gap-2 shadow-md">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-          <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <Calculator className="w-3.5 h-3.5 text-cyan-400" />
-            Mathematical Attribution Calculation
-          </span>
-          <span className="text-[9px] text-slate-400 font-mono">
-            Weights: 40% / 25% / 20% / 15%
-          </span>
-        </div>
-
-        {/* Plain-English Suspect Explanation */}
-        <div className="p-2.5 bg-slate-950/90 rounded-lg border border-cyan-500/20 text-[9.5px] flex flex-col gap-1 text-slate-300">
-          <span className="text-cyan-300 font-bold flex items-center gap-1">
-            💡 Plain English Forensic Summary:
-          </span>
-          <p className="leading-relaxed text-[9.5px]">
-            This vessel scored <strong className="text-rose-400 font-mono">{(activeVessel.probability_score || activeVessel.anomaly_score || 98.4).toFixed(1)}/100</strong> because it passed within <strong className="text-cyan-300 font-mono">{hindcastCpa}</strong> of the oil spill origin (40% weight), slowed down by <strong className="text-amber-300 font-mono">{speedDropDelta.toFixed(1)} kts</strong> while crossing the zone (25% weight), and operated with transponder dark for <strong className="text-rose-400 font-mono">{maxAisGap.toFixed(0)} mins</strong> (20% weight).
-          </p>
-        </div>
-
-        {/* Math Formula Box */}
-        <div className="p-2 bg-slate-950/80 rounded border border-slate-800/90 text-[10px] text-center text-cyan-300">
-          Score = (CPA·40% + SpeedDrop·25% + AISGap·20% + Loiter·15%) × CargoMult
-        </div>
-
-        {/* 4 Factor Contribution Rows */}
-        <div className="flex flex-col gap-1.5 text-[10px]">
-          {/* Factor 1: CPA */}
-          <div className="p-2 bg-slate-950/60 rounded border border-slate-800/80 flex flex-col gap-1">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-300 font-semibold">1. Closest Approach (CPA to Origin)</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] text-slate-400">40% Wt</span>
-                <strong className="text-cyan-300 font-mono">+{subscores.cpa_points.toFixed(1)} pts</strong>
+      {/* MODULE 1: Primary Selected Vessel Profile */}
+      {culpritSection === 'profile' && (
+        <div className="flex flex-col gap-3">
+          <div className={`p-3 bg-slate-900/95 rounded-xl border flex flex-col gap-2 shadow-md ${
+            isHighRisk ? 'border-rose-500/50' : isModerateRisk ? 'border-amber-500/40' : 'border-slate-800'
+          }`}>
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                  isHighRisk
+                    ? 'bg-rose-950/90 text-rose-300 border-rose-500/60'
+                    : isModerateRisk
+                    ? 'bg-amber-950/90 text-amber-300 border-amber-500/60'
+                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                }`}>
+                  Rank {rankLabel} of {suspects.length}
+                </span>
+                <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold border ${activeCat.badgeClass}`}>
+                  {activeCat.icon} {activeCat.label}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[9px] text-slate-400 block">ANOMALY SCORE</span>
+                <span className={`font-bold text-sm ${
+                  isHighRisk ? 'text-rose-400' : isModerateRisk ? 'text-amber-400' : 'text-emerald-400'
+                }`}>
+                  {anomalyScore} / 100
+                </span>
               </div>
             </div>
-            <div className="flex justify-between text-[9.5px] text-slate-400">
-              <span>Distance: {hindcastCpa}</span>
-              <span>Subscore: {((subscores.cpa_points / weights.cpa_weight)).toFixed(1)}/100</span>
-            </div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div
-                className="bg-cyan-400 h-full rounded-full"
-                style={{ width: `${Math.min(100, Math.max(0, (subscores.cpa_points / weights.cpa_weight)))}%` }}
-              />
-            </div>
-          </div>
 
-          {/* Factor 2: Speed Drop */}
-          <div className="p-2 bg-slate-950/60 rounded border border-slate-800/80 flex flex-col gap-1">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-300 font-semibold">2. Kinematic Speed Deceleration</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] text-slate-400">25% Wt</span>
-                <strong className="text-amber-300 font-mono">+{subscores.speed_drop_points.toFixed(1)} pts</strong>
+            {/* Vessel Name & Identification */}
+            <div>
+              <span className="text-white font-bold text-xs flex items-center gap-1.5">
+                <span className="text-sm">{activeCat.icon}</span>
+                {activeVessel.name}
+              </span>
+              <span className="text-[9.5px] text-slate-400 block">
+                MMSI: {activeVessel.mmsi} • Flag: {activeVessel.flag} • Type: {activeVessel.vessel_type || 'Cargo'}
+              </span>
+            </div>
+
+            {/* Replay Synchronized Telemetry Clock Bar */}
+            <div className="flex items-center justify-between px-2 py-1 rounded-md bg-slate-950/80 border border-slate-800 text-[9.5px]">
+              <span className="text-slate-400 font-mono flex items-center gap-1.5">
+                <Clock className="w-3 h-3 text-cyan-400" />
+                <span>Replay Clock: <b className="text-cyan-300">{timeOffsetMinutes === 0 ? 'LIVE (T-0)' : `T${timeOffsetMinutes}m`}</b></span>
+              </span>
+              <span className={`font-mono font-bold ${isAisDarkWindow ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`}>
+                {isAisDarkWindow ? '📡 AIS DARK WINDOW ACTIVE' : '📶 AIS BROADCASTING'}
+              </span>
+            </div>
+
+            {/* Vessel Specific Operational Profile Card */}
+            <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/90 flex flex-col gap-1 text-[10px]">
+              <div className="flex justify-between items-start">
+                <span className="text-slate-400">Declared Cargo:</span>
+                <strong className="text-amber-300 text-right max-w-[220px] truncate">
+                  {activeVessel.cargo_type || 'Commercial Containerized / General Freight'}
+                </strong>
+              </div>
+              <div className="flex justify-between items-start">
+                <span className="text-slate-400">Destination Port:</span>
+                <strong className="text-cyan-300 text-right max-w-[220px] truncate">
+                  {activeVessel.destination || 'International Transit Corridor'}
+                </strong>
+              </div>
+              <div className="flex flex-col gap-0.5 pt-0.5 border-t border-slate-800/80">
+                <span className="text-slate-400 text-[9px]">Trajectory & Maneuver Pattern:</span>
+                <span className="text-white font-mono text-[9.5px] leading-tight">
+                  {trajectoryDesc}
+                </span>
               </div>
             </div>
-            <div className="flex justify-between text-[9.5px] text-slate-400">
-              <span>Drop: Δ {speedDropDelta.toFixed(1)} kts (Base {activeVessel.speed_knots || 14.8} kts)</span>
-              <span>Subscore: {((subscores.speed_drop_points / weights.speed_drop_weight)).toFixed(1)}/100</span>
-            </div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div
-                className="bg-amber-400 h-full rounded-full"
-                style={{ width: `${Math.min(100, Math.max(0, (subscores.speed_drop_points / weights.speed_drop_weight)))}%` }}
-              />
-            </div>
-          </div>
 
-          {/* Factor 3: AIS Blackout */}
-          <div className="p-2 bg-slate-950/60 rounded border border-slate-800/80 flex flex-col gap-1">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-300 font-semibold">3. AIS Blackout Gap Window</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] text-slate-400">20% Wt</span>
-                <strong className="text-rose-400 font-mono">+{subscores.ais_gap_points.toFixed(1)} pts</strong>
+            {/* Breakdown of Anomaly Factors */}
+            <div className="flex flex-col gap-1.5 pt-0.5 text-[10.5px]">
+              <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
+                <span className="text-slate-400">Replay Speed (Instant):</span>
+                <strong className={currentSpeed <= 6.0 && speedDropDelta > 3.0 ? "text-rose-400 animate-pulse" : speedDropDelta > 3.0 ? "text-amber-300" : "text-slate-300"}>
+                  {currentSpeed.toFixed(1)} kts {currentSpeed <= 6.0 && speedDropDelta > 3.0 ? '(🚨 Discharging at Slow Ahead)' : `(Voyage cruise: ${activeVessel.speed_knots || 14.8} kts)`}
+                </strong>
+              </div>
+              <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
+                <span className="text-slate-400">Current Distance to Origin:</span>
+                <strong className={isOverpassLocus ? "text-rose-400 animate-pulse font-bold" : "text-cyan-300"}>
+                  {currentDistKm < 1.0 ? `${(currentDistKm * 1000).toFixed(0)} meters` : `${currentDistKm.toFixed(2)} km`} {isOverpassLocus ? '(🚨 OVERPASS LOCUS)' : `(Hindcast CPA: ${hindcastCpa})`}
+                </strong>
+              </div>
+              <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
+                <span className="text-slate-400">AIS Status at T{timeOffsetMinutes}m:</span>
+                <strong className={isAisDarkWindow ? "text-amber-400 font-bold animate-pulse" : maxAisGap > 15 ? "text-amber-300" : "text-emerald-400"}>
+                  {isAisDarkWindow ? '🚨 DARK WINDOW ACTIVE (Silent)' : maxAisGap > 15 ? `Nominal (${maxAisGap.toFixed(0)}m dark gap recorded)` : 'Nominal Transmission (0m gap)'}
+                </strong>
+              </div>
+              <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
+                <span className="text-slate-400">Vessel Class & Hazard:</span>
+                <strong className="text-white">
+                  {activeVessel.vessel_type || 'Cargo'} • Mult: {cargoMult.toFixed(2)}x
+                </strong>
               </div>
             </div>
-            <div className="flex justify-between text-[9.5px] text-slate-400">
-              <span>Gap: {maxAisGap.toFixed(0)} min</span>
-              <span>Subscore: {((subscores.ais_gap_points / weights.ais_gap_weight)).toFixed(1)}/100</span>
-            </div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div
-                className="bg-rose-400 h-full rounded-full"
-                style={{ width: `${Math.min(100, Math.max(0, (subscores.ais_gap_points / weights.ais_gap_weight)))}%` }}
-              />
+
+            {/* Evidence Tags */}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {speedDropDelta > 3.0 && (
+                <span className="px-2 py-0.5 rounded bg-amber-950/90 text-amber-300 text-[9.5px] font-bold border border-amber-500/50">
+                  🚨 Speed Deceleration Match
+                </span>
+              )}
+              {maxAisGap > 15 && (
+                <span className="px-2 py-0.5 rounded bg-rose-950/90 text-rose-300 text-[9.5px] font-bold border border-rose-500/50">
+                  📡 AIS Dark Window
+                </span>
+              )}
+              {(anomalyBreakdown.hindcast_cpa_distance_km || 99) < 2.0 && (
+                <span className="px-2 py-0.5 rounded bg-cyan-950/90 text-cyan-300 text-[9.5px] font-bold border border-cyan-500/50">
+                  📍 Origin Intercept CPA
+                </span>
+              )}
+              {cargoMult > 1.0 && (
+                <span className="px-2 py-0.5 rounded bg-purple-950/90 text-purple-300 text-[9.5px] font-bold border border-purple-500/50">
+                  🛢️ High-Risk Tanker Class
+                </span>
+              )}
+              {cargoMult < 0.5 && (
+                <span className="px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 text-[9.5px] font-bold border border-emerald-500/50">
+                  🛡️ Response / Patrol Vessel Exclusion
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Factor 4: Loitering & Heading */}
-          <div className="p-2 bg-slate-950/60 rounded border border-slate-800/80 flex flex-col gap-1">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-300 font-semibold">4. Loitering & Course Alteration</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] text-slate-400">15% Wt</span>
-                <strong className="text-purple-300 font-mono">+{subscores.loitering_points.toFixed(1)} pts</strong>
+          {/* Quick Action Buttons */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setCulpritSection('attribution')}
+              className="p-2.5 bg-slate-900/80 hover:bg-slate-850 rounded-xl border border-rose-500/30 text-left transition-all group cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-rose-300 text-[10.5px] font-bold mb-0.5">
+                <span className="flex items-center gap-1">
+                  <Calculator className="w-3 h-3 text-rose-400" /> Attribution Analysis
+                </span>
+                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
               </div>
-            </div>
-            <div className="flex justify-between text-[9.5px] text-slate-400">
-              <span>Course Metric: {(anomalyBreakdown.loitering_score || 25).toFixed(0)}/100</span>
-              <span>Subscore: {((subscores.loitering_points / weights.loitering_weight)).toFixed(1)}/100</span>
-            </div>
-            <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-              <div
-                className="bg-purple-400 h-full rounded-full"
-                style={{ width: `${Math.min(100, Math.max(0, (subscores.loitering_points / weights.loitering_weight)))}%` }}
-              />
-            </div>
-          </div>
+              <span className="text-[9px] text-slate-400 block">4 Weighted Forensic Vectors</span>
+            </button>
 
-          {/* Factor 5: Cargo Risk Multiplier */}
-          <div className="p-2 bg-slate-950/70 rounded border border-slate-800/80 flex justify-between items-center text-[10px]">
-            <span className="text-slate-400">Cargo Type Risk Multiplier:</span>
-            <strong className={cargoMult > 1.0 ? "text-purple-300" : cargoMult < 0.5 ? "text-emerald-400" : "text-slate-300"}>
-              {activeVessel.vessel_type || 'Cargo'} ({cargoMult.toFixed(2)}x)
-            </strong>
+            <button
+              onClick={() => setCulpritSection('fleet')}
+              className="p-2.5 bg-slate-900/80 hover:bg-slate-850 rounded-xl border border-cyan-500/30 text-left transition-all group cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-cyan-300 text-[10.5px] font-bold mb-0.5">
+                <span className="flex items-center gap-1">
+                  <Ship className="w-3 h-3 text-cyan-400" /> Corridor Fleet
+                </span>
+                <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </div>
+              <span className="text-[9px] text-slate-400 block">Ranked {suspects.length} Tracked Ships</span>
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Plain-English Explanation Summary Box */}
-        <div className="p-2.5 rounded-lg bg-slate-950/90 border border-slate-800 text-[10px] flex flex-col gap-1 mt-0.5">
-          <span className="text-cyan-400 font-bold flex items-center gap-1">
-            <HelpCircle className="w-3 h-3 text-cyan-400" />
-            Attribution Rationale (Why this ship scored {isHighRisk ? 'CRITICAL' : isModerateRisk ? 'MODERATE' : 'LOW'}):
-          </span>
-          <p className="text-slate-300 leading-relaxed text-[9.5px]">
-            {anomalyBreakdown.explanation_summary ||
-              (isHighRisk
-                ? `Vessel crossed within close proximity to breach origin at T-42 min, dropped speed significantly during discharge window, and extinguished AIS transponder.`
-                : `Vessel maintained standard commercial passage speed, continuous AIS beacon broadcast, and sufficient safety distance from the spill origin.`)}
-          </p>
-        </div>
-      </div>
+      {/* MODULE 2: Forensic Attribution Analysis */}
+      {culpritSection === 'attribution' && (
+        <div className="p-3 bg-slate-900/90 rounded-xl border border-cyan-500/30 flex flex-col gap-2.5 shadow-md">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <Calculator className="w-3.5 h-3.5 text-cyan-400" />
+              Forensic Attribution Assessment
+            </span>
+            <span className="text-[9px] text-slate-400 font-mono">
+              Weights: 40% / 25% / 20% / 15%
+            </span>
+          </div>
 
-      {/* 30+ Corridor Suspect Fleet Ranking System */}
-      <div className="flex flex-col gap-2 pt-1">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-            Corridor Fleet Vessel Ranking ({filteredSuspects.length} / {suspects.length})
-          </span>
-          <span className="text-[9px] text-slate-400">Click ship to inspect math</span>
-        </div>
+          {/* Forensic Assessment Summary */}
+          <div className="p-2.5 bg-slate-950/90 rounded-lg border border-cyan-500/20 text-[9.5px] flex flex-col gap-1 text-slate-300">
+            <span className="text-cyan-300 font-bold flex items-center gap-1">
+              Forensic Attribution Summary:
+            </span>
+            <p className="leading-relaxed text-[9.5px]">
+              This vessel scored <strong className="text-rose-400 font-mono">{(activeVessel.probability_score || activeVessel.anomaly_score || 98.4).toFixed(1)}/100</strong> because it passed within <strong className="text-cyan-300 font-mono">{hindcastCpa}</strong> of the oil spill origin (40% weight), slowed down by <strong className="text-amber-300 font-mono">{speedDropDelta.toFixed(1)} kts</strong> while crossing the zone (25% weight), and operated with transponder dark for <strong className="text-rose-400 font-mono">{maxAisGap.toFixed(0)} mins</strong> (20% weight).
+            </p>
+          </div>
 
-        {/* Search & Filter Bar */}
-        <div className="flex flex-col gap-1.5">
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search 30+ ships by name, MMSI, or flag..."
-              className="w-full bg-slate-950/80 border border-slate-800 rounded-lg pl-8 pr-7 py-1.5 text-[10.5px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
-              >
-                <X className="w-3 h-3" />
-              </button>
+          {/* Attribution Rationale Box */}
+          <div className="p-2.5 rounded-lg bg-slate-950/90 border border-slate-800 text-[10px] flex flex-col gap-1">
+            <span className="text-cyan-400 font-bold flex items-center gap-1">
+              <HelpCircle className="w-3 h-3 text-cyan-400" />
+              Attribution Rationale ({isHighRisk ? 'CRITICAL RISK' : isModerateRisk ? 'MODERATE RISK' : 'LOW RISK'}):
+            </span>
+            <p className="text-slate-300 leading-relaxed text-[9.5px]">
+              {anomalyBreakdown.explanation_summary ||
+                (isHighRisk
+                  ? `Vessel crossed within close proximity to breach origin at T-42 min, dropped speed significantly during discharge window, and extinguished AIS transponder.`
+                  : `Vessel maintained standard commercial passage speed, continuous AIS beacon broadcast, and sufficient safety distance from the spill origin.`)}
+            </p>
+          </div>
+
+          {/* On-Demand Mathematical Formulation Button */}
+          <div className="pt-1">
+            <button
+              onClick={() => setShowAttributionCalc(!showAttributionCalc)}
+              className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-950/90 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 cursor-pointer transition-colors text-[10px]"
+            >
+              <span className="flex items-center gap-1.5 font-bold">
+                <Calculator className="w-3 h-3 text-cyan-400" />
+                {showAttributionCalc ? 'Hide Attribution Formulation' : 'View Attribution Formulation & Weights'}
+              </span>
+              {showAttributionCalc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+
+            {showAttributionCalc && (
+              <div className="mt-2 flex flex-col gap-2">
+                {/* Math Formula Box */}
+                <div className="p-2 bg-slate-950/80 rounded border border-slate-800/90 text-[10px] text-center text-cyan-300">
+                  Score = (CPA·40% + SpeedDrop·25% + AISGap·20% + Loiter·15%) × CargoMult
+                </div>
+
+                {/* 4 Factor Contribution Rows */}
+                <div className="flex flex-col gap-1.5 text-[10px]">
+                  {/* Factor 1: CPA */}
+                  <div className="p-2 bg-slate-950/60 rounded border border-slate-800/80 flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-300 font-semibold">1. Closest Approach (CPA to Origin)</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-slate-400">40% Wt</span>
+                        <strong className="text-cyan-300 font-mono">+{subscores.cpa_points.toFixed(1)} pts</strong>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-[9.5px] text-slate-400">
+                      <span>Distance: {hindcastCpa}</span>
+                      <span>Subscore: {((subscores.cpa_points / weights.cpa_weight)).toFixed(1)}/100</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                      <div
+                        className="bg-cyan-400 h-full rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(0, (subscores.cpa_points / weights.cpa_weight)))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Factor 2: Speed Drop */}
+                  <div className="p-2 bg-slate-950/60 rounded border border-slate-800/80 flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-300 font-semibold">2. Kinematic Speed Deceleration</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-slate-400">25% Wt</span>
+                        <strong className="text-amber-300 font-mono">+{subscores.speed_drop_points.toFixed(1)} pts</strong>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-[9.5px] text-slate-400">
+                      <span>Drop: Δ {speedDropDelta.toFixed(1)} kts (Base {activeVessel.speed_knots || 14.8} kts)</span>
+                      <span>Subscore: {((subscores.speed_drop_points / weights.speed_drop_weight)).toFixed(1)}/100</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                      <div
+                        className="bg-amber-400 h-full rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(0, (subscores.speed_drop_points / weights.speed_drop_weight)))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Factor 3: AIS Blackout */}
+                  <div className="p-2 bg-slate-950/60 rounded border border-slate-800/80 flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-300 font-semibold">3. AIS Blackout Gap Window</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-slate-400">20% Wt</span>
+                        <strong className="text-rose-400 font-mono">+{subscores.ais_gap_points.toFixed(1)} pts</strong>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-[9.5px] text-slate-400">
+                      <span>Gap: {maxAisGap.toFixed(0)} min</span>
+                      <span>Subscore: {((subscores.ais_gap_points / weights.ais_gap_weight)).toFixed(1)}/100</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                      <div
+                        className="bg-rose-400 h-full rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(0, (subscores.ais_gap_points / weights.ais_gap_weight)))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Factor 4: Loitering & Heading */}
+                  <div className="p-2 bg-slate-950/60 rounded border border-slate-800/80 flex flex-col gap-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-300 font-semibold">4. Loitering & Course Alteration</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[9px] text-slate-400">15% Wt</span>
+                        <strong className="text-purple-300 font-mono">+{subscores.loitering_points.toFixed(1)} pts</strong>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-[9.5px] text-slate-400">
+                      <span>Course Metric: {(anomalyBreakdown.loitering_score || 25).toFixed(0)}/100</span>
+                      <span>Subscore: {((subscores.loitering_points / weights.loitering_weight)).toFixed(1)}/100</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                      <div
+                        className="bg-purple-400 h-full rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(0, (subscores.loitering_points / weights.loitering_weight)))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Factor 5: Cargo Risk Multiplier */}
+                  <div className="p-2 bg-slate-950/70 rounded border border-slate-800/80 flex justify-between items-center text-[10px]">
+                    <span className="text-slate-400">Cargo Type Risk Multiplier:</span>
+                    <strong className={cargoMult > 1.0 ? "text-purple-300" : cargoMult < 0.5 ? "text-emerald-400" : "text-slate-300"}>
+                      {activeVessel.vessel_type || 'Cargo'} ({cargoMult.toFixed(2)}x)
+                    </strong>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-
-          {/* Filter Chips */}
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => setRiskFilter('all')}
-              className={`px-2 py-0.8 rounded-md text-[9.5px] font-bold transition-all cursor-pointer ${
-                riskFilter === 'all'
-                  ? 'bg-cyan-500 text-slate-950 shadow-sm'
-                  : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              All ({suspects.length})
-            </button>
-            <button
-              onClick={() => setRiskFilter('critical')}
-              className={`px-2 py-0.8 rounded-md text-[9.5px] font-bold transition-all cursor-pointer ${
-                riskFilter === 'critical'
-                  ? 'bg-rose-500 text-white shadow-sm'
-                  : 'bg-slate-900 text-rose-400/80 hover:text-rose-300 border border-rose-500/30'
-              }`}
-            >
-              Critical ({countCritical})
-            </button>
-            <button
-              onClick={() => setRiskFilter('moderate')}
-              className={`px-2 py-0.8 rounded-md text-[9.5px] font-bold transition-all cursor-pointer ${
-                riskFilter === 'moderate'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'bg-slate-900 text-amber-400/80 hover:text-amber-300 border border-amber-500/30'
-              }`}
-            >
-              Moderate ({countModerate})
-            </button>
-            <button
-              onClick={() => setRiskFilter('low')}
-              className={`px-2 py-0.8 rounded-md text-[9.5px] font-bold transition-all cursor-pointer ${
-                riskFilter === 'low'
-                  ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                  : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              Low Risk ({countLow})
-            </button>
-          </div>
         </div>
+      )}
 
-        {/* Scrollable Ranked Fleet List */}
-        <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-1">
-          {filteredSuspects.map((vessel) => {
-            const isSelected = vessel.mmsi === activeVessel.mmsi;
-            const score = vessel.anomaly_score ?? vessel.probability_score ?? 0;
-            const isCrit = score >= 70;
-            const isMod = score >= 30 && score < 70;
+      {/* MODULE 3: 30+ Corridor Suspect Fleet Ranking System */}
+      {culpritSection === 'fleet' && (
+        <div className="flex flex-col gap-2 pt-1">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+              Corridor Fleet Ranking ({filteredSuspects.length} / {suspects.length})
+            </span>
+            <span className="text-[9px] text-slate-400">Click ship to inspect</span>
+          </div>
 
-            // Global rank in full sorted fleet
-            const rank = suspects.findIndex((s) => s.mmsi === vessel.mmsi) + 1;
-            const formattedRank = `#${rank < 10 ? '0' + rank : rank}`;
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col gap-1.5">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search 30+ ships by name, MMSI, or flag..."
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-lg pl-8 pr-7 py-1.5 text-[10.5px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
 
-            return (
+            {/* Filter Chips */}
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
               <button
-                key={vessel.mmsi}
-                onClick={() => onSelectVessel(vessel.mmsi)}
-                className={`p-2 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-slate-900 border-cyan-400 shadow-md ring-1 ring-cyan-400/50'
-                    : 'bg-slate-950/70 border-slate-800 hover:bg-slate-900/80 hover:border-slate-700'
+                onClick={() => setRiskFilter('all')}
+                className={`px-2 py-0.8 rounded-md text-[9.5px] font-bold transition-all cursor-pointer ${
+                  riskFilter === 'all'
+                    ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
                 }`}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={`font-mono text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                    isCrit ? 'bg-rose-950 text-rose-300 border border-rose-500/40' :
-                    isMod ? 'bg-amber-950 text-amber-300 border border-amber-500/40' :
-                    'bg-slate-800 text-slate-400'
-                  }`}>
-                    {formattedRank}
-                  </span>
+                All ({suspects.length})
+              </button>
+              <button
+                onClick={() => setRiskFilter('critical')}
+                className={`px-2 py-0.8 rounded-md text-[9.5px] font-bold transition-all cursor-pointer ${
+                  riskFilter === 'critical'
+                    ? 'bg-rose-500 text-white shadow-sm'
+                    : 'bg-slate-900 text-rose-400/80 hover:text-rose-300 border border-rose-500/30'
+                }`}
+              >
+                Critical ({countCritical})
+              </button>
+              <button
+                onClick={() => setRiskFilter('moderate')}
+                className={`px-2 py-0.8 rounded-md text-[9.5px] font-bold transition-all cursor-pointer ${
+                  riskFilter === 'moderate'
+                    ? 'bg-amber-500 text-slate-950 shadow-sm'
+                    : 'bg-slate-900 text-amber-400/80 hover:text-amber-300 border border-amber-500/30'
+                }`}
+              >
+                Moderate ({countModerate})
+              </button>
+              <button
+                onClick={() => setRiskFilter('low')}
+                className={`px-2 py-0.8 rounded-md text-[9.5px] font-bold transition-all cursor-pointer ${
+                  riskFilter === 'low'
+                    ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                    : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+                }`}
+              >
+                Low Risk ({countLow})
+              </button>
+            </div>
+          </div>
 
-                  {(() => {
-                    const vCat = getVesselCategory(vessel);
-                    const sv = scrubbedVessels?.find((s) => s.mmsi === vessel.mmsi);
-                    const liveSpd = sv?.speed ?? vessel.speed_knots ?? 14.0;
-                    const curShipLon = sv?.lon ?? vessel.last_lon ?? 33.0;
-                    const curShipLat = sv?.lat ?? vessel.last_lat ?? 33.0;
-                    const curDistKm = Math.sqrt(
-                      Math.pow((curShipLon - currentIncident.originCoords[0]) * 111.139 * Math.cos((currentIncident.originCoords[1] * Math.PI) / 180), 2) +
-                      Math.pow((curShipLat - currentIncident.originCoords[1]) * 111.139, 2)
-                    );
-                    const isDark = sv?.isAisDark || (vessel.mmsi === 212000001 && timeOffsetMinutes >= -42 && timeOffsetMinutes <= -12);
+          {/* Scrollable Ranked Fleet List */}
+          <div className="flex flex-col gap-1.5 max-h-80 overflow-y-auto pr-1">
+            {filteredSuspects.map((vessel) => {
+              const isSelected = vessel.mmsi === activeVessel.mmsi;
+              const score = vessel.anomaly_score ?? vessel.probability_score ?? 0;
+              const isCrit = score >= 70;
+              const isMod = score >= 30 && score < 70;
 
-                    return (
-                      <>
-                        <span className="text-sm shrink-0" title={vCat.label}>{vCat.icon}</span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-white font-bold text-[11px] truncate">{vessel.name}</span>
-                            <span className={`text-[8.5px] px-1 py-0.2 rounded border font-semibold ${vCat.badgeClass}`}>
-                              {vCat.label}
+              // Global rank in full sorted fleet
+              const rank = suspects.findIndex((s) => s.mmsi === vessel.mmsi) + 1;
+              const formattedRank = `#${rank < 10 ? '0' + rank : rank}`;
+
+              return (
+                <button
+                  key={vessel.mmsi}
+                  onClick={() => {
+                    onSelectVessel(vessel.mmsi);
+                    setCulpritSection('profile');
+                  }}
+                  className={`p-2 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-slate-900 border-cyan-400 shadow-md ring-1 ring-cyan-400/50'
+                      : 'bg-slate-950/70 border-slate-800 hover:bg-slate-900/80 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`font-mono text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                      isCrit ? 'bg-rose-950 text-rose-300 border border-rose-500/40' :
+                      isMod ? 'bg-amber-950 text-amber-300 border border-amber-500/40' :
+                      'bg-slate-800 text-slate-400'
+                    }`}>
+                      {formattedRank}
+                    </span>
+
+                    {(() => {
+                      const vCat = getVesselCategory(vessel);
+                      const sv = scrubbedVessels?.find((s) => s.mmsi === vessel.mmsi);
+                      const liveSpd = sv?.speed ?? vessel.speed_knots ?? 14.0;
+                      const curShipLon = sv?.lon ?? vessel.last_lon ?? 33.0;
+                      const curShipLat = sv?.lat ?? vessel.last_lat ?? 33.0;
+                      const curDistKm = Math.sqrt(
+                        Math.pow((curShipLon - currentIncident.originCoords[0]) * 111.139 * Math.cos((currentIncident.originCoords[1] * Math.PI) / 180), 2) +
+                        Math.pow((curShipLat - currentIncident.originCoords[1]) * 111.139, 2)
+                      );
+                      const isDark = sv?.isAisDark || (vessel.mmsi === 212000001 && timeOffsetMinutes >= -42 && timeOffsetMinutes <= -12);
+
+                      return (
+                        <>
+                          <span className="text-sm shrink-0" title={vCat.label}>{vCat.icon}</span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-white font-bold text-[11px] truncate">{vessel.name}</span>
+                              <span className={`text-[8.5px] px-1 py-0.2 rounded border font-semibold ${vCat.badgeClass}`}>
+                                {vCat.label}
+                              </span>
+                            </div>
+                            <span className="text-[9px] text-slate-400 block truncate">
+                              To: {vessel.destination || 'Transit'} • {liveSpd.toFixed(1)} kts • {curDistKm < 1.0 ? `${(curDistKm * 1000).toFixed(0)}m` : `${curDistKm.toFixed(1)}km`} to origin {isDark ? '• ⚠️ AIS DARK' : ''}
                             </span>
                           </div>
-                          <span className="text-[9px] text-slate-400 block truncate">
-                            To: {vessel.destination || 'Transit'} • {liveSpd.toFixed(1)} kts • {curDistKm < 1.0 ? `${(curDistKm * 1000).toFixed(0)}m` : `${curDistKm.toFixed(1)}km`} to origin {isDark ? '• ⚠️ AIS DARK' : ''}
-                          </span>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
+                        </>
+                      );
+                    })()}
+                  </div>
 
-                <div className="text-right shrink-0 ml-2">
-                  <span
-                    className={`px-2 py-0.5 rounded text-[9.5px] font-bold border font-mono ${
-                      isCrit
-                        ? 'bg-rose-950/90 text-rose-300 border-rose-500/50'
-                        : isMod
-                        ? 'bg-amber-950/90 text-amber-300 border-amber-500/50'
-                        : 'bg-slate-800 text-slate-400 border-slate-700'
-                    }`}
-                  >
-                    {score.toFixed(1)}/100
-                  </span>
-                </div>
-              </button>
-            );
-          })}
+                  <div className="text-right shrink-0 ml-2">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[9.5px] font-bold border font-mono ${
+                        isCrit
+                          ? 'bg-rose-950/90 text-rose-300 border-rose-500/50'
+                          : isMod
+                          ? 'bg-amber-950/90 text-amber-300 border-amber-500/50'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}
+                    >
+                      {score.toFixed(1)}/100
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -1461,6 +1773,9 @@ interface MetoceanTabProps {
 }
 
 const MetoceanTab: React.FC<MetoceanTabProps> = ({ metocean, threat }) => {
+  const [metoceanSection, setMetoceanSection] = useState<'drift' | 'wind_current' | 'weather'>('drift');
+  const [showDriftMath, setShowDriftMath] = useState(false);
+
   const windSpeed = metocean?.wind_speed_kts || 16.2;
   const windDir = metocean?.wind_direction_deg || 295;
   const windCard = metocean?.wind_cardinal || 'WNW';
@@ -1469,65 +1784,208 @@ const MetoceanTab: React.FC<MetoceanTabProps> = ({ metocean, threat }) => {
   const curDir = metocean?.current_direction_deg || 65;
   const curCard = metocean?.current_cardinal || 'ENE';
 
+  const netSpeed = metocean?.net_drift_speed_kts ?? 1.35;
+  const netDir = metocean?.net_drift_direction_deg ?? 84.5;
+  const netCard = metocean?.current_cardinal ?? 'E';
+
   return (
     <div className="flex flex-col gap-3 font-mono text-xs">
-      {/* Live Weather Vectors Card */}
-      <div className="p-3 bg-slate-900/95 rounded-xl border border-slate-800 flex flex-col gap-2.5 shadow-md">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-          <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <Wind className="w-3.5 h-3.5 text-cyan-400" />
-            Levantine Basin Metocean Vectors
-          </span>
-          <span className="text-[9.5px] text-emerald-400 font-bold">LIVE TELEMETRY</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-[10.5px]">
-          <div className="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800 flex flex-col gap-1">
-            <span className="text-slate-400 text-[9.5px] flex items-center gap-1">
-              <Wind className="w-3 h-3 text-cyan-400" /> Surface Wind
-            </span>
-            <strong className="text-white text-xs">{windSpeed} kts @ {windDir}°</strong>
-            <span className="text-[9px] text-cyan-300">{windCard} Flow</span>
-          </div>
-
-          <div className="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800 flex flex-col gap-1">
-            <span className="text-slate-400 text-[9.5px] flex items-center gap-1">
-              <Waves className="w-3 h-3 text-cyan-300" /> Surface Current
-            </span>
-            <strong className="text-white text-xs">{curSpeed} kts @ {curDir}°</strong>
-            <span className="text-[9px] text-cyan-300">{curCard} Advection</span>
-          </div>
-        </div>
+      {/* Sub-Tabs Module Switcher (Prevents Downward Scrolling) */}
+      <div className="grid grid-cols-3 gap-1 p-1 bg-slate-950/90 rounded-xl border border-slate-800 text-[10px] font-bold">
+        <button
+          onClick={() => setMetoceanSection('drift')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            metoceanSection === 'drift'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          🌊 Net Drift Vector
+        </button>
+        <button
+          onClick={() => setMetoceanSection('wind_current')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            metoceanSection === 'wind_current'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          💨 Wind & Currents
+        </button>
+        <button
+          onClick={() => setMetoceanSection('weather')}
+          className={`py-1.5 px-1 rounded-lg text-center transition-all cursor-pointer truncate ${
+            metoceanSection === 'weather'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          🌡️ Weather Station
+        </button>
       </div>
 
-      {/* Fay Hydrodynamic Dispersion Model Card */}
-      <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-2">
-        <span className="text-[10.5px] text-slate-300 font-bold uppercase border-b border-slate-800 pb-1 flex items-center gap-1.5">
-          <Compass className="w-3.5 h-3.5 text-cyan-400" />
-          Fay +6h Hydrodynamic Forecast
-        </span>
+      {/* MODULE 1: Net Drift Vector & Fay Dispersion */}
+      {metoceanSection === 'drift' && (
+        <div className="flex flex-col gap-3">
+          <div className="p-3 bg-gradient-to-br from-slate-900/95 to-cyan-950/30 rounded-xl border border-cyan-500/40 flex flex-col gap-2.5 shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-cyan-400" />
+                Fay Hydrodynamic Drift & Expansion
+              </span>
+              <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-500/30 text-[9px]">
+                +6h Forecast
+              </span>
+            </div>
 
-        <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Net Drift Speed:</span>
-            <strong className="text-cyan-300">
-              {metocean?.net_drift_speed_kts ?? 1.35} kts @ {metocean?.net_drift_direction_deg ?? 84.5}° {metocean?.current_cardinal ?? 'E'}
-            </strong>
-          </div>
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Radial Spread Rate:</span>
-            <strong className="text-amber-300">+{threat.growth_rate_pct_per_hour}% / hour</strong>
-          </div>
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Evaporative Weathering:</span>
-            <strong className="text-emerald-400">{metocean?.weathering_evaporation_pct ?? 22.5}% Mass Lost (12h)</strong>
-          </div>
-          <div className="flex justify-between p-1.5 bg-slate-950/70 rounded border border-slate-800">
-            <span className="text-slate-400">Emulsification State:</span>
-            <strong className="text-rose-300">{metocean?.weathering_emulsification_pct ?? 34.0}% Water Content</strong>
+            <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+              <div className="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800 flex flex-col gap-0.5">
+                <span className="text-slate-400 text-[9px]">Net Drift Velocity:</span>
+                <strong className="text-cyan-300 text-xs font-mono">{netSpeed} kts @ {netDir}°</strong>
+                <span className="text-[8.5px] text-cyan-400">{netCard} Advective Flow</span>
+              </div>
+              <div className="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800 flex flex-col gap-0.5">
+                <span className="text-slate-400 text-[9px]">Radial Spread Rate:</span>
+                <strong className="text-amber-300 text-xs font-mono">+{threat.growth_rate_pct_per_hour}% / hr</strong>
+                <span className="text-[8.5px] text-amber-400">Viscous-Inertial Regime</span>
+              </div>
+            </div>
+
+            <div className="p-2.5 bg-slate-950/90 rounded-lg border border-slate-800 flex flex-col gap-1.5 text-[10px]">
+              <div className="flex justify-between items-center text-slate-300">
+                <span className="text-slate-400">Hindcast Origin Vector:</span>
+                <strong className="text-rose-300 font-mono">275.0° (W) Origin Back-Trace</strong>
+              </div>
+              <div className="flex justify-between items-center text-slate-300">
+                <span className="text-slate-400">Coastal Clearance Margin:</span>
+                <strong className="text-emerald-400 font-mono">{threat.coast_distance_km} km ({threat.predicted_arrival_hours || 11.5}h ETA)</strong>
+              </div>
+            </div>
+
+            {/* On-Demand Formulation Toggle */}
+            <div className="pt-1">
+              <button
+                onClick={() => setShowDriftMath(!showDriftMath)}
+                className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-950/90 border border-slate-800 hover:border-cyan-500/40 text-slate-300 hover:text-cyan-300 cursor-pointer transition-colors text-[9.5px]"
+              >
+                <span className="flex items-center gap-1.5 font-bold">
+                  <Calculator className="w-3 h-3 text-cyan-400" />
+                  {showDriftMath ? 'Hide Drift Formulation' : 'View Hydrodynamic Drift Formulation'}
+                </span>
+                {showDriftMath ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+
+              {showDriftMath && (
+                <div className="mt-2 p-2.5 bg-slate-950 rounded-lg border border-cyan-500/30 text-[9.5px] flex flex-col gap-2">
+                  <div className="p-2 bg-slate-900 rounded border border-slate-800 font-mono text-cyan-200 text-[9px] text-center">
+                    v_drift = v_current + 0.030 · v_wind
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[9px] text-slate-300">
+                    <div className="p-1.5 bg-slate-900/60 rounded border border-slate-800">
+                      <span className="text-slate-400 block">Wind Component:</span>
+                      <strong className="text-cyan-300">0.030 × {windSpeed} = {(windSpeed * 0.03).toFixed(2)} kts</strong>
+                    </div>
+                    <div className="p-1.5 bg-slate-900/60 rounded border border-slate-800">
+                      <span className="text-slate-400 block">Current Vector:</span>
+                      <strong className="text-cyan-300">{curSpeed} kts (Direct 100%)</strong>
+                    </div>
+                  </div>
+                  <p className="text-slate-400 text-[8.5px] leading-relaxed">
+                    Hydrodynamic vector summation combines ocean surface current advection with 3% wind drag factor, aligning slick trajectory within 4.2° of satellite ground-truth observations.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* MODULE 2: Wind & Ocean Currents */}
+      {metoceanSection === 'wind_current' && (
+        <div className="flex flex-col gap-3">
+          <div className="p-3 bg-slate-900/95 rounded-xl border border-slate-800 flex flex-col gap-2.5 shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Wind className="w-3.5 h-3.5 text-cyan-400" />
+                Levantine Basin Metocean Vectors
+              </span>
+              <span className="text-[9.5px] text-emerald-400 font-bold">LIVE TELEMETRY</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+              <div className="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800 flex flex-col gap-1">
+                <span className="text-slate-400 text-[9.5px] flex items-center gap-1">
+                  <Wind className="w-3 h-3 text-cyan-400" /> Surface Wind
+                </span>
+                <strong className="text-white text-xs">{windSpeed} kts @ {windDir}°</strong>
+                <span className="text-[9px] text-cyan-300">{windCard} Flow ({(windSpeed * 0.514444).toFixed(1)} m/s)</span>
+              </div>
+
+              <div className="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800 flex flex-col gap-1">
+                <span className="text-slate-400 text-[9.5px] flex items-center gap-1">
+                  <Waves className="w-3 h-3 text-cyan-300" /> Surface Current
+                </span>
+                <strong className="text-white text-xs">{curSpeed} kts @ {curDir}°</strong>
+                <span className="text-[9px] text-cyan-300">{curCard} Advection ({(curSpeed * 0.514444).toFixed(1)} m/s)</span>
+              </div>
+            </div>
+
+            <div className="p-2.5 bg-slate-950/90 rounded-lg border border-slate-800 text-[9.5px] flex flex-col gap-1">
+              <span className="text-cyan-300 font-bold flex items-center gap-1">
+                <Activity className="w-3 h-3 text-cyan-400" />
+                Bragg Wave Resonance Diagnostics:
+              </span>
+              <p className="text-slate-300 leading-relaxed text-[9px]">
+                Wind speed of <strong className="text-cyan-300">{windSpeed} kts</strong> falls squarely in the optimal 3.0–12.0 m/s detection window, ensuring capillary wave excitation on surrounding seawater while oil dampens reflections by -8.9 dB.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODULE 3: Weather Station & Physical Degradation */}
+      {metoceanSection === 'weather' && (
+        <div className="flex flex-col gap-3">
+          <div className="p-3 bg-slate-900/95 rounded-xl border border-slate-800 flex flex-col gap-2.5 shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <span className="text-[11px] text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                Oceanographic State & Oil Weathering
+              </span>
+              <span className="text-[9.5px] text-cyan-400 font-bold">BUOY IN-SITU</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="p-2 bg-slate-950/80 rounded border border-slate-800 flex flex-col">
+                <span className="text-slate-400 text-[9px]">Sea Surface Temp:</span>
+                <strong className="text-white text-xs">{metocean?.sea_surface_temp_c ?? 21.4}°C</strong>
+              </div>
+              <div className="p-2 bg-slate-950/80 rounded border border-slate-800 flex flex-col">
+                <span className="text-slate-400 text-[9px]">Wave Height (Hs):</span>
+                <strong className="text-cyan-300 text-xs">{metocean?.significant_wave_height_m ?? 1.2} m</strong>
+              </div>
+              <div className="p-2 bg-slate-950/80 rounded border border-slate-800 flex flex-col">
+                <span className="text-slate-400 text-[9px]">Evaporative Loss:</span>
+                <strong className="text-emerald-400 text-xs">{metocean?.weathering_evaporation_pct ?? 26.5}% (12h)</strong>
+              </div>
+              <div className="p-2 bg-slate-950/80 rounded border border-slate-800 flex flex-col">
+                <span className="text-slate-400 text-[9px]">Water Emulsification:</span>
+                <strong className="text-rose-300 text-xs">{metocean?.weathering_emulsification_pct ?? 31.0}%</strong>
+              </div>
+              <div className="col-span-2 p-2 bg-slate-950/80 rounded border border-slate-800 flex flex-col gap-0.5">
+                <div className="flex justify-between items-center text-[9px]">
+                  <span className="text-slate-400">Sea State & Condition:</span>
+                  <span className="text-cyan-300 font-semibold">{metocean?.sea_state ?? "Moderate (Beaufort 3-4)"}</span>
+                </div>
+                <div className="flex justify-between items-center text-[9px]">
+                  <span className="text-slate-400">Radar Quality Index:</span>
+                  <span className="text-emerald-400 font-semibold">{metocean?.sar_backscatter_quality ?? "OPTIMAL (High Radar Contrast)"}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1542,183 +2000,479 @@ interface ThreatsTabProps {
   onFocusLocation?: (coords: [number, number], title: string, category?: string) => void;
 }
 
-const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, onFocusLocation }) => {
+const ThreatsTab: React.FC<ThreatsTabProps> = ({ threat, currentIncident, spill, onFocusLocation }) => {
+  const [threatSection, setThreatSection] = useState<'severity' | 'assets' | 'protocol'>('severity');
+  const [threatCategory, setThreatCategory] = useState<'all' | 'fishery' | 'harbour' | 'aquaculture' | 'community'>('all');
+  const [showThreatMath, setShowThreatMath] = useState<boolean>(false);
+
   return (
     <div className="flex flex-col gap-3 font-mono text-xs">
-      {/* Overall Threat & Landfall Rating */}
-      <div className="p-3 bg-slate-900/95 rounded-xl border border-rose-500/40 flex flex-col gap-2 shadow-md">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-          <span className="text-[11px] text-rose-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-            Coastal Multi-Hazard Threat Assessment
-          </span>
-          <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 font-bold border border-rose-600/40 text-[9.5px]">
-            {threat.overall_severity_level} ({threat.overall_severity_score}/100)
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
-          <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
-            <span className="text-slate-400 block">Coastline Distance</span>
-            <strong className="text-white text-xs">{threat.coast_distance_km} km</strong>
-          </div>
-          <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
-            <span className="text-slate-400 block">Landfall Arrival ETA</span>
-            <strong className="text-amber-300 text-xs">{threat.predicted_arrival_hours || 11.5} Hours</strong>
-          </div>
-        </div>
+      {/* Primary Section Sub-Tab Navigation */}
+      <div className="grid grid-cols-3 gap-1 p-1 bg-slate-950/90 rounded-xl border border-slate-800 text-[10px] font-bold shrink-0">
+        <button
+          onClick={() => setThreatSection('severity')}
+          className={`py-1.5 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
+            threatSection === 'severity'
+              ? 'bg-rose-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          ⚠️ Threat Severity
+        </button>
+        <button
+          onClick={() => setThreatSection('assets')}
+          className={`py-1.5 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
+            threatSection === 'assets'
+              ? 'bg-amber-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          🏝️ Vulnerable Assets
+        </button>
+        <button
+          onClick={() => setThreatSection('protocol')}
+          className={`py-1.5 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
+            threatSection === 'protocol'
+              ? 'bg-cyan-500 text-slate-950 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+          }`}
+        >
+          🚨 Emergency Protocol
+        </button>
       </div>
 
-      {/* 🟢 1. Fishing Zones Impact */}
-      <div className="p-3 bg-slate-900/90 rounded-xl border border-emerald-500/30 flex flex-col gap-2">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-1">
-          <span className="text-[10.5px] text-emerald-300 font-bold uppercase flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 shadow-sm" />
-            🟢 Fishing Zones Vulnerability
-          </span>
-          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40">
-            {threat.fishing_zone_risk || 'HIGH'}
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
-            <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.fishing_zone_name || 'Levantine Deep-Water Pelagic Fishery Fairway'}</span>
-              <span className="text-emerald-400 font-mono">{threat.fishing_fleet_count || 180} Trawlers</span>
+      {/* SUB-TAB 1: THREAT SEVERITY & MULTI-HAZARD ASSESSMENT */}
+      {threatSection === 'severity' && (
+        <div className="flex flex-col gap-3">
+          {/* Overall Severity Card */}
+          <div className="p-3 bg-slate-900/95 rounded-xl border border-rose-500/40 flex flex-col gap-2 shadow-md">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+              <span className="text-[11px] text-rose-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                Coastal Multi-Hazard Threat Matrix
+              </span>
+              <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 font-bold border border-rose-600/40 text-[9.5px]">
+                {threat.overall_severity_level} ({threat.overall_severity_score}/100)
+              </span>
             </div>
-            <p className="text-[9.5px] text-slate-400">
-              Urgent broadcast alert issued. Standby advisory active for high-value pelagic tuna and swordfish harvesting grounds.
-            </p>
-            {onFocusLocation && (
-              <button
-                onClick={() => onFocusLocation(threat.fishing_zone_coords || [33.0578, 33.2590], threat.fishing_zone_name || 'Levantine Pelagic Fairway', 'fishing_zone')}
-                className="mt-1 self-start px-2 py-1 rounded bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
-              >
-                <Navigation className="w-3 h-3 text-emerald-400" />
-                Locate Fishing Fairway on Map
-              </button>
+
+            <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
+              <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
+                <span className="text-slate-400 block text-[9px]">Littoral Proximity</span>
+                <strong className="text-white text-xs">{threat.coast_distance_km} km</strong>
+                <span className="text-[8.5px] text-slate-400 block mt-0.5">Offshore Baseline</span>
+              </div>
+              <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
+                <span className="text-slate-400 block text-[9px]">Landfall ETA</span>
+                <strong className="text-amber-300 text-xs">{threat.predicted_arrival_hours || 11.5} Hours</strong>
+                <span className="text-[8.5px] text-amber-400/80 block mt-0.5">Critical Response Window</span>
+              </div>
+              <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
+                <span className="text-slate-400 block text-[9px]">Net Advection Velocity</span>
+                <strong className="text-cyan-300 text-xs">0.42 kts (0.22 m/s)</strong>
+                <span className="text-[8.5px] text-slate-400 block mt-0.5">Bearing: 042° True</span>
+              </div>
+              <div className="p-2 bg-slate-950/80 rounded border border-slate-800">
+                <span className="text-slate-400 block text-[9px]">Primary Intercept Zone</span>
+                <strong className="text-white text-[11px] truncate block">Limassol Littoral</strong>
+                <span className="text-[8.5px] text-slate-400 block mt-0.5">Vasiliko Bay Inlets</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Sector Cards (Direct Navigation to Assets) */}
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <button
+              onClick={() => {
+                setThreatSection('assets');
+                setThreatCategory('fishery');
+              }}
+              className="p-2.5 bg-slate-900/90 hover:bg-slate-850 rounded-xl border border-emerald-500/30 text-left transition-all group cursor-pointer flex flex-col gap-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-emerald-300 font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-sm bg-emerald-500" /> Fisheries
+                </span>
+                <span className="text-[8.5px] px-1 py-0.2 rounded bg-emerald-950 text-emerald-300 font-bold">
+                  {threat.fishing_zone_risk || 'HIGH'}
+                </span>
+              </div>
+              <span className="text-white font-semibold truncate">{threat.fishing_fleet_count || 180} Trawlers</span>
+              <span className="text-[9px] text-slate-400 group-hover:text-emerald-300 flex items-center gap-0.5 mt-0.5">
+                Inspect Fairway <ChevronRight className="w-2.5 h-2.5" />
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setThreatSection('assets');
+                setThreatCategory('harbour');
+              }}
+              className="p-2.5 bg-slate-900/90 hover:bg-slate-850 rounded-xl border border-blue-500/30 text-left transition-all group cursor-pointer flex flex-col gap-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-blue-300 font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-500" /> Harbours
+                </span>
+                <span className="text-[8.5px] px-1 py-0.2 rounded bg-blue-950 text-blue-300 font-bold">
+                  {threat.fishing_harbour_risk || 'HIGH'}
+                </span>
+              </div>
+              <span className="text-white font-semibold truncate">{threat.harbour_vessel_count || 450} Vessels</span>
+              <span className="text-[9px] text-slate-400 group-hover:text-blue-300 flex items-center gap-0.5 mt-0.5">
+                Inspect Terminal <ChevronRight className="w-2.5 h-2.5" />
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setThreatSection('assets');
+                setThreatCategory('aquaculture');
+              }}
+              className="p-2.5 bg-slate-900/90 hover:bg-slate-850 rounded-xl border border-purple-500/30 text-left transition-all group cursor-pointer flex flex-col gap-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-purple-300 font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-sm bg-purple-500" /> Mariculture
+                </span>
+                <span className="text-[8.5px] px-1 py-0.2 rounded bg-purple-950 text-purple-300 font-bold">
+                  {threat.aquaculture_risk || 'HIGH'}
+                </span>
+              </div>
+              <span className="text-white font-semibold truncate">€{threat.aquaculture_economic_cr || 75.0}M Asset</span>
+              <span className="text-[9px] text-slate-400 group-hover:text-purple-300 flex items-center gap-0.5 mt-0.5">
+                Inspect Pens <ChevronRight className="w-2.5 h-2.5" />
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setThreatSection('assets');
+                setThreatCategory('community');
+              }}
+              className="p-2.5 bg-slate-900/90 hover:bg-slate-850 rounded-xl border border-orange-500/30 text-left transition-all group cursor-pointer flex flex-col gap-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-orange-300 font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-orange-500" /> Communities
+                </span>
+                <span className="text-[8.5px] px-1 py-0.2 rounded bg-orange-950 text-orange-300 font-bold">
+                  {threat.coastal_community_risk || 'HIGH'}
+                </span>
+              </div>
+              <span className="text-white font-semibold truncate">185k Littoral Pop.</span>
+              <span className="text-[9px] text-slate-400 group-hover:text-orange-300 flex items-center gap-0.5 mt-0.5">
+                Inspect Littoral <ChevronRight className="w-2.5 h-2.5" />
+              </span>
+            </button>
+          </div>
+
+          {/* On-Demand Mathematical Formulation Toggle */}
+          <div className="bg-slate-900/80 rounded-xl border border-slate-800 p-2.5 flex flex-col gap-2">
+            <button
+              onClick={() => setShowThreatMath(!showThreatMath)}
+              className="w-full flex items-center justify-between text-[10px] font-bold text-slate-300 hover:text-cyan-300 cursor-pointer"
+            >
+              <span className="flex items-center gap-1.5">
+                <Calculator className="w-3.5 h-3.5 text-cyan-400" />
+                Multi-Hazard Threat Index Formulation
+              </span>
+              <span className="text-[9px] text-cyan-400 flex items-center gap-1">
+                {showThreatMath ? 'Hide Math' : 'Show Math'}
+                {showThreatMath ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </span>
+            </button>
+
+            {showThreatMath && (
+              <div className="pt-2 border-t border-slate-800/80 flex flex-col gap-2 text-[9.5px] text-slate-300">
+                <div className="p-2 bg-slate-950/90 rounded border border-cyan-900/40 text-[9px] leading-relaxed">
+                  <div className="text-cyan-300 font-semibold mb-1">Composite Coastal Vulnerability Index (CVI):</div>
+                  <div className="font-mono text-emerald-300 bg-slate-900 p-1.5 rounded border border-slate-800 mb-1.5">
+                    T_coastal = w1·S_prox + w2·S_speed + w3·S_eco + w4·S_area ∈ [0, 100]
+                  </div>
+                  <div className="text-slate-400 space-y-0.5">
+                    <div>• S_prox = max(0, 100·(1 - d_coast / 25 km)) [Weight w1 = 0.35]</div>
+                    <div>• S_speed = min(100, 100·(v_drift / 1.0 kts)) [Weight w2 = 0.25]</div>
+                    <div>• S_eco = max(Vulnerability_sector_j) [Weight w3 = 0.25]</div>
+                    <div>• S_area = min(100, 100·(A_slick / 10.0 km²)) [Weight w4 = 0.15]</div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center text-[9px] text-slate-400 px-1">
+                  <span>Standard Reference:</span>
+                  <span className="text-white font-semibold">IMO / IPIECA Guidelines for Oil Spill Risk Assessment</span>
+                </div>
+              </div>
             )}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 🔵 2. Fishing Harbours & Ports Impact */}
-      <div className="p-3 bg-slate-900/90 rounded-xl border border-blue-500/30 flex flex-col gap-2">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-1">
-          <span className="text-[10.5px] text-blue-300 font-bold uppercase flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" />
-            🔵 Fishing Harbours at Risk
-          </span>
-          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-950 text-blue-300 border border-blue-500/40">
-            {threat.fishing_harbour_risk || 'HIGH'}
-          </span>
-        </div>
+      {/* SUB-TAB 2: VULNERABLE COASTAL ASSETS (CATEGORY FILTERED) */}
+      {threatSection === 'assets' && (
+        <div className="flex flex-col gap-3">
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar p-1 bg-slate-950/90 rounded-xl border border-slate-800 text-[10px] font-bold shrink-0">
+            <button
+              onClick={() => setThreatCategory('all')}
+              className={`py-1 px-2 rounded-lg text-center transition-all cursor-pointer whitespace-nowrap ${
+                threatCategory === 'all'
+                  ? 'bg-rose-500 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              🌐 All (4)
+            </button>
+            <button
+              onClick={() => setThreatCategory('fishery')}
+              className={`py-1 px-2 rounded-lg text-center transition-all cursor-pointer whitespace-nowrap ${
+                threatCategory === 'fishery'
+                  ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              🟢 Fisheries
+            </button>
+            <button
+              onClick={() => setThreatCategory('harbour')}
+              className={`py-1 px-2 rounded-lg text-center transition-all cursor-pointer whitespace-nowrap ${
+                threatCategory === 'harbour'
+                  ? 'bg-blue-500 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              🔵 Harbours
+            </button>
+            <button
+              onClick={() => setThreatCategory('aquaculture')}
+              className={`py-1 px-2 rounded-lg text-center transition-all cursor-pointer whitespace-nowrap ${
+                threatCategory === 'aquaculture'
+                  ? 'bg-purple-500 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              🟣 Aquaculture
+            </button>
+            <button
+              onClick={() => setThreatCategory('community')}
+              className={`py-1 px-2 rounded-lg text-center transition-all cursor-pointer whitespace-nowrap ${
+                threatCategory === 'community'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              🟠 Communities
+            </button>
+          </div>
 
-        <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
-            <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.fishing_harbour_name || 'Limassol Commercial & Fishery Terminal'}</span>
-              <span className="text-blue-400 font-mono">{threat.harbour_vessel_count || 450} Vessels</span>
-            </div>
-            <p className="text-[9.5px] text-slate-400">
-              Pre-position containment booms across harbor entrance. Evacuation alert ready for offshore landing berths.
-            </p>
-            {onFocusLocation && (
-              <button
-                onClick={() => onFocusLocation(threat.fishing_harbour_coords || [33.0450, 34.6750], threat.fishing_harbour_name || 'Limassol Port Terminal', 'fishing_harbour')}
-                className="mt-1 self-start px-2 py-1 rounded bg-blue-950/60 hover:bg-blue-900/80 text-blue-300 border border-blue-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
-              >
-                <Navigation className="w-3 h-3 text-blue-400" />
-                Locate Harbour on Map
-              </button>
+          {/* Cards Container */}
+          <div className="flex flex-col gap-2.5">
+            {/* Fishery Card */}
+            {(threatCategory === 'all' || threatCategory === 'fishery') && (
+              <div className="p-3 bg-slate-900/90 rounded-xl border border-emerald-500/30 flex flex-col gap-2 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                  <span className="text-[11px] text-emerald-300 font-bold uppercase flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 shadow-sm" />
+                    Fishing Grounds Fairway
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+                    {threat.fishing_zone_risk || 'HIGH'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-white font-bold text-[10.5px]">
+                  <span>{threat.fishing_zone_name || 'Levantine Deep-Water Pelagic Fishery Fairway'}</span>
+                  <span className="text-emerald-400 font-mono">{threat.fishing_fleet_count || 180} Trawlers</span>
+                </div>
+                <p className="text-[9.5px] text-slate-400 leading-relaxed">
+                  Offshore commercial harvesting fairway for tuna and swordfish stocks. Trajectory envelope intersects active trawler operational grounds within 6 hours.
+                </p>
+                {onFocusLocation && (
+                  <button
+                    onClick={() => onFocusLocation(threat.fishing_zone_coords || [33.0578, 33.2590], threat.fishing_zone_name || 'Levantine Pelagic Fairway', 'fishing_zone')}
+                    className="self-start px-2.5 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/50 text-[10px] font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Navigation className="w-3 h-3 text-emerald-400" />
+                    Locate Fairway on Map
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Harbour Card */}
+            {(threatCategory === 'all' || threatCategory === 'harbour') && (
+              <div className="p-3 bg-slate-900/90 rounded-xl border border-blue-500/30 flex flex-col gap-2 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                  <span className="text-[11px] text-blue-300 font-bold uppercase flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm" />
+                    Commercial & Fishery Harbour
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-blue-950 text-blue-300 border border-blue-500/40">
+                    {threat.fishing_harbour_risk || 'HIGH'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-white font-bold text-[10.5px]">
+                  <span>{threat.fishing_harbour_name || 'Limassol Commercial & Fishery Terminal'}</span>
+                  <span className="text-blue-400 font-mono">{threat.harbour_vessel_count || 450} Vessels</span>
+                </div>
+                <p className="text-[9.5px] text-slate-400 leading-relaxed">
+                  Major port navigation channel and fishing fleet sheltering basin. Containment boom placement recommended at breakwater heads to block slick intrusion.
+                </p>
+                {onFocusLocation && (
+                  <button
+                    onClick={() => onFocusLocation(threat.fishing_harbour_coords || [33.0450, 34.6750], threat.fishing_harbour_name || 'Limassol Port Terminal', 'fishing_harbour')}
+                    className="self-start px-2.5 py-1.5 rounded-lg bg-blue-950/80 hover:bg-blue-900 text-blue-300 border border-blue-500/50 text-[10px] font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Navigation className="w-3 h-3 text-blue-400" />
+                    Locate Harbour on Map
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Aquaculture Card */}
+            {(threatCategory === 'all' || threatCategory === 'aquaculture') && (
+              <div className="p-3 bg-slate-900/90 rounded-xl border border-purple-500/30 flex flex-col gap-2 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                  <span className="text-[11px] text-purple-300 font-bold uppercase flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-sm bg-purple-500 shadow-sm" />
+                    Mariculture Sea Cages
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-purple-950 text-purple-300 border border-purple-500/40">
+                    {threat.aquaculture_risk || 'HIGH'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-white font-bold text-[10.5px]">
+                  <span>{threat.aquaculture_name || 'Vasiliko Bay Offshore Mariculture Cages'}</span>
+                  <span className="text-purple-400 font-mono">€{threat.aquaculture_economic_cr || 75.0}M Valuation</span>
+                </div>
+                <p className="text-[9.5px] text-slate-400 leading-relaxed">
+                  Commercial sea bass and sea bream rearing facilities. Highly vulnerable to dissolved hydrocarbon toxicity. Sorbent barrier deployment mandated.
+                </p>
+                {onFocusLocation && (
+                  <button
+                    onClick={() => onFocusLocation(threat.aquaculture_coords || [33.31, 34.70], threat.aquaculture_name || 'Vasiliko Bay Mariculture', 'aquaculture')}
+                    className="self-start px-2.5 py-1.5 rounded-lg bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-500/50 text-[10px] font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Navigation className="w-3 h-3 text-purple-400" />
+                    Locate Cages on Map
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Community Card */}
+            {(threatCategory === 'all' || threatCategory === 'community') && (
+              <div className="p-3 bg-slate-900/90 rounded-xl border border-orange-500/30 flex flex-col gap-2 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                  <span className="text-[11px] text-orange-300 font-bold uppercase flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" />
+                    Littoral Community & Shoreline
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-orange-950 text-orange-300 border border-orange-500/40">
+                    {threat.coastal_community_risk || 'HIGH'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-white font-bold text-[10.5px]">
+                  <span>{threat.coastal_community_name || 'Limassol Waterfront Maritime Community'}</span>
+                  <span className="text-orange-400 font-mono">{threat.community_population ? threat.community_population.toLocaleString() : '185,000'} Pop.</span>
+                </div>
+                <p className="text-[9.5px] text-slate-400 leading-relaxed">
+                  Densely populated urban coastline and public amenity beaches. Shoreline contingency clean-up task forces alerted for potential tarball stranding.
+                </p>
+                {onFocusLocation && (
+                  <button
+                    onClick={() => onFocusLocation(threat.coastal_community_coords || [33.0450, 34.6750], threat.coastal_community_name || 'Limassol Waterfront', 'coastal_community')}
+                    className="self-start px-2.5 py-1.5 rounded-lg bg-orange-950/80 hover:bg-orange-900 text-orange-300 border border-orange-500/50 text-[10px] font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Navigation className="w-3 h-3 text-orange-400" />
+                    Locate Shoreline on Map
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* 🟣 3. Aquaculture & Mariculture Impact */}
-      <div className="p-3 bg-slate-900/90 rounded-xl border border-purple-500/30 flex flex-col gap-2">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-1">
-          <span className="text-[10.5px] text-purple-300 font-bold uppercase flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-sm bg-purple-500 shadow-sm" />
-            🟣 Aquaculture Farms Exposure
-          </span>
-          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-950 text-purple-300 border border-purple-500/40">
-            {threat.aquaculture_risk || 'HIGH'}
-          </span>
-        </div>
+      {/* SUB-TAB 3: EMERGENCY PROTOCOL & RESPONSE CHECKLIST */}
+      {threatSection === 'protocol' && (
+        <div className="flex flex-col gap-3">
+          {/* 4-Stage Tiered Contingency Response Matrix */}
+          <div className="p-3 bg-slate-900/90 rounded-xl border border-cyan-500/30 flex flex-col gap-2.5 shadow-md">
+            <span className="text-[10.5px] text-cyan-300 font-bold uppercase border-b border-slate-800 pb-1 flex items-center justify-between">
+              <span>National Maritime Contingency Plan (Tier 2/3)</span>
+              <span className="text-[8.5px] text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-500/40">STAGE 1 ACTIVE</span>
+            </span>
 
-        <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
-            <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.aquaculture_name || 'Vasiliko Bay Offshore Mariculture Cages'}</span>
-              <span className="text-purple-400 font-mono">€{threat.aquaculture_economic_cr || 75.0}M Value</span>
+            <div className="space-y-2 text-[10px]">
+              {/* Stage 1 */}
+              <div className="p-2 bg-slate-950/80 rounded border-l-2 border-emerald-500 flex flex-col gap-1">
+                <div className="flex justify-between items-center font-bold">
+                  <span className="text-emerald-300">Phase 1 (0–2h): Immediate Offshore Containment</span>
+                  <span className="text-[8.5px] px-1 py-0.2 rounded bg-emerald-950 text-emerald-400">IN PROGRESS</span>
+                </div>
+                <div className="text-slate-300 text-[9px] leading-relaxed">
+                  • Deploy 1,200m offshore curtain containment boom around slick perimeter.<br />
+                  • Issue urgent NAVTEX broadcast to divert approaching vessel traffic.<br />
+                  • Lock AIS radar tracking cordon around primary suspect vessel.
+                </div>
+              </div>
+
+              {/* Stage 2 */}
+              <div className="p-2 bg-slate-950/80 rounded border-l-2 border-amber-500 flex flex-col gap-1">
+                <div className="flex justify-between items-center font-bold">
+                  <span className="text-amber-300">Phase 2 (2–6h): Critical Asset Deflection Shielding</span>
+                  <span className="text-[8.5px] px-1 py-0.2 rounded bg-amber-950 text-amber-400">DISPATCHED</span>
+                </div>
+                <div className="text-slate-300 text-[9px] leading-relaxed">
+                  • Anchor sorbent deflection barriers across Vasiliko Bay mariculture inlets.<br />
+                  • Pre-position pneumatic bubble screen across Limassol harbour mouth.<br />
+                  • Divert pelagic commercial trawlers southwest of current drift vector.
+                </div>
+              </div>
+
+              {/* Stage 3 */}
+              <div className="p-2 bg-slate-950/80 rounded border-l-2 border-cyan-500 flex flex-col gap-1">
+                <div className="flex justify-between items-center font-bold">
+                  <span className="text-cyan-300">Phase 3 (6–12h): Dynamic Recovery & Mechanical Skimming</span>
+                  <span className="text-[8.5px] px-1 py-0.2 rounded bg-slate-900 text-slate-400">STANDBY</span>
+                </div>
+                <div className="text-slate-300 text-[9px] leading-relaxed">
+                  • Mobilize EMSA Standby Oil Spill Vessel (*DAMAS / AKROTIRI COMMAND*).<br />
+                  • Initiate high-volume oleophilic disc & weir skimming (250 m³/h capacity).<br />
+                  • Track evaporative weathering mass balance via satellite telemetry.
+                </div>
+              </div>
+
+              {/* Stage 4 */}
+              <div className="p-2 bg-slate-950/80 rounded border-l-2 border-rose-500 flex flex-col gap-1">
+                <div className="flex justify-between items-center font-bold">
+                  <span className="text-rose-300">Phase 4 (12h+): Shoreline Defense & Wildlife Protection</span>
+                  <span className="text-[8.5px] px-1 py-0.2 rounded bg-slate-900 text-slate-400">PLANNED</span>
+                </div>
+                <div className="text-slate-300 text-[9px] leading-relaxed">
+                  • Pre-stage vacuum tanker trucks and washing units at Lady's Mile shoreline.<br />
+                  • Activate Department of Fisheries emergency oiled wildlife response unit.
+                </div>
+              </div>
             </div>
-            <p className="text-[9.5px] text-slate-400">
-              Emergency advisory issued to close intertidal water intake gates and deploy secondary skirt oil deflectors.
-            </p>
-            {onFocusLocation && (
-              <button
-                onClick={() => onFocusLocation(threat.aquaculture_coords || [33.31, 34.70], threat.aquaculture_name || 'Vasiliko Bay Mariculture', 'aquaculture')}
-                className="mt-1 self-start px-2 py-1 rounded bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
-              >
-                <Navigation className="w-3 h-3 text-purple-400" />
-                Locate Aquaculture Cages on Map
-              </button>
-            )}
           </div>
-        </div>
-      </div>
 
-      {/* 🟠 4. Coastal Communities & Koliwadas Impact */}
-      <div className="p-3 bg-slate-900/90 rounded-xl border border-orange-500/30 flex flex-col gap-2">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-1">
-          <span className="text-[10.5px] text-orange-300 font-bold uppercase flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" />
-            🟠 Coastal Communities Impact
-          </span>
-          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-orange-950 text-orange-300 border border-orange-500/40">
-            {threat.coastal_community_risk || 'HIGH'}
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-1.5 text-[10.5px]">
-          <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800 flex flex-col gap-1.5">
-            <div className="flex justify-between items-center text-white font-bold">
-              <span>{threat.coastal_community_name || 'Limassol Waterfront Maritime Community'}</span>
-              <span className="text-orange-400 font-mono">{threat.community_population ? threat.community_population.toLocaleString() : '185,000'} Pop.</span>
+          {/* Active Protection Directives */}
+          {threat.active_advisories && threat.active_advisories.length > 0 && (
+            <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-2">
+              <span className="text-[10.5px] text-cyan-300 font-bold uppercase border-b border-slate-800 pb-1">
+                Active Coastal Protection Directives
+              </span>
+              <ul className="space-y-1 text-[10px] text-slate-300">
+                {threat.active_advisories.map((adv: string, idx: number) => (
+                  <li key={idx} className="flex items-start gap-1.5">
+                    <span className="text-cyan-400 font-bold">•</span>
+                    <span>{adv}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <p className="text-[9.5px] text-slate-400">
-              Shoreline response contingency activated. Village community coordinators on alert for potential beach tarball deposits.
-            </p>
-            {onFocusLocation && (
-              <button
-                onClick={() => onFocusLocation(threat.coastal_community_coords || [33.0450, 34.6750], threat.coastal_community_name || 'Limassol Waterfront', 'coastal_community')}
-                className="mt-1 self-start px-2 py-1 rounded bg-orange-950/60 hover:bg-orange-900/80 text-orange-300 border border-orange-500/40 text-[10px] font-bold flex items-center gap-1 transition-all"
-              >
-                <Navigation className="w-3 h-3 text-orange-400" />
-                Locate Coastal Community on Map
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Active Protection Advisories */}
-      {threat.active_advisories && threat.active_advisories.length > 0 && (
-        <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col gap-2">
-          <span className="text-[10.5px] text-cyan-300 font-bold uppercase border-b border-slate-800 pb-1">
-            Active Coastal Protection Directives
-          </span>
-          <ul className="space-y-1 text-[10px] text-slate-300">
-            {threat.active_advisories.map((adv: string, idx: number) => (
-              <li key={idx} className="flex items-start gap-1.5">
-                <span className="text-cyan-400 font-bold">•</span>
-                <span>{adv}</span>
-              </li>
-            ))}
-          </ul>
+          )}
         </div>
       )}
     </div>
@@ -2070,7 +2824,7 @@ export const BayesianClassificationModal: React.FC<BayesianClassificationModalPr
   metocean,
   currentIncident,
 }) => {
-  const [modalMode, setModalMode] = useState<'simple' | 'math'>('simple');
+  const [modalMode, setModalMode] = useState<'verification' | 'math'>('verification');
   const dampingRatio = Number((falsePositive?.marangoni_damping_db || spill?.damping_ratio_db || 8.9).toFixed(1));
   const calcDetails = falsePositive?.calculation_details;
   const windKts = Number((metocean?.wind_speed_kts ?? calcDetails?.inputs?.wind_speed_kts ?? 12.8).toFixed(1));
@@ -2200,17 +2954,17 @@ export const BayesianClassificationModal: React.FC<BayesianClassificationModalPr
           </div>
         </div>
 
-        {/* View Mode Toggle: Simple vs Math */}
+        {/* View Mode Toggle: Physical Verification vs Math */}
         <div className="flex rounded-xl bg-slate-900 p-1 border border-slate-800 text-xs">
           <button
-            onClick={() => setModalMode('simple')}
+            onClick={() => setModalMode('verification')}
             className={`flex-1 py-1.5 rounded-lg font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              modalMode === 'simple'
+              modalMode === 'verification'
                 ? 'bg-cyan-500 text-slate-950 shadow-md ring-1 ring-cyan-400/50'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            💡 Plain-English Walkthrough
+            📋 Physical Evidence Verification
           </button>
           <button
             onClick={() => setModalMode('math')}
@@ -2224,14 +2978,14 @@ export const BayesianClassificationModal: React.FC<BayesianClassificationModalPr
           </button>
         </div>
 
-        {/* SIMPLE VIEW MODE */}
-        {modalMode === 'simple' ? (
+        {/* PHYSICAL VERIFICATION VIEW MODE */}
+        {modalMode === 'verification' ? (
           <div className="flex flex-col gap-3">
-            {/* 3 Step Plain-English AI Confirmation */}
+            {/* 3 Step Physical Evidence Verification */}
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                How the AI Proved this is Oil (3-Step Physical Verification)
+                Physical Evidence Verification (3 Key Indicators)
               </span>
 
               {/* Step 1 */}
@@ -2470,7 +3224,7 @@ export const BayesianClassificationModal: React.FC<BayesianClassificationModalPr
           onClick={onClose}
           className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold cursor-pointer transition-all text-xs shadow-lg"
         >
-          {modalMode === 'simple' ? 'Close Plain-English Walkthrough' : 'Close Mathematical Derivation'}
+          {modalMode === 'verification' ? 'Close Physical Verification' : 'Close Mathematical Derivation'}
         </button>
       </div>
     </div>,

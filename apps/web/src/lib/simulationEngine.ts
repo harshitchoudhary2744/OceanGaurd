@@ -56,6 +56,16 @@ export function moveCoordinate(lon: number, lat: number, headingDeg: number, dis
   return [Number(deg(lon2).toFixed(6)), Number(deg(lat2).toFixed(6))];
 }
 
+// Calculate true spherical initial bearing (degrees) between two points
+export function calculateBearing(lon1: number, lat1: number, lon2: number, lat2: number): number {
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const lat1Rad = (lat1 * Math.PI) / 180;
+  const lat2Rad = (lat2 * Math.PI) / 180;
+  const y = Math.sin(dLon) * Math.cos(lat2Rad);
+  const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
 // Generate smooth realistic elongated oil spill polygon
 export function generateRealisticSpillPolygon(
   centerLon: number,
@@ -1611,7 +1621,7 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
     cargo_type: "Low-Sulphur Marine Gasoil (115,000 DWT)",
     lat: 34.520,
     lon: 33.150,
-    heading_degrees: 268,
+    heading_degrees: 78,
     speed_knots: 12.4,
   },
   {
@@ -1889,11 +1899,11 @@ function generateShipWaypoints(ship: {
   // Maneuvering arrival route: turns northeast from cruising lane into pilot fairway
   if (mmsi === 500100009) {
     return [
-      { tMinutes: -360, lon: 32.52, lat: 34.46, heading: 268, speed: 14.5 },
-      { tMinutes: -180, lon: 32.84, lat: 34.49, heading: 268, speed: 14.5 },
-      { tMinutes: -42,  lon: 33.08, lat: 34.51, heading: 295, speed: 11.2 },
-      { tMinutes: 0,    lon: 33.15, lat: 34.52, heading: 310, speed: 8.5 },
-      { tMinutes: 180,  lon: 33.26, lat: 34.62, heading: 310, speed: 4.2 },
+      { tMinutes: -360, lon: 32.52, lat: 34.46, heading: 84, speed: 14.5 },
+      { tMinutes: -180, lon: 32.84, lat: 34.49, heading: 84, speed: 14.5 },
+      { tMinutes: -42,  lon: 33.08, lat: 34.51, heading: 80, speed: 11.2 },
+      { tMinutes: 0,    lon: 33.15, lat: 34.52, heading: 78, speed: 8.5 },
+      { tMinutes: 180,  lon: 33.26, lat: 34.62, heading: 42, speed: 4.2 },
     ];
   }
 
@@ -1989,40 +1999,40 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
       { tMinutes: 180,  lon: 33.240, lat: 33.290, heading: 95, speed: 13.5 },
     ],
   },
-  // 2. LEVANT STAR (Container Ship - Transits NE 035° towards Limassol)
+  // 2. LEVANT STAR (Container Ship - Transits NE 031° towards Limassol)
   {
     mmsi: 212000002,
     name: "LEVANT STAR",
     waypoints: [
-      { tMinutes: -360, lon: 33.300, lat: 33.180, heading: 35, speed: 14.2 },
-      { tMinutes: -180, lon: 33.220, lat: 33.230, heading: 35, speed: 14.2 },
-      { tMinutes: -42,  lon: 33.160, lat: 33.268, heading: 35, speed: 14.2 },
-      { tMinutes: 0,    lon: 33.140, lat: 33.280, heading: 35, speed: 14.2 },
-      { tMinutes: 180,  lon: 33.060, lat: 33.330, heading: 35, speed: 14.2 },
+      { tMinutes: -360, lon: 32.980, lat: 33.050, heading: 31, speed: 14.2 },
+      { tMinutes: -180, lon: 33.060, lat: 33.165, heading: 31, speed: 14.2 },
+      { tMinutes: -42,  lon: 33.115, lat: 33.245, heading: 31, speed: 14.2 },
+      { tMinutes: 0,    lon: 33.140, lat: 33.280, heading: 31, speed: 14.2 },
+      { tMinutes: 180,  lon: 33.220, lat: 33.395, heading: 31, speed: 14.2 },
     ],
   },
-  // 3. AEGEAN VOYAGER (Bulk Carrier - Transits ESE 110° towards Port Said, Rank #2 suspect with minor deceleration)
+  // 3. AEGEAN VOYAGER (Bulk Carrier - Transits ESE 114° towards Port Said, Rank #2 suspect with minor deceleration)
   {
     mmsi: 212000003,
     name: "AEGEAN VOYAGER",
     waypoints: [
-      { tMinutes: -360, lon: 32.980, lat: 33.350, heading: 110, speed: 12.5 },
-      { tMinutes: -180, lon: 33.100, lat: 33.300, heading: 110, speed: 12.5 },
-      { tMinutes: -42,  lon: 33.185, lat: 33.270, heading: 110, speed: 7.1 }, // 16.6 km CPA distance, speed drop to 7.1 kts
-      { tMinutes: 0,    lon: 33.220, lat: 33.250, heading: 110, speed: 12.5 },
-      { tMinutes: 180,  lon: 33.340, lat: 33.200, heading: 110, speed: 12.5 },
+      { tMinutes: -360, lon: 32.980, lat: 33.350, heading: 114, speed: 12.5 },
+      { tMinutes: -180, lon: 33.100, lat: 33.300, heading: 111, speed: 12.5 },
+      { tMinutes: -42,  lon: 33.185, lat: 33.270, heading: 121, speed: 7.1 }, // 16.6 km CPA distance, speed drop to 7.1 kts
+      { tMinutes: 0,    lon: 33.220, lat: 33.250, heading: 114, speed: 12.5 },
+      { tMinutes: 180,  lon: 33.340, lat: 33.200, heading: 114, speed: 12.5 },
     ],
   },
-  // 4. AKROTIRI BREEZE (LPG Tanker - Transits SW 220° towards Alexandria, Rank #3 suspect)
+  // 4. AKROTIRI BREEZE (LPG Tanker - Transits SW 228° towards Alexandria, Rank #3 suspect)
   {
     mmsi: 212000004,
     name: "AKROTIRI BREEZE",
     waypoints: [
-      { tMinutes: -360, lon: 33.200, lat: 33.380, heading: 220, speed: 11.8 },
-      { tMinutes: -180, lon: 33.120, lat: 33.320, heading: 220, speed: 11.8 },
-      { tMinutes: -42,  lon: 33.060, lat: 33.275, heading: 220, speed: 11.8 }, // 55.0 km CPA
-      { tMinutes: 0,    lon: 33.040, lat: 33.260, heading: 220, speed: 11.8 },
-      { tMinutes: 180,  lon: 32.960, lat: 33.200, heading: 220, speed: 11.8 },
+      { tMinutes: -360, lon: 33.200, lat: 33.380, heading: 228, speed: 11.8 },
+      { tMinutes: -180, lon: 33.120, lat: 33.320, heading: 228, speed: 11.8 },
+      { tMinutes: -42,  lon: 33.060, lat: 33.275, heading: 228, speed: 11.8 }, // 55.0 km CPA
+      { tMinutes: 0,    lon: 33.040, lat: 33.260, heading: 228, speed: 11.8 },
+      { tMinutes: 180,  lon: 32.960, lat: 33.200, heading: 228, speed: 11.8 },
     ],
   },
   // 5. CYPRUS POLICE PATROL / EMSA (Coast Guard Fast Intercept Patrol WSW 245°, Rank #4 response vessel)
@@ -2030,11 +2040,11 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
     mmsi: 212000005,
     name: "CYPRUS POLICE PATROL / EMSA",
     waypoints: [
-      { tMinutes: -360, lon: 33.380, lat: 33.420, heading: 245, speed: 14.0 }, // Coastline patrol base
-      { tMinutes: -180, lon: 33.300, lat: 33.360, heading: 245, speed: 22.0 }, // Inbound emergency transit
-      { tMinutes: -42,  lon: 33.180, lat: 33.300, heading: 245, speed: 22.0 }, // High speed sprint
+      { tMinutes: -360, lon: 33.380, lat: 33.420, heading: 231, speed: 14.0 }, // Coastline patrol base
+      { tMinutes: -180, lon: 33.300, lat: 33.360, heading: 241, speed: 22.0 }, // Inbound emergency transit
+      { tMinutes: -42,  lon: 33.180, lat: 33.300, heading: 249, speed: 22.0 }, // High speed sprint
       { tMinutes: 0,    lon: 33.05775642, lat: 33.25902604, heading: 245, speed: 6.0 }, // Arrives at oil slick locus for containment boom deployment
-      { tMinutes: 180,  lon: 33.065, lat: 33.255, heading: 245, speed: 4.5 }, // Station keeping / skimming operations
+      { tMinutes: 180,  lon: 33.065, lat: 33.255, heading: 124, speed: 4.5 }, // Station keeping / skimming operations
     ],
   },
   // 6–30. Authentic Mediterranean Commercial Fleet Corridor Waypoints
@@ -2047,7 +2057,15 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
 
 export const VESSEL_WAYPOINTS = MUMBAI_VESSEL_WAYPOINTS;
 
-// Precise piece-wise waypoint kinematic interpolation
+// Smooth angular shortest-path interpolation between two headings in degrees [0, 360)
+export function interpolateAngle(fromDeg: number, toDeg: number, progress: number): number {
+  let diff = (toDeg - fromDeg) % 360;
+  if (diff > 180) diff -= 360;
+  if (diff < -180) diff += 360;
+  return Math.round(((fromDeg + diff * Math.max(0, Math.min(1, progress))) % 360 + 360) % 360);
+}
+
+// Precise piece-wise waypoint kinematic interpolation with true Course Over Ground (COG) heading locking
 export function interpolateVesselPosition(
   mmsi: number,
   timeOffsetMinutes: number,
@@ -2061,20 +2079,27 @@ export function interpolateVesselPosition(
     const wps = vesselTrack.waypoints;
 
     if (timeOffsetMinutes <= wps[0].tMinutes) {
+      const heading0 = wps.length > 1
+        ? Math.round(calculateBearing(wps[0].lon, wps[0].lat, wps[1].lon, wps[1].lat))
+        : wps[0].heading;
       return {
         lon: wps[0].lon,
         lat: wps[0].lat,
-        heading: wps[0].heading,
+        heading: heading0,
         speed: wps[0].speed,
         isAisDark: isAisDarkWindow,
       };
     }
     if (timeOffsetMinutes >= wps[wps.length - 1].tMinutes) {
       const last = wps[wps.length - 1];
+      const prev = wps.length > 1 ? wps[wps.length - 2] : last;
+      const lastHeading = wps.length > 1
+        ? Math.round(calculateBearing(prev.lon, prev.lat, last.lon, last.lat))
+        : last.heading;
       return {
         lon: last.lon,
         lat: last.lat,
-        heading: last.heading,
+        heading: lastHeading,
         speed: last.speed,
         isAisDark: isAisDarkWindow,
       };
@@ -2090,11 +2115,44 @@ export function interpolateVesselPosition(
         const lon = w1.lon + (w2.lon - w1.lon) * progress;
         const lat = w1.lat + (w2.lat - w1.lat) * progress;
 
-        // Smooth heading angular interpolation with wrap-around
-        let angleDiff = (w2.heading - w1.heading) % 360;
-        if (angleDiff > 180) angleDiff -= 360;
-        if (angleDiff < -180) angleDiff += 360;
-        const heading = Math.round((w1.heading + angleDiff * progress + 360) % 360);
+        // Calculate true Course Over Ground (COG) along the physical trajectory segment
+        const segDistKm = Math.hypot((w2.lon - w1.lon) * Math.cos((w1.lat * Math.PI) / 180), w2.lat - w1.lat) * 111.32;
+        let heading: number;
+
+        if (segDistKm > 0.02) {
+          const currentBearing = calculateBearing(w1.lon, w1.lat, w2.lon, w2.lat);
+
+          // Smooth turn transition when approaching a bend (last 20% of segment into next segment)
+          if (progress > 0.80 && i < wps.length - 2) {
+            const nextW1 = wps[i + 1];
+            const nextW2 = wps[i + 2];
+            const nextDistKm = Math.hypot((nextW2.lon - nextW1.lon) * Math.cos((nextW1.lat * Math.PI) / 180), nextW2.lat - nextW1.lat) * 111.32;
+            if (nextDistKm > 0.02) {
+              const nextBearing = calculateBearing(nextW1.lon, nextW1.lat, nextW2.lon, nextW2.lat);
+              const turnFactor = (progress - 0.80) / 0.40; // reaches 0.5 at waypoint apex
+              heading = interpolateAngle(currentBearing, nextBearing, turnFactor);
+            } else {
+              heading = Math.round(currentBearing);
+            }
+          } else if (progress < 0.20 && i > 0) {
+            // Smooth turn exit coming out of bend (first 20% of segment)
+            const prevW1 = wps[i - 1];
+            const prevW2 = wps[i];
+            const prevDistKm = Math.hypot((prevW2.lon - prevW1.lon) * Math.cos((prevW1.lat * Math.PI) / 180), prevW2.lat - prevW1.lat) * 111.32;
+            if (prevDistKm > 0.02) {
+              const prevBearing = calculateBearing(prevW1.lon, prevW1.lat, prevW2.lon, prevW2.lat);
+              const turnFactor = 0.5 + (progress / 0.20) * 0.5;
+              heading = interpolateAngle(prevBearing, currentBearing, turnFactor);
+            } else {
+              heading = Math.round(currentBearing);
+            }
+          } else {
+            heading = Math.round(currentBearing);
+          }
+        } else {
+          // Stationary/slow loitering: retain waypoint heading without jitter
+          heading = w1.heading;
+        }
 
         // Smooth speed interpolation
         const speed = Number((w1.speed + (w2.speed - w1.speed) * progress).toFixed(1));
@@ -2332,7 +2390,7 @@ export class AutonomousSimulationEngine {
           latitude: 33.280,
           longitude: 33.140,
           speed_knots: 14.2,
-          heading_degrees: 35,
+          heading_degrees: 31,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2354,7 +2412,7 @@ export class AutonomousSimulationEngine {
           latitude: 33.250,
           longitude: 33.220,
           speed_knots: 12.5,
-          heading_degrees: 110,
+          heading_degrees: 114,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2373,10 +2431,10 @@ export class AutonomousSimulationEngine {
         cargo_type: "Liquefied Gas (LPG)",
         anomaly_score: 12.7,
         current_position: {
-          latitude: 33.609,
-          longitude: 33.507,
-          speed_knots: 11.0,
-          heading_degrees: 285,
+          latitude: 33.260,
+          longitude: 33.040,
+          speed_knots: 11.8,
+          heading_degrees: 228,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },

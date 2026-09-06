@@ -1,7 +1,7 @@
 """
-OceanGuard Easy-to-Understand & Concise Pipeline Word Document (.docx) Generator
+OceanGuard Executive Architecture & Pipeline Technical Specification Word Document (.docx) Generator
 Compiles an executive, crystal-clear, and compact Microsoft Word document that explains
-every step of the OceanGuard pipeline in plain, easy-to-understand language while
+every step of the OceanGuard pipeline with operational clarity and mathematical rigor while
 preserving 100% of all technical details, verified working links, equations, and project data.
 
 Every single source and benchmark dataset is fully included with verified working links.
@@ -219,10 +219,10 @@ def build_verified_pipeline_document(output_path: str):
 
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
 
-    # Executive Summary in Plain Words
+    # Executive Operational Architecture
     add_callout(
         doc,
-        "HOW OCEANGUARD WORKS IN 8 SIMPLE STEPS:\n"
+        "OCEANGUARD OPERATIONAL PIPELINE ARCHITECTURE (8 STAGES):\n"
         "1. Radar Cleaning: Remove grainy static noise from satellite radar without blurring the oil spill edges.\n"
         "2. AI Outline: Our deep neural network scans the radar image and draws an exact outline around the dark oil slick.\n"
         "3. Map & Size: We convert the AI outline into real GPS coordinates and calculate its area (km²) and volume (liters).\n"
@@ -240,7 +240,7 @@ def build_verified_pipeline_document(output_path: str):
     # =========================================================================
     add_step_heading(doc, 1, "Satellite Ingestion & 2D Vectorized Lee Speckle Noise Despeckling")
     
-    add_compact_subhead(doc, "In Simple Words")
+    add_compact_subhead(doc, "Operational Principle")
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
@@ -280,7 +280,7 @@ def build_verified_pipeline_document(output_path: str):
         "}"
     )
 
-    add_compact_subhead(doc, "Plain-English Calculation (Zero Dollar Symbols)")
+    add_compact_subhead(doc, "Forensic Calculation Methodology")
     add_code_box(doc,
         "How the Filter Decides What to Smooth:\n"
         "1. Local Average = Average brightness of the 25 pixels in the 5x5 box\n"
@@ -300,7 +300,7 @@ def build_verified_pipeline_document(output_path: str):
     # =========================================================================
     add_step_heading(doc, 2, "DeepSAR U-Net Convolutional Neural Segmentation")
     
-    add_compact_subhead(doc, "In Simple Words")
+    add_compact_subhead(doc, "Operational Principle")
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
@@ -340,7 +340,7 @@ def build_verified_pipeline_document(output_path: str):
         "}"
     )
 
-    add_compact_subhead(doc, "Plain-English Calculation (Zero Dollar Symbols)")
+    add_compact_subhead(doc, "Forensic Calculation Methodology")
     add_code_box(doc,
         "How the AI Measures Its Accuracy:\n"
         "1. Probability = 1.0 / (1.0 + Exponential of (-Logit))\n"
@@ -358,7 +358,7 @@ def build_verified_pipeline_document(output_path: str):
     # =========================================================================
     add_step_heading(doc, 3, "WGS84 Georeferencing, Contour Tracing & Morphological Analysis")
     
-    add_compact_subhead(doc, "In Simple Words")
+    add_compact_subhead(doc, "Operational Principle")
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
@@ -398,7 +398,7 @@ def build_verified_pipeline_document(output_path: str):
         "}"
     )
 
-    add_compact_subhead(doc, "Plain-English Calculation (Zero Dollar Symbols)")
+    add_compact_subhead(doc, "Forensic Calculation Methodology")
     add_code_box(doc,
         "How We Measure the Spill on Earth:\n"
         "1. Degree to Kilometer Conversion:\n"
@@ -420,7 +420,7 @@ def build_verified_pipeline_document(output_path: str):
     # =========================================================================
     add_step_heading(doc, 4, "Marangoni Wave Damping Physics & 6-Class Multi-Modal Bayesian Discrimination")
     
-    add_compact_subhead(doc, "In Simple Words")
+    add_compact_subhead(doc, "Operational Principle")
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
@@ -458,7 +458,7 @@ def build_verified_pipeline_document(output_path: str):
         "}"
     )
 
-    add_compact_subhead(doc, "Plain-English Calculation (Zero Dollar Symbols)")
+    add_compact_subhead(doc, "Forensic Calculation Methodology")
     add_code_box(doc,
         "How the Physics Verification Works:\n"
         "1. Damping Contrast = How much the slick flattens ripples compared to the surrounding sea.\n"
@@ -479,7 +479,7 @@ def build_verified_pipeline_document(output_path: str):
     # =========================================================================
     add_step_heading(doc, 5, "2D Hydrodynamic Drift Advection & Reverse Origin Hindcasting")
     
-    add_compact_subhead(doc, "In Simple Words")
+    add_compact_subhead(doc, "Operational Principle")
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
@@ -519,7 +519,7 @@ def build_verified_pipeline_document(output_path: str):
         "}"
     )
 
-    add_compact_subhead(doc, "Plain-English Calculation (Zero Dollar Symbols)")
+    add_compact_subhead(doc, "Forensic Calculation Methodology")
     add_code_box(doc,
         "How We Reverse the Spill Trajectory:\n"
         "1. Wind Push: Wind moves oil at 3.0% of wind speed, angled 15 degrees to the right due to Earth's rotation.\n"
@@ -539,7 +539,7 @@ def build_verified_pipeline_document(output_path: str):
     # =========================================================================
     add_step_heading(doc, 6, "AIS Vessel Tracking & Kinematic Anomaly Attribution")
     
-    add_compact_subhead(doc, "In Simple Words")
+    add_compact_subhead(doc, "Operational Principle")
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
@@ -580,7 +580,7 @@ def build_verified_pipeline_document(output_path: str):
         "}"
     )
 
-    add_compact_subhead(doc, "Plain-English Calculation (Zero Dollar Symbols)")
+    add_compact_subhead(doc, "Forensic Calculation Methodology")
     add_code_box(doc,
         "How We Score Suspect Ships (0 to 100 Points):\n"
         "1. Distance Score (40%): How close the ship came to the dump point (100 pts if it passed directly overhead).\n"
@@ -600,7 +600,7 @@ def build_verified_pipeline_document(output_path: str):
     # =========================================================================
     add_step_heading(doc, 7, "Multi-Hazard Coastal Vulnerability & Landfall ETA Matrix")
     
-    add_compact_subhead(doc, "In Simple Words")
+    add_compact_subhead(doc, "Operational Principle")
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
@@ -642,7 +642,7 @@ def build_verified_pipeline_document(output_path: str):
         "}"
     )
 
-    add_compact_subhead(doc, "Plain-English Calculation (Zero Dollar Symbols)")
+    add_compact_subhead(doc, "Forensic Calculation Methodology")
     add_code_box(doc,
         "How We Calculate Arrival Times:\n"
         "1. Distance = Geodesic GPS distance between the closest edge of the oil spill and the asset.\n"
@@ -662,7 +662,7 @@ def build_verified_pipeline_document(output_path: str):
     # =========================================================================
     add_step_heading(doc, 8, "Automated Tactical Sonar Alerts & Tamper-Evident SHA-256 Forensic Dossier Generation")
     
-    add_compact_subhead(doc, "In Simple Words")
+    add_compact_subhead(doc, "Operational Principle")
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
@@ -702,7 +702,7 @@ def build_verified_pipeline_document(output_path: str):
         "}"
     )
 
-    add_compact_subhead(doc, "Plain-English Calculation (Zero Dollar Symbols)")
+    add_compact_subhead(doc, "Forensic Calculation Methodology")
     add_code_box(doc,
         "How Digital Sealing Works:\n"
         "1. SHA-256 Hash = A 256-bit unique digital fingerprint created by mathematically scrambling the\n"
@@ -721,7 +721,7 @@ def build_verified_pipeline_document(output_path: str):
     # =========================================================================
     add_step_heading(doc, 9, "Interactive Tactical Web Command Center Operator Guide")
     
-    add_compact_subhead(doc, "In Simple Words")
+    add_compact_subhead(doc, "Operational Principle")
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(2)
     p.paragraph_format.line_spacing = 1.15
