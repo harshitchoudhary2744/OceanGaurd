@@ -186,77 +186,60 @@ function getShipMarkerHtml(
   speed: number,
   heading: number
 ): string {
-  const displayShortName = name.length > 15 ? name.split(' ').slice(0, 2).join(' ') : name;
+  const displayShortName = name.length > 14 ? name.split(' ').slice(0, 2).join(' ') : name;
   const speedStr = (speed || 0).toFixed(1);
 
   // 1. CULPRIT: VLCC Supertanker in glowing crimson with radar threat rings & lock-on reticle
   if (type === 'culprit') {
     const labelTitle = isAisDark
-      ? '📡 AIS DARK • DISCHARGE'
+      ? '📡 AIS DARK'
       : isSelected
       ? '🎯 PRIMARY SUSPECT'
-      : '🎯 CULPRIT VESSEL';
+      : '🎯 CULPRIT';
 
     const labelClass = isAisDark
-      ? 'marker-label absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-amber-950/95 border-2 border-amber-400 text-[10px] font-mono font-bold text-amber-200 whitespace-nowrap shadow-[0_0_25px_rgba(245,158,11,0.9)] z-40 flex items-center gap-1.5 backdrop-blur-md animate-bounce'
+      ? 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-md bg-amber-950/95 border border-amber-400 text-[8px] font-mono font-bold text-amber-200 whitespace-nowrap shadow-[0_0_15px_rgba(245,158,11,0.9)] z-40 flex items-center gap-1 backdrop-blur-md animate-bounce group-hover:scale-110 group-hover:text-[10px] transition-all duration-150 origin-bottom'
       : isSelected
-      ? 'marker-label absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-rose-950/95 border-2 border-rose-400 text-[10px] font-mono font-bold text-white whitespace-nowrap shadow-[0_0_25px_rgba(244,63,94,0.95)] z-40 flex items-center gap-1.5 backdrop-blur-md ring-2 ring-rose-500/50'
-      : 'marker-label absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-rose-950/90 border-2 border-rose-500 text-[10px] font-mono font-bold text-rose-200 whitespace-nowrap shadow-[0_0_18px_rgba(244,63,94,0.85)] z-40 flex items-center gap-1.5 backdrop-blur-md';
+      ? 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-md bg-rose-950/95 border border-rose-400 text-[8px] font-mono font-bold text-white whitespace-nowrap shadow-[0_0_18px_rgba(244,63,94,0.95)] z-40 flex items-center gap-1 backdrop-blur-md ring-2 ring-rose-500/50 group-hover:scale-110 group-hover:text-[10px] transition-all duration-150 origin-bottom'
+      : 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-md bg-rose-950/90 border border-rose-500 text-[7.5px] font-mono font-bold text-rose-200 whitespace-nowrap shadow-[0_0_12px_rgba(244,63,94,0.85)] z-40 flex items-center gap-1 backdrop-blur-md group-hover:scale-110 group-hover:text-[10px] transition-all duration-150 origin-bottom';
 
     return `
       <!-- Double Radar Threat Rings -->
-      <div class="marker-ring absolute -inset-3 rounded-full border-2 border-rose-500/70 bg-rose-500/15 animate-ping pointer-events-none"></div>
-      <div class="absolute -inset-1 rounded-full border border-rose-400/60 bg-rose-950/30 animate-pulse pointer-events-none"></div>
+      <div class="marker-ring absolute -inset-2 rounded-full border border-rose-500/70 bg-rose-500/15 animate-ping pointer-events-none"></div>
+      <div class="absolute -inset-0.5 rounded-full border border-rose-400/60 bg-rose-950/30 animate-pulse pointer-events-none"></div>
 
       <!-- Tactical Reticle Brackets (Target Lock) -->
-      <div class="marker-reticle absolute -inset-1.5 pointer-events-none flex flex-col justify-between p-0.5 z-20">
+      <div class="marker-reticle absolute -inset-1 pointer-events-none flex flex-col justify-between p-0.5 z-20">
         <div class="flex justify-between">
-          <div class="w-3 h-3 border-t-2 border-l-2 border-rose-400 shadow-[0_0_8px_rgba(244,63,94,1)]"></div>
-          <div class="w-3 h-3 border-t-2 border-r-2 border-rose-400 shadow-[0_0_8px_rgba(244,63,94,1)]"></div>
+          <div class="w-2 h-2 border-t-2 border-l-2 border-rose-400 shadow-[0_0_6px_rgba(244,63,94,1)]"></div>
+          <div class="w-2 h-2 border-t-2 border-r-2 border-rose-400 shadow-[0_0_6px_rgba(244,63,94,1)]"></div>
         </div>
         <div class="flex justify-between">
-          <div class="w-3 h-3 border-b-2 border-l-2 border-rose-400 shadow-[0_0_8px_rgba(244,63,94,1)]"></div>
-          <div class="w-3 h-3 border-b-2 border-r-2 border-rose-400 shadow-[0_0_8px_rgba(244,63,94,1)]"></div>
+          <div class="w-2 h-2 border-b-2 border-l-2 border-rose-400 shadow-[0_0_6px_rgba(244,63,94,1)]"></div>
+          <div class="w-2 h-2 border-b-2 border-r-2 border-rose-400 shadow-[0_0_6px_rgba(244,63,94,1)]"></div>
         </div>
       </div>
 
-      <!-- Rotated VLCC Supertanker Silhouette -->
-      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 36px; height: 72px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-        <svg viewBox="0 0 36 72" width="34" height="68" class="drop-shadow-[0_0_12px_rgba(244,63,94,0.95)]" xmlns="http://www.w3.org/2000/svg">
+      <!-- Rotated Compact VLCC Supertanker Silhouette -->
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 24px; height: 48px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 36 72" width="22" height="44" class="drop-shadow-[0_0_10px_rgba(244,63,94,0.95)]" xmlns="http://www.w3.org/2000/svg">
           <path d="M18 4 C13 4 8 12 8 22 L8 58 C8 65 12 68 18 68 C24 68 28 65 28 58 L28 22 C28 12 23 4 18 4 Z" fill="#e11d48" stroke="#ffffff" stroke-width="1.8" />
           <path d="M18 7 C14 7 10 14 10 23 L10 56 C10 61 13 64 18 64 C23 64 26 61 26 56 L26 23 C26 14 22 7 18 7 Z" fill="#9f1239" />
           <path d="M14 7 Q18 4.5 22 7" stroke="#ffffff" stroke-width="1.4" fill="none" />
-          <!-- Crude Oil Pipe Manifold Spine -->
           <line x1="18" y1="16" x2="18" y2="50" stroke="#fde047" stroke-width="2.2" stroke-linecap="round" />
-          <!-- Lateral Manifold Headers -->
           <line x1="11" y1="24" x2="25" y2="24" stroke="#fde047" stroke-width="1.6" stroke-linecap="round" />
           <line x1="11" y1="33" x2="25" y2="33" stroke="#fde047" stroke-width="1.6" stroke-linecap="round" />
           <line x1="11" y1="42" x2="25" y2="42" stroke="#fde047" stroke-width="1.6" stroke-linecap="round" />
-          <!-- Cargo Tank Domes -->
-          <circle cx="14" cy="20" r="1.3" fill="#ffffff" />
-          <circle cx="22" cy="20" r="1.3" fill="#ffffff" />
-          <circle cx="14" cy="28.5" r="1.3" fill="#ffffff" />
-          <circle cx="22" cy="28.5" r="1.3" fill="#ffffff" />
-          <circle cx="14" cy="37.5" r="1.3" fill="#ffffff" />
-          <circle cx="22" cy="37.5" r="1.3" fill="#ffffff" />
-          <circle cx="14" cy="46" r="1.3" fill="#ffffff" />
-          <circle cx="22" cy="46" r="1.3" fill="#ffffff" />
-          <!-- Aft Superstructure (Bridge Block) -->
           <rect x="10" y="52" width="16" height="8" rx="1.5" fill="#0f172a" stroke="#ffffff" stroke-width="1.2" />
-          <!-- Bridge Wings -->
-          <line x1="7" y1="54" x2="29" y2="54" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />
-          <!-- Bridge Window Glass (Glowing Cyan) -->
           <rect x="12" y="53" width="12" height="2" rx="0.5" fill="#38bdf8" />
-          <!-- Exhaust Funnel (Hazard Crimson/Dark) -->
           <rect x="15" y="60.5" width="6" height="3" rx="0.8" fill="#e11d48" stroke="#ffffff" stroke-width="0.8" />
-          <circle cx="18" cy="62" r="0.8" fill="#020617" />
         </svg>
       </div>
 
-      <!-- Prominent Culprit Label -->
+      <!-- Prominent Culprit Label with Hover Expansion -->
       <div class="${labelClass}">
-        <span class="w-2 h-2 rounded-full ${isAisDark ? 'bg-amber-400' : 'bg-rose-500'} animate-ping"></span>
-        <span>${labelTitle}: ${name}</span>
+        <span class="w-1.5 h-1.5 rounded-full ${isAisDark ? 'bg-amber-400' : 'bg-rose-500'} animate-ping"></span>
+        <span>${labelTitle}: ${displayShortName}</span>
         <span class="text-white font-mono font-semibold marker-speed-val">(${speedStr} kts)</span>
       </div>
     `;
@@ -264,71 +247,55 @@ function getShipMarkerHtml(
 
   // Common Selection / AIS-Dark Decorators
   let ringHtml = '';
-  let labelClass = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[9px] font-mono text-slate-400 whitespace-nowrap pointer-events-none z-30 group-hover:text-white group-hover:border-slate-600 transition-colors flex items-center gap-1';
+  // Default compact label, expands on hover
+  let labelClass = 'marker-label absolute -top-6 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded bg-slate-950/85 border border-slate-800 text-[7.5px] font-mono text-slate-400 whitespace-nowrap pointer-events-none z-30 group-hover:text-white group-hover:border-cyan-500/70 group-hover:bg-slate-950 group-hover:text-[10px] group-hover:scale-110 group-hover:shadow-[0_0_12px_rgba(6,182,212,0.5)] group-hover:z-50 transition-all duration-150 origin-bottom flex items-center gap-0.5 backdrop-blur-xs';
   let labelPrefix = '';
 
   if (isSelected) {
-    ringHtml = '<div class="marker-ring absolute -inset-2 rounded-full border-2 border-sky-400 bg-sky-500/20 animate-ping pointer-events-none"></div>';
-    labelClass = 'marker-label absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-slate-950/95 border-2 border-sky-500 text-[10px] font-mono font-bold text-sky-300 whitespace-nowrap shadow-xl z-30 flex items-center gap-1 backdrop-blur-sm';
+    ringHtml = '<div class="marker-ring absolute -inset-1.5 rounded-full border-2 border-sky-400 bg-sky-500/20 animate-ping pointer-events-none"></div>';
+    labelClass = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-md bg-slate-950/95 border-2 border-sky-500 text-[8.5px] font-mono font-bold text-sky-300 whitespace-nowrap shadow-xl z-30 flex items-center gap-1 backdrop-blur-sm group-hover:scale-115 group-hover:text-[10.5px] transition-all duration-150 origin-bottom';
     labelPrefix = '🔍 ';
   } else if (isAisDark) {
-    ringHtml = '<div class="marker-ring absolute -inset-2 rounded-full border border-amber-500/70 bg-amber-500/20 animate-pulse pointer-events-none"></div>';
-    labelClass = 'marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-amber-950/90 border border-amber-500/80 text-[9px] font-mono text-amber-300 whitespace-nowrap pointer-events-none z-30 animate-pulse flex items-center gap-1';
+    ringHtml = '<div class="marker-ring absolute -inset-1.5 rounded-full border border-amber-500/70 bg-amber-500/20 animate-pulse pointer-events-none"></div>';
+    labelClass = 'marker-label absolute -top-6 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded bg-amber-950/90 border border-amber-500/80 text-[7.5px] font-mono text-amber-300 whitespace-nowrap pointer-events-none z-30 animate-pulse flex items-center gap-0.5 group-hover:scale-110 group-hover:text-[10px] transition-all duration-150 origin-bottom';
     labelPrefix = '⚠️ AIS DARK ';
   }
 
-  // 2. PATROL CUTTER: Sharp fast-interceptor hull with dual emergency flashers
+  // 2. PATROL CUTTER: Compact interceptor hull
   if (type === 'patrol') {
     return `
       ${ringHtml || '<div class="marker-ring absolute -inset-1 rounded-full border border-cyan-500/50 bg-cyan-500/10 pointer-events-none"></div>'}
-      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 24px; height: 48px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-        <svg viewBox="0 0 24 48" width="22" height="44" class="drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" xmlns="http://www.w3.org/2000/svg">
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 18px; height: 34px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 24 48" width="16" height="30" class="drop-shadow-[0_0_6px_rgba(6,182,212,0.8)]" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 3 L6 15 L6 41 C6 44 8.5 46 12 46 C15.5 46 18 44 18 41 L18 15 Z" fill="#06b6d4" stroke="#ffffff" stroke-width="1.4" />
           <path d="M12 6 L8 16 L8 39 C8 41 9.5 43 12 43 C14.5 43 16 41 16 39 L16 16 Z" fill="#0891b2" />
           <circle cx="12" cy="12" r="1.5" fill="#ffffff" />
           <rect x="8.5" y="18" width="7" height="13" rx="1.8" fill="#0f172a" stroke="#ffffff" stroke-width="0.9" />
           <rect x="9.5" y="19.5" width="5" height="2.5" rx="0.5" fill="#67e8f9" />
-          <line x1="9" y1="25" x2="11.5" y2="25" stroke="#38bdf8" stroke-width="1.4" />
-          <line x1="12.5" y1="25" x2="15" y2="25" stroke="#f43f5e" stroke-width="1.4" />
-          <rect x="9.5" y="34" width="5" height="4" rx="0.5" fill="#0e7490" stroke="#083344" stroke-width="0.5" />
         </svg>
       </div>
-      <div class="marker-label absolute top-12 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-cyan-700/70 text-[9px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-1">
-        🛡️ CYPRUS CG PATROL <span class="marker-speed-val font-semibold">(${speedStr} kts)</span>
+      <div class="marker-label absolute top-9 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded bg-slate-950/90 border border-cyan-700/70 text-[7.5px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-0.5 group-hover:scale-110 group-hover:text-[10px] transition-all duration-150 origin-top">
+        🛡️ PATROL <span class="marker-speed-val font-semibold">(${speedStr} kts)</span>
       </div>
     `;
   }
 
-  // 3. CONTAINER SHIP (ULCV): Multi-tiered colored container bays (20ft/40ft TEUs)
+  // 3. CONTAINER SHIP (ULCV): Compact colorful container bays
   if (type === 'container') {
     const strokeColor = isSelected ? '#38bdf8' : '#94a3b8';
     return `
       ${ringHtml}
-      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 28px; height: 56px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-        <svg viewBox="0 0 30 64" width="24" height="52" class="drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
-          <!-- Sleek Container Hull -->
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 20px; height: 38px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 30 64" width="18" height="34" class="drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
           <path d="M15 3 C10 3 6 13 6 22 L6 53 C6 58 10 61 15 61 C20 61 24 58 24 53 L24 22 C24 13 20 3 15 3 Z" fill="#1e293b" stroke="${strokeColor}" stroke-width="1.4" />
           <path d="M15 5 C11 5 8 13 8 22 L8 52 C8 56 11 59 15 59 C19 59 22 56 22 52 L22 22 C22 13 19 5 15 5 Z" fill="#0f172a" />
-          <!-- Forward Breakwater -->
-          <path d="M9 16 L15 13 L21 16" stroke="#ffffff" stroke-width="1.1" fill="none" />
-          <!-- 4 Tiers of Colorful TEU Container Bays -->
-          <!-- Bay 1: Emerald & Royal Blue -->
           <rect x="8.5" y="18" width="6" height="7.5" rx="0.5" fill="#10b981" />
           <rect x="15.5" y="18" width="6" height="7.5" rx="0.5" fill="#3b82f6" />
-          <!-- Bay 2: Orange & Yellow -->
           <rect x="8.5" y="27" width="6" height="7.5" rx="0.5" fill="#f97316" />
           <rect x="15.5" y="27" width="6" height="7.5" rx="0.5" fill="#eab308" />
-          <!-- Bay 3: Cyan & Purple -->
           <rect x="8.5" y="36" width="6" height="7.5" rx="0.5" fill="#06b6d4" />
           <rect x="15.5" y="36" width="6" height="7.5" rx="0.5" fill="#a855f7" />
-          <!-- Bay 4: Steel Blue & Crimson -->
-          <rect x="8.5" y="45" width="6" height="6" rx="0.5" fill="#38bdf8" />
-          <rect x="15.5" y="45" width="6" height="6" rx="0.5" fill="#f43f5e" />
-          <!-- Aft Superstructure Bridge -->
           <rect x="8" y="52" width="14" height="6" rx="1" fill="#334155" stroke="#ffffff" stroke-width="0.8" />
-          <rect x="9.5" y="53" width="11" height="1.5" rx="0.3" fill="#67e8f9" />
-          <!-- Exhaust Funnel -->
-          <rect x="13.5" y="58" width="3" height="2" rx="0.4" fill="#ef4444" />
         </svg>
       </div>
       <div class="${labelClass}">
@@ -338,32 +305,19 @@ function getShipMarkerHtml(
     `;
   }
 
-  // 4. LNG/LPG CRYOGENIC GAS CARRIER: 4 Moss Spherical Insulated Pressure Tanks
+  // 4. LNG/LPG CRYOGENIC GAS CARRIER: Compact Moss Spherical Pressure Tanks
   if (type === 'gas_carrier') {
     const strokeColor = isSelected ? '#38bdf8' : '#2dd4bf';
     return `
       ${ringHtml}
-      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 28px; height: 56px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-        <svg viewBox="0 0 30 64" width="24" height="52" class="drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
-          <!-- Teal Cryogenic Hull -->
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 20px; height: 38px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 30 64" width="18" height="34" class="drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
           <path d="M15 3 C10 3 6 12 6 21 L6 53 C6 58 10 61 15 61 C20 61 24 58 24 53 L24 21 C24 12 20 3 15 3 Z" fill="#0f766e" stroke="${strokeColor}" stroke-width="1.4" />
-          <path d="M15 5 C11 5 8 13 8 22 L8 52 C8 56 11 59 15 59 C19 59 22 56 22 52 L22 22 C22 13 19 5 15 5 Z" fill="#134e4a" />
-          <!-- Cryogenic Trunk Pipe Spine -->
-          <line x1="15" y1="12" x2="15" y2="52" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" />
-          <!-- 4 Luminous Cyan Moss Spherical Tanks -->
           <circle cx="15" cy="18" r="4.8" fill="#06b6d4" stroke="#ffffff" stroke-width="1" />
-          <path d="M12.5 16.5 A3 3 0 0 1 17.5 16.5" stroke="#ffffff" stroke-width="0.8" fill="none" />
           <circle cx="15" cy="28" r="4.8" fill="#06b6d4" stroke="#ffffff" stroke-width="1" />
-          <path d="M12.5 26.5 A3 3 0 0 1 17.5 26.5" stroke="#ffffff" stroke-width="0.8" fill="none" />
           <circle cx="15" cy="38" r="4.8" fill="#06b6d4" stroke="#ffffff" stroke-width="1" />
-          <path d="M12.5 36.5 A3 3 0 0 1 17.5 36.5" stroke="#ffffff" stroke-width="0.8" fill="none" />
           <circle cx="15" cy="48" r="4.8" fill="#06b6d4" stroke="#ffffff" stroke-width="1" />
-          <path d="M12.5 46.5 A3 3 0 0 1 17.5 46.5" stroke="#ffffff" stroke-width="0.8" fill="none" />
-          <!-- Forward Flare Mast -->
-          <line x1="15" y1="6" x2="15" y2="11" stroke="#fde047" stroke-width="1.3" />
-          <!-- Aft Superstructure -->
           <rect x="8.5" y="53" width="13" height="6" rx="1" fill="#0f172a" stroke="#2dd4bf" stroke-width="0.8" />
-          <rect x="10" y="54" width="10" height="1.5" rx="0.3" fill="#67e8f9" />
         </svg>
       </div>
       <div class="${labelClass}">
@@ -373,31 +327,18 @@ function getShipMarkerHtml(
     `;
   }
 
-  // 5. BULK CARRIER (Capesize / Handymax): Square open cargo holds & deck crane jibs
+  // 5. BULK CARRIER: Compact square cargo holds
   if (type === 'bulk_carrier') {
     const strokeColor = isSelected ? '#38bdf8' : '#94a3b8';
     return `
       ${ringHtml}
-      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 28px; height: 56px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-        <svg viewBox="0 0 30 64" width="24" height="52" class="drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
-          <!-- Wide Beam Dry Bulk Hull -->
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 20px; height: 38px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 30 64" width="18" height="34" class="drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
           <path d="M15 3 C9.5 3 5.5 11 5.5 20 L5.5 53 C5.5 58 9.5 61 15 61 C20.5 61 24.5 58 24.5 53 L24.5 20 C24.5 11 20.5 3 15 3 Z" fill="#334155" stroke="${strokeColor}" stroke-width="1.4" />
-          <path d="M15 5 C10.5 5 7.5 12 7.5 21 L7.5 52 C7.5 56 10.5 59 15 59 C19.5 59 22.5 56 22.5 52 L22.5 21 C22.5 12 19.5 5 15 5 Z" fill="#1e293b" />
-          <!-- 4 Large Cargo Hatches -->
-          <rect x="8.5" y="14" width="13" height="6.5" rx="0.5" fill="#0f172a" stroke="#64748b" stroke-width="0.8" />
-          <rect x="8.5" y="24" width="13" height="6.5" rx="0.5" fill="#0f172a" stroke="#64748b" stroke-width="0.8" />
-          <rect x="8.5" y="34" width="13" height="6.5" rx="0.5" fill="#0f172a" stroke="#64748b" stroke-width="0.8" />
-          <rect x="8.5" y="44" width="13" height="6.5" rx="0.5" fill="#0f172a" stroke="#64748b" stroke-width="0.8" />
-          <!-- 3 Deck Cranes with Jib Booms -->
-          <circle cx="15" cy="22" r="1.3" fill="#f59e0b" />
-          <line x1="15" y1="22" x2="19" y2="19" stroke="#f59e0b" stroke-width="1.2" stroke-linecap="round" />
-          <circle cx="15" cy="32" r="1.3" fill="#f59e0b" />
-          <line x1="15" y1="32" x2="19" y2="29" stroke="#f59e0b" stroke-width="1.2" stroke-linecap="round" />
-          <circle cx="15" cy="42" r="1.3" fill="#f59e0b" />
-          <line x1="15" y1="42" x2="19" y2="39" stroke="#f59e0b" stroke-width="1.2" stroke-linecap="round" />
-          <!-- Aft Superstructure -->
-          <rect x="8" y="52" width="14" height="6" rx="1" fill="#475569" stroke="#ffffff" stroke-width="0.8" />
-          <rect x="10" y="53" width="10" height="1.5" rx="0.3" fill="#38bdf8" />
+          <rect x="8.5" y="16" width="13" height="6.5" rx="0.5" fill="#0f172a" stroke="#64748b" stroke-width="0.8" />
+          <rect x="8.5" y="26" width="13" height="6.5" rx="0.5" fill="#0f172a" stroke="#64748b" stroke-width="0.8" />
+          <rect x="8.5" y="36" width="13" height="6.5" rx="0.5" fill="#0f172a" stroke="#64748b" stroke-width="0.8" />
+          <rect x="8" y="50" width="14" height="6" rx="1" fill="#475569" stroke="#ffffff" stroke-width="0.8" />
         </svg>
       </div>
       <div class="${labelClass}">
@@ -407,29 +348,18 @@ function getShipMarkerHtml(
     `;
   }
 
-  // 6. OIL / PRODUCT TANKER (Aframax / Suezmax): Manifold cross headers & pipelines
+  // 6. OIL / PRODUCT TANKER: Compact pipeline rack
   if (type === 'tanker') {
     const strokeColor = isSelected ? '#38bdf8' : '#38bdf8';
     return `
       ${ringHtml}
-      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 28px; height: 56px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-        <svg viewBox="0 0 30 64" width="24" height="52" class="drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 20px; height: 38px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 30 64" width="18" height="34" class="drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
           <path d="M15 3 C10 3 6.5 11 6.5 20 L6.5 53 C6.5 58 10 61 15 61 C20 61 23.5 58 23.5 53 L23.5 20 C23.5 11 20 3 15 3 Z" fill="#1e293b" stroke="${strokeColor}" stroke-width="1.4" />
-          <path d="M15 5 C11 5 8.5 12 8.5 21 L8.5 52 C8.5 56 11 59 15 59 C19 59 21.5 56 21.5 52 L21.5 21 C21.5 12 19 5 15 5 Z" fill="#0f172a" />
-          <!-- Centerline Oil Pipeline Rack -->
           <line x1="15" y1="14" x2="15" y2="48" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" />
-          <!-- Midship Cargo Manifold Headers -->
           <line x1="9.5" y1="28" x2="20.5" y2="28" stroke="#f59e0b" stroke-width="1.6" stroke-linecap="round" />
           <circle cx="15" cy="28" r="1.8" fill="#fbbf24" />
-          <!-- Inspection Trunks -->
-          <circle cx="11.5" cy="20" r="1.3" fill="#ffffff" />
-          <circle cx="18.5" cy="20" r="1.3" fill="#ffffff" />
-          <circle cx="11.5" cy="38" r="1.3" fill="#ffffff" />
-          <circle cx="18.5" cy="38" r="1.3" fill="#ffffff" />
-          <!-- Aft Superstructure -->
           <rect x="8.5" y="51" width="13" height="6.5" rx="1" fill="#334155" stroke="#ffffff" stroke-width="0.8" />
-          <line x1="6" y1="53" x2="24" y2="53" stroke="#ffffff" stroke-width="1.2" />
-          <rect x="10" y="52" width="10" height="1.5" rx="0.3" fill="#38bdf8" />
         </svg>
       </div>
       <div class="${labelClass}">
@@ -439,23 +369,16 @@ function getShipMarkerHtml(
     `;
   }
 
-  // 7. RO-RO CARGO / VEHICLE CARRIER: Enclosed slab-sided high superstructure
+  // 7. RO-RO CARGO / VEHICLE CARRIER
   if (type === 'roro') {
     const strokeColor = isSelected ? '#38bdf8' : '#818cf8';
     return `
       ${ringHtml}
-      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 26px; height: 52px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-        <svg viewBox="0 0 28 56" width="22" height="46" class="drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 18px; height: 34px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 28 56" width="16" height="30" class="drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
           <path d="M14 4 C10 4 7 12 7 20 L7 50 C7 54 10 56 14 56 C18 56 21 54 21 50 L21 20 C21 12 18 4 14 4 Z" fill="#3730a3" stroke="${strokeColor}" stroke-width="1.3" />
-          <path d="M14 6 C11 6 8.5 13 8.5 21 L8.5 49 C8.5 53 11 54.5 14 54.5 C17 54.5 19.5 53 19.5 49 L19.5 21 C19.5 13 17 6 14 6 Z" fill="#312e81" />
-          <!-- Aerodynamic Forward Wheelhouse -->
-          <path d="M9.5 13 Q14 10 18.5 13 L18.5 17 L9.5 17 Z" fill="#0f172a" stroke="#ffffff" stroke-width="0.7" />
-          <rect x="11" y="12.5" width="6" height="1.8" rx="0.4" fill="#38bdf8" />
-          <!-- Deck Cowls -->
           <rect x="10" y="24" width="8" height="2" rx="0.5" fill="#4338ca" />
           <rect x="10" y="32" width="8" height="2" rx="0.5" fill="#4338ca" />
-          <rect x="10" y="40" width="8" height="2" rx="0.5" fill="#4338ca" />
-          <!-- Stern Ramp Markings -->
           <line x1="8.5" y1="49" x2="19.5" y2="49" stroke="#fbbf24" stroke-width="1.4" stroke-dasharray="2 1" />
         </svg>
       </div>
@@ -466,21 +389,16 @@ function getShipMarkerHtml(
     `;
   }
 
-  // 8. OFFSHORE SUPPLY VESSEL (OSV): Forward wheelhouse, open working cargo deck aft
+  // 8. OFFSHORE SUPPLY VESSEL
   if (type === 'offshore') {
     const strokeColor = isSelected ? '#38bdf8' : '#fbbf24';
     return `
       ${ringHtml}
-      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 24px; height: 46px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-        <svg viewBox="0 0 26 50" width="20" height="40" class="drop-shadow-[0_2px_5px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 18px; height: 32px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 26 50" width="16" height="28" class="drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]" xmlns="http://www.w3.org/2000/svg">
           <path d="M13 3 C10 3 7 9 7 16 L7 44 C7 47 9.5 48.5 13 48.5 C16.5 48.5 19 47 19 44 L19 16 C19 9 16 3 13 3 Z" fill="#d97706" stroke="${strokeColor}" stroke-width="1.3" />
-          <!-- Forward Superstructure -->
           <rect x="8" y="9" width="10" height="12" rx="1.5" fill="#0f172a" stroke="#ffffff" stroke-width="0.8" />
-          <rect x="9.5" y="11" width="7" height="2" rx="0.5" fill="#38bdf8" />
-          <!-- Open Working Cargo Aft Deck -->
           <rect x="8.5" y="23" width="9" height="20" rx="0.5" fill="#78350f" stroke="#b45309" stroke-width="0.7" />
-          <!-- Towing Winch Drum -->
-          <circle cx="13" cy="26" r="1.6" fill="#fde047" />
         </svg>
       </div>
       <div class="${labelClass}">
@@ -518,17 +436,13 @@ function getShipMarkerHtml(
 
   return `
     ${ringHtml}
-    <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 24px; height: 48px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-      <svg viewBox="0 0 28 56" width="22" height="44" class="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
+    <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 18px; height: 32px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+      <svg viewBox="0 0 28 56" width="16" height="28" class="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]" xmlns="http://www.w3.org/2000/svg">
         <path d="M14 4 C11 4 7 11 7 19 L7 45 C7 51 10 54 14 54 C18 54 21 51 21 45 L21 19 C21 11 17 4 14 4 Z" fill="${hullFill}" stroke="${hullStroke}" stroke-width="1.4" />
         <path d="M14 6 C12 6 9 12 9 19 L9 44 C9 48 11 51 14 51 C17 51 19 48 19 44 L19 19 C19 12 16 6 14 6 Z" fill="${deckFill}" />
         <rect x="10" y="14" width="8" height="6" rx="0.8" fill="${hatchFill}" stroke="${hatchStroke}" stroke-width="0.8" />
         <rect x="10" y="22" width="8" height="6" rx="0.8" fill="${hatchFill}" stroke="${hatchStroke}" stroke-width="0.8" />
-        <rect x="10" y="30" width="8" height="6" rx="0.8" fill="${hatchFill}" stroke="${hatchStroke}" stroke-width="0.8" />
         <rect x="9" y="38" width="10" height="7" rx="1.2" fill="${bridgeFill}" stroke="${hullStroke}" stroke-width="1" />
-        <rect x="10.5" y="39.5" width="7" height="1.5" rx="0.4" fill="${windowFill}" />
-        <line x1="7" y1="41" x2="21" y2="41" stroke="${hullStroke}" stroke-width="1" />
-        <rect x="12" y="46" width="4" height="2.5" rx="0.5" fill="#0f172a" />
       </svg>
     </div>
     <div class="${labelClass}">
@@ -579,6 +493,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   onSelectVesselRef.current = onSelectVessel;
   const onSelectSpillRef = useRef(onSelectSpill);
   onSelectSpillRef.current = onSelectSpill;
+  const prevSelectedSpillRef = useRef<string | null>(null);
+  const prevSelectedVesselRef = useRef<number | null>(null);
 
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showLayerDrawer, setShowLayerDrawer] = useState(false);
@@ -1618,24 +1534,46 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     return () => clearTimeout(timer);
   }, [focusTarget, mapLoaded]);
 
-  // Smooth camera fly-to when selected incident or vessel changes (if no manual focusTarget)
+  // Smooth camera fly-to ONLY when user explicitly selects a new incident or vessel (not on periodic refetches)
   useEffect(() => {
     if (!mapLoaded || !mapRef.current || focusTarget) return;
     const map = mapRef.current;
 
-    const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === activeSuspect?.mmsi);
-    const lastWp = activeWaypointTrack?.waypoints[activeWaypointTrack.waypoints.length - 1];
-    const targetLon = lastWp?.lon ?? activeSuspect?.last_lon ?? baseOrigin[0];
-    const targetLat = lastWp?.lat ?? activeSuspect?.last_lat ?? baseOrigin[1];
+    const spillChanged = selectedSpillId !== prevSelectedSpillRef.current;
+    const vesselChanged = selectedVesselMmsi !== prevSelectedVesselRef.current;
 
-    map.flyTo({
-      center: [targetLon, targetLat],
-      zoom: 10.4,
-      duration: 1200,
-      essential: true,
-      padding: { top: 60, bottom: 150, left: 20, right: 20 },
-    });
-  }, [selectedSpillId, selectedVesselMmsi, mapLoaded, baseOrigin, activeSuspect, focusTarget]);
+    if (!spillChanged && !vesselChanged) return;
+
+    prevSelectedSpillRef.current = selectedSpillId || null;
+    prevSelectedVesselRef.current = selectedVesselMmsi || null;
+
+    if (vesselChanged && selectedVesselMmsi) {
+      // Find current position of the selected vessel
+      const targetVessel = scrubbedVessels?.find((v) => v.mmsi === selectedVesselMmsi);
+      const targetLon = targetVessel?.lon ?? activeSuspect?.last_lon;
+      const targetLat = targetVessel?.lat ?? activeSuspect?.last_lat;
+
+      if (targetLon !== undefined && targetLat !== undefined) {
+        map.flyTo({
+          center: [targetLon, targetLat],
+          zoom: 11.2,
+          duration: 1200,
+          essential: true,
+          padding: { top: 60, bottom: 150, left: 20, right: 20 },
+        });
+      }
+    } else if (spillChanged && selectedSpillId) {
+      // Center camera over the spill centroid / incident origin
+      const targetCoords = currentIncident?.originCoords || baseOrigin;
+      map.flyTo({
+        center: [targetCoords[0], targetCoords[1]],
+        zoom: 10.4,
+        duration: 1200,
+        essential: true,
+        padding: { top: 60, bottom: 150, left: 20, right: 20 },
+      });
+    }
+  }, [selectedSpillId, selectedVesselMmsi, mapLoaded, baseOrigin, currentIncident, activeSuspect, focusTarget, scrubbedVessels]);
 
   // Render & Update Vessel Markers with Active Focus Highlight
   useEffect(() => {
@@ -1689,32 +1627,32 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
       const applyMarkerDimensions = (element: HTMLElement) => {
         if (shipType === 'culprit') {
-          element.style.width = '64px';
-          element.style.height = '92px';
+          element.style.width = '38px';
+          element.style.height = '58px';
           element.style.zIndex = isSelected ? '55' : '50';
         } else if (shipType === 'container') {
-          element.style.width = '44px';
-          element.style.height = '70px';
+          element.style.width = '26px';
+          element.style.height = '44px';
           element.style.zIndex = isSelected ? '45' : '23';
         } else if (shipType === 'gas_carrier' || shipType === 'tanker' || shipType === 'bulk_carrier') {
-          element.style.width = '42px';
-          element.style.height = '66px';
+          element.style.width = '26px';
+          element.style.height = '44px';
           element.style.zIndex = isSelected ? '45' : '22';
         } else if (shipType === 'roro') {
-          element.style.width = '38px';
-          element.style.height = '60px';
+          element.style.width = '24px';
+          element.style.height = '40px';
           element.style.zIndex = isSelected ? '45' : '20';
         } else if (shipType === 'offshore') {
-          element.style.width = '34px';
-          element.style.height = '52px';
+          element.style.width = '22px';
+          element.style.height = '36px';
           element.style.zIndex = isSelected ? '45' : '20';
         } else if (shipType === 'patrol') {
-          element.style.width = '36px';
-          element.style.height = '54px';
+          element.style.width = '24px';
+          element.style.height = '38px';
           element.style.zIndex = '35';
         } else {
-          element.style.width = '38px';
-          element.style.height = '56px';
+          element.style.width = '24px';
+          element.style.height = '38px';
           element.style.zIndex = isSelected ? '45' : '20';
         }
       };

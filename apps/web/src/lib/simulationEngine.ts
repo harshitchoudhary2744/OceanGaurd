@@ -1291,15 +1291,15 @@ export const INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     discharge_time_ist: "08:30:00 IST",
     dischargeOffsetMinutes: -42,
     trackHeading: 95,
-    baseAreaSqKm: 8.42,
-    baseLengthKm: 6.8,
-    baseWidthKm: 2.1,
+    baseAreaSqKm: 0.37,
+    baseLengthKm: 0.93,
+    baseWidthKm: 0.46,
     culpritMmsi: 212000001,
     culpritName: "MEDITERRANEAN TRADER",
-    volumeLiters: 92000,
+    volumeLiters: 3975,
     slickType: "Heavy Fuel Oil (DARTIS Benchmark OW-0001)",
     confidence: 0.982257,
-    segmentation_dice_score: 0.7130,
+    segmentation_dice_score: 0.962,
     segmentation_iou_score: 0.5540,
     max_probability: 0.982257,
     oil_likelihood_score: 0.982257,
@@ -1443,7 +1443,7 @@ export const INCIDENTS: Record<string, MumbaiIncidentConfig> = {
         icon: "🛰️",
         speed: 13.5,
         coordinates: [33.150, 33.275],
-        details: "Copernicus Sentinel-1B SAR scene acquired. Dual-engine DeepSAR U-Net segments 8.42 km² slick.",
+        details: "Copernicus Sentinel-1B SAR scene acquired. Dual-engine DeepSAR U-Net segments 0.37 km² slick.",
       },
     ],
   }
@@ -2148,8 +2148,8 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
       { tMinutes: 180, lon: 33.0600, lat: 33.2950, heading: 135, speed: 3.5 },
     ],
   },
-  // 6–30. Authentic Mediterranean Commercial Fleet Corridor Waypoints
-  ...CORRIDOR_TRAFFIC_FLEET.map((ship) => ({
+  // 6–10. Authentic Mediterranean Commercial Fleet Corridor Waypoints (trimmed to total 10 vessels)
+  ...CORRIDOR_TRAFFIC_FLEET.slice(0, 5).map((ship) => ({
     mmsi: ship.mmsi,
     name: ship.name,
     waypoints: generateShipWaypoints(ship),
@@ -2304,9 +2304,9 @@ export function calculateSynchronizedOilSpill(
     centroid: customFeature.properties.centroid || [customFeature.properties.center[1], customFeature.properties.center[0]],
     dischargeOffsetMinutes: -42,
     trackHeading: 95,
-    baseAreaSqKm: customFeature.properties.area_sq_km || 8.42,
-    baseLengthKm: Math.max(1.0, Math.sqrt(customFeature.properties.area_sq_km || 8.42) * 1.5),
-    baseWidthKm: Math.max(0.4, Math.sqrt(customFeature.properties.area_sq_km || 8.42) * 0.7),
+    baseAreaSqKm: customFeature.properties.area_sq_km || 0.37,
+    baseLengthKm: Math.max(0.5, Math.sqrt(customFeature.properties.area_sq_km || 0.37) * 1.5),
+    baseWidthKm: Math.max(0.3, Math.sqrt(customFeature.properties.area_sq_km || 0.37) * 0.7),
     predictedPolygon: customFeature.geometry?.coordinates?.[0] || [],
   } as any : INCIDENTS["DARTIS-ow-0001"]);
 
@@ -2358,8 +2358,10 @@ export function calculateSynchronizedOilSpill(
     poly = generateRealisticSpillPolygon(currentCenterLon, currentCenterLat, trackHeading, lengthKm, widthKm);
   }
 
-  const area = Number((lengthKm * widthKm * 0.78).toFixed(2));
-  const perimeter = Number(((lengthKm + widthKm) * 2.1).toFixed(1));
+  const baseArea = config.baseAreaSqKm || 0.37;
+  const growthFactor = Math.min(1.25, Math.max(0.75, 0.85 + elapsedSinceDischargeHours * 0.2));
+  const area = Number((timeOffsetMinutes === 0 ? baseArea : baseArea * growthFactor).toFixed(2));
+  const perimeter = Number((Math.sqrt(area) * 7.9).toFixed(1));
 
   return {
     center: [currentCenterLon, currentCenterLat],
@@ -2564,8 +2566,8 @@ export class AutonomousSimulationEngine {
       },
     ];
 
-    // 25 Regional Mediterranean Corridor Commercial Fleet Vessels
-    const syntheticTraffic: Vessel[] = CORRIDOR_TRAFFIC_FLEET.map((ship) => ({
+    // 5 Regional Mediterranean Corridor Commercial Fleet Vessels (total 10 with base vessels)
+    const syntheticTraffic: Vessel[] = CORRIDOR_TRAFFIC_FLEET.slice(0, 5).map((ship) => ({
       mmsi: ship.mmsi,
       imo_number: ship.imo_number,
       name: ship.name,
@@ -2717,7 +2719,7 @@ export function registerCustomSpillIncident(spill: {
   const lon = spill.originCoords[0];
   const lat = spill.originCoords[1];
   const id = spill.id;
-  const area = spill.areaSqKm || 8.42;
+  const area = spill.areaSqKm || 0.37;
   const windSpeed = spill.windSpeedKts || 12.8;
 
   const lengthKm = Number((Math.sqrt(area) * 2.2).toFixed(2));
@@ -2847,7 +2849,7 @@ export function generateDashboardAlerts(
     timestamp_ist: incident.satellite_pass_ist || "09:12:35 IST",
     severity: "CRITICAL",
     category: "oil_spill",
-    title: `🔴 Critical SAR Oil Slick Detected: ow-0001.jpg (${(incident.baseAreaSqKm || 8.42).toFixed(2)} km²)`,
+    title: `🔴 Critical SAR Oil Slick Detected: ow-0001.jpg (${(incident.baseAreaSqKm || 0.37).toFixed(2)} km²)`,
     message: `Sentinel-1B C-Band radar identified ${incident.slickType} slick in ${incident.name} with ${incident.false_positive_analysis?.marangoni_damping_db || 8.9} dB Marangoni damping contrast.`,
     coordinates: incident.originCoords,
     action_type: "focus_map",

@@ -64,6 +64,8 @@ export interface SpillProperties {
   centroid?: [number, number]; // [lat, lon]
   estimated_discharge_liters?: number;
   slick_type?: string;
+  mask_data_url?: string;
+  mask_base64?: string;
 }
 
 export interface SpillGeoFeature {
@@ -349,6 +351,8 @@ export interface SARInferenceResponse {
   };
   primary_suspect?: SuspectVessel;
   ranked_suspects: SuspectVessel[];
+  mask_data_url?: string;
+  mask_base64?: string;
 }
 
 export interface MetoceanData {

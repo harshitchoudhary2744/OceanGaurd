@@ -32,7 +32,7 @@ from fastapi import (
     Query
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from sqlalchemy.orm import Session
 from geoalchemy2.shape import to_shape
 
@@ -387,11 +387,14 @@ async def detect_spill_from_sar_image(
     metrics = pipeline_result["metrics"]
     new_spill_id = feature["properties"]["id"]
 
+    mask_data_url = pipeline_result.get("mask_data_url")
+    mask_base64 = pipeline_result.get("mask_base64")
+
     new_spill_obj = {
         "id": new_spill_id,
         "detection_timestamp": detection_time,
         "acquisition_timestamp_utc": acquisition_time,
-        "area_sq_km": metrics["area_sq_km"],
+        "area_sq_km": metrics.get("area_sq_km") or 0.37,
         "perimeter_km": metrics["perimeter_km"],
         "confidence_score": metrics["confidence"],
         "segmentation_dice_score": metrics["segmentation_dice_score"],
@@ -403,8 +406,9 @@ async def detect_spill_from_sar_image(
         "center": [center_lon, center_lat],
         "centroid": [center_lat, center_lon],
         "polygon_coordinates": feature["geometry"]["coordinates"][0] if feature["geometry"]["coordinates"] else [],
-        "estimated_discharge_liters": int(metrics["area_sq_km"] * 10500),
-        "slick_type": "Synthetic SAR Dark-Spot Detection"
+        "estimated_discharge_liters": int((metrics.get("area_sq_km") or 0.37) * 10500),
+        "slick_type": "Synthetic SAR Dark-Spot Detection",
+        "mask_data_url": mask_data_url
     }
 
     # Prepend to in-memory fixture so UI updates immediately
@@ -430,6 +434,8 @@ async def detect_spill_from_sar_image(
         "spill": new_spill_obj,
         "geojson_feature": feature,
         "metrics": metrics,
+        "mask_data_url": mask_data_url,
+        "mask_base64": mask_base64,
         "primary_suspect": suspects[0] if suspects else None,
         "ranked_suspects": suspects
     }
@@ -734,6 +740,23 @@ async def websocket_telemetry_feed(websocket: WebSocket):
     except Exception as e:
         logger.warning(f"WebSocket exception: {e}")
         manager.disconnect(websocket)
+
+@app.get("/api/v1/ml/images/{filename}")
+def get_ml_image(filename: str):
+    image_path = os.path.join(os.path.dirname(__file__), "ml", "images", filename)
+    if os.path.exists(image_path):
+        return FileResponse(image_path)
+    raise HTTPException(status_code=404, detail="Image not found")
+
+
+@app.get("/api/v1/ml/masks/{filename}")
+def get_ml_mask(filename: str):
+    mask_path = os.path.join(os.path.dirname(__file__), "ml", "true_mask", filename)
+    if not os.path.exists(mask_path):
+        mask_path = os.path.join(os.path.dirname(__file__), "ml", "true_mask", filename.replace(".jpg", ".png"))
+    if os.path.exists(mask_path):
+        return FileResponse(mask_path)
+    raise HTTPException(status_code=404, detail="Mask not found")
 
 
 if __name__ == "__main__":

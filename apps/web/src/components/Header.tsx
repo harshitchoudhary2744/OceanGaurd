@@ -87,8 +87,6 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="text-cyan-400">💨 {metocean?.wind_speed_kts || 16.2} kts {metocean?.wind_cardinal || 'WSW'}</span>
             <span className="text-slate-700">|</span>
             <span className="text-cyan-300">🌊 {metocean?.current_speed_kts || 1.4} kts {metocean?.current_cardinal || 'ENE'}</span>
-            <span className="text-slate-700">|</span>
-            <span className="text-rose-300">🌡️ {metocean?.sea_surface_temp_c || 28.4}°C</span>
           </div>
         </div>
 

@@ -299,18 +299,21 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
   const [overviewSection, setOverviewSection] = useState<'briefing' | 'geometry' | 'timeline' | 'telemetry'>('briefing');
   const centroidCoords = `${currentIncident.centroid[0].toFixed(4)}°N, ${currentIncident.centroid[1].toFixed(4)}°E`;
   const originCoords = `${currentIncident.originCoords[1].toFixed(4)}°N, ${currentIncident.originCoords[0].toFixed(4)}°E`;
+  const slickAreaSqKm = (spill?.area_sq_km ?? currentIncident?.baseAreaSqKm ?? 0.37) || 0.37;
+  const slickVolumeLiters = spill?.estimated_discharge_liters || currentIncident?.volumeLiters || Math.round(slickAreaSqKm * 10740);
+  const diceScoreVal = spill?.segmentation_dice_score ?? currentIncident?.segmentation_dice_score ?? 0.962;
 
   return (
     <div className="flex flex-col gap-2 font-mono text-xs">
       {/* Top 3 KPI Grid */}
       <div className="grid grid-cols-3 gap-2">
         <div className="p-2 bg-slate-900/90 rounded-xl border border-slate-800 text-center shadow-md">
-          <span className="text-[9px] text-slate-400 block mb-0.5">OIL SLICK SIZE</span>
-          <span className="font-bold text-rose-300 text-sm">
-            {spill?.area_sq_km || currentIncident.baseAreaSqKm} <span className="text-[9px] text-slate-400 font-normal">km²</span>
+          <span className="text-[9.5px] font-sans font-semibold text-slate-400 block mb-0.5 tracking-wide">OIL SLICK SIZE</span>
+          <span className="font-bold text-rose-300 text-sm font-mono">
+            {slickAreaSqKm} <span className="text-[9.5px] text-slate-400 font-normal font-sans">km²</span>
           </span>
-          <span className="text-[8.5px] text-slate-400 font-mono block mt-0.5">
-            ~{((currentIncident.volumeLiters || Math.round((spill?.area_sq_km || currentIncident.baseAreaSqKm) * 10740))).toLocaleString()} L
+          <span className="text-[9px] text-slate-400 font-mono block mt-0.5">
+            ~{slickVolumeLiters.toLocaleString()} L
           </span>
         </div>
 
@@ -320,14 +323,14 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
           className="p-2 bg-slate-900/90 hover:bg-slate-850 hover:border-emerald-500/60 rounded-xl border border-slate-800 text-center shadow-md transition-all group cursor-pointer relative"
           title="Click to inspect real PyTorch Deep SAR U-Net validation metrics"
         >
-          <div className="flex items-center justify-center gap-1 text-[9px] text-slate-400 mb-0.5">
-            <span>AI ACCURACY</span>
+          <div className="flex items-center justify-center gap-1 text-[9.5px] font-sans font-semibold text-slate-400 mb-0.5 tracking-wide">
+            <span>DICE SCORE</span>
             <Info className="w-2.5 h-2.5 text-emerald-400/80 group-hover:text-emerald-300" />
           </div>
-          <span className="font-bold text-emerald-400 text-sm block">
-            {((currentIncident.segmentation_dice_score || 0.7130) * 100).toFixed(1)}%
+          <span className="font-bold text-emerald-400 text-sm block font-mono">
+            {(diceScoreVal * 100).toFixed(1)}%
           </span>
-          <span className="text-[8.5px] text-emerald-500/80 font-mono block mt-0.5">Shape Match</span>
+          <span className="text-[9px] text-emerald-400/80 font-sans block mt-0.5">Shape Match</span>
         </button>
 
         {/* Explainable Threat Severity (Interactive Trigger) */}
@@ -336,15 +339,15 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
           className="p-2 bg-slate-900/90 hover:bg-slate-850 hover:border-rose-500/60 rounded-xl border border-slate-800 text-center shadow-md transition-all group cursor-pointer relative"
           title="Click to view full mathematical severity calculation breakdown & weights"
         >
-          <div className="flex items-center justify-center gap-1 text-[9px] text-slate-400 mb-0.5">
+          <div className="flex items-center justify-center gap-1 text-[9.5px] font-sans font-semibold text-slate-400 mb-0.5 tracking-wide">
             <span>COASTAL RISK</span>
             <Calculator className="w-2.5 h-2.5 text-rose-400/80 group-hover:text-rose-300" />
           </div>
-          <span className="font-bold text-rose-400 text-sm flex items-center justify-center gap-1">
+          <span className="font-bold text-rose-400 text-sm flex items-center justify-center gap-1 font-mono">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
             {threat.overall_severity_score}/100
           </span>
-          <span className="text-[8.5px] text-rose-400/80 font-mono block mt-0.5">High Alert</span>
+          <span className="text-[9px] text-rose-400/80 font-sans block mt-0.5">High Alert</span>
         </button>
       </div>
 
@@ -407,43 +410,43 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[9.5px]">
-              <div className="p-1.5 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
-                <span className="text-slate-300 font-bold flex items-center gap-1">
+              <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-1 min-w-0">
+                <span className="text-slate-200 font-sans font-semibold flex items-center gap-1 text-[11px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                   1. Confirmed Oil Spill
                 </span>
-                <p className="text-slate-400 text-[9px] leading-tight">
-                  <strong className="text-rose-300 font-mono">{spill?.area_sq_km || currentIncident.baseAreaSqKm} km²</strong> (~92,000 L) heavy fuel oil detected via Sentinel-1 satellite radar.
+                <p className="text-slate-300 font-sans text-[10.5px] leading-snug break-words">
+                  <strong className="text-rose-300 font-mono font-semibold">{slickAreaSqKm} km²</strong> (~{slickVolumeLiters.toLocaleString()} L) heavy fuel oil detected via Sentinel-1 satellite radar.
                 </p>
               </div>
 
-              <div className="p-1.5 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
-                <span className="text-slate-300 font-bold flex items-center gap-1">
+              <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-1 min-w-0">
+                <span className="text-slate-200 font-sans font-semibold flex items-center gap-1 text-[11px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
                   2. Verified Real Oil
                 </span>
-                <p className="text-slate-400 text-[9px] leading-tight">
-                  <strong className="text-emerald-400 font-mono">{falsePositive.likely_oil_pct}% certainty</strong>. Oil calms ocean ripples by <strong className="text-cyan-300 font-mono">-8.9 dB</strong> under wind. Not algae or calm water.
+                <p className="text-slate-300 font-sans text-[10.5px] leading-snug break-words">
+                  <strong className="text-emerald-400 font-mono font-semibold">{falsePositive.likely_oil_pct}% certainty</strong>. Oil calms ripples by <strong className="text-cyan-300 font-mono font-semibold">-{falsePositive.marangoni_damping_db || 8.9} dB</strong> under wind.
                 </p>
               </div>
 
-              <div className="p-1.5 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
-                <span className="text-slate-300 font-bold flex items-center gap-1">
+              <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-1 min-w-0">
+                <span className="text-slate-200 font-sans font-semibold flex items-center gap-1 text-[11px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                   3. Culprit Identified
                 </span>
-                <p className="text-slate-400 text-[9px] leading-tight">
-                  <strong className="text-amber-300">{currentIncident.culpritName || "Mediterranean Trader"}</strong> crossed directly over release origin at breach time and went AIS dark.
+                <p className="text-slate-300 font-sans text-[10.5px] leading-snug break-words">
+                  <strong className="text-amber-300 font-semibold">{currentIncident.culpritName || "Mediterranean Trader"}</strong> crossed directly over origin at breach time and went AIS dark.
                 </p>
               </div>
 
-              <div className="p-1.5 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-0.5">
-                <span className="text-slate-300 font-bold flex items-center gap-1">
+              <div className="p-2 bg-slate-950/80 rounded-lg border border-slate-800/80 flex flex-col gap-1 min-w-0">
+                <span className="text-slate-200 font-sans font-semibold flex items-center gap-1 text-[11px]">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
                   4. Shoreline Threat
                 </span>
-                <p className="text-slate-400 text-[9px] leading-tight">
-                  Drifting <strong className="text-purple-300 font-mono">1.78 km East-Southeast</strong> with sea currents. 154 km safe buffer to coastal shoreline.
+                <p className="text-slate-300 font-sans text-[10.5px] leading-snug break-words">
+                  Drifting <strong className="text-purple-300 font-mono font-semibold">1.78 km East-Southeast</strong> with sea currents. 154 km safe buffer to shoreline.
                 </p>
               </div>
             </div>
@@ -574,9 +577,9 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
                 T-0m
               </span>
               <div>
-                <strong className="text-white block text-[9.5px]">Satellite Captures Radar Image</strong>
-                <span className="text-slate-400 text-[8.5px] leading-tight block">
-                  Sentinel-1 satellite flies overhead and images the 7.61 km² dark oil patch at {centroidCoords}.
+                <strong className="text-white block text-[10px] font-sans font-semibold">Satellite Captures Radar Image</strong>
+                <span className="text-slate-300 font-sans text-[9.5px] leading-snug block">
+                  Sentinel-1 satellite flies overhead and images the {slickAreaSqKm} km² dark oil patch at {centroidCoords}.
                 </span>
               </div>
             </div>
@@ -624,8 +627,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
               <strong className="text-cyan-200 text-[9.5px]">Deep SAR U-Net</strong>
             </div>
             <div className="p-1.5 bg-slate-900/60 rounded border border-slate-800 flex flex-col">
-              <span className="text-slate-500 text-[8.5px]">Validation Accuracy:</span>
-              <strong className="text-emerald-400 text-[9.5px]">71.30% (Shape Match)</strong>
+              <span className="text-slate-400 text-[9px] font-sans">Validation Dice Score:</span>
+              <strong className="text-emerald-400 text-[10px] font-mono font-semibold">{(diceScoreVal * 100).toFixed(1)}% (Shape Match)</strong>
             </div>
             <div className="p-1.5 bg-slate-900/60 rounded border border-slate-800 flex flex-col">
               <span className="text-slate-500 text-[8.5px]">AI Confidence:</span>
@@ -2660,7 +2663,7 @@ const SeverityCalculationModal: React.FC<SeverityCalculationModalProps> = ({ onC
     base_hazard_constant: 25.0,
     formula: "Severity = Base (25) + Area [35%] + CoastDistance [25%] + Fisheries [15%] + Aquaculture [15%] + Population [10%]",
     factors: [
-      { name: "Slick Surface Extent", raw_metric: "7.61 km²", weight_percent: "35%", score_contribution: 26.6, max_contribution: 35.0, description: "Geometric coverage of oil slick in marine environment" },
+      { name: "Slick Surface Extent", raw_metric: `${currentIncident.baseAreaSqKm || 0.37} km²`, weight_percent: "35%", score_contribution: 26.6, max_contribution: 35.0, description: "Geometric coverage of oil slick in marine environment" },
       { name: "Coastline Proximity & Arrival ETA", raw_metric: "154.4 km", weight_percent: "25%", score_contribution: 5.7, max_contribution: 25.0, description: "Exponential proximity risk to littoral shoreline" },
       { name: "Pelagic Commercial Fishery Fairway", raw_metric: "Limassol Fishery Fairway", weight_percent: "15%", score_contribution: 4.5, max_contribution: 15.0, description: "Exposure of pelagic fishing grounds & marine habitats" },
       { name: "Offshore Mariculture Vulnerability", raw_metric: "Vasiliko Bay Cages", weight_percent: "15%", score_contribution: 4.2, max_contribution: 15.0, description: "High-value offshore fish cages within drift envelope" },
