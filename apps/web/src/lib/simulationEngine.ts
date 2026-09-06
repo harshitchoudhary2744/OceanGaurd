@@ -1884,14 +1884,98 @@ export const CORRIDOR_TRAFFIC_FLEET: CorridorShipDef[] = [
   },
 ];
 
+// 5 Active Distinct Regional Corridor Commercial Fleet Vessels (forming 10 total with 5 base vessels)
+export const ACTIVE_CORRIDOR_FLEET: CorridorShipDef[] = [
+  {
+    mmsi: 500100001,
+    imo_number: 9708681,
+    name: "MSC SVEVA",
+    flag: "Panama",
+    vessel_type: "Container Ship",
+    length_meters: 395,
+    draught_meters: 15.5,
+    call_sign: "3FVR2",
+    destination: "ROTTERDAM COMMERCIAL GATEWAY",
+    cargo_type: "Containerized Consumer Goods (19,224 TEU)",
+    lat: 32.8000,
+    lon: 32.7000,
+    heading_degrees: 270,
+    speed_knots: 19.0,
+  },
+  {
+    mmsi: 500100024,
+    imo_number: 9892345,
+    name: "STENA PROMETHEUS",
+    flag: "Cyprus",
+    vessel_type: "Product Tanker",
+    length_meters: 183,
+    draught_meters: 10.8,
+    call_sign: "5BCR4",
+    destination: "MONI MULTIBUOY MOORING",
+    cargo_type: "Aviation Turbine Fuel Jet A-1 (49,900 DWT)",
+    lat: 34.6200,
+    lon: 33.0500,
+    heading_degrees: 75,
+    speed_knots: 11.0,
+  },
+  {
+    mmsi: 500100022,
+    imo_number: 9768521,
+    name: "SEACOR BRAVE",
+    flag: "Marshall Islands",
+    vessel_type: "Offshore Supply Vessel",
+    length_meters: 88,
+    draught_meters: 5.8,
+    call_sign: "V7KJ9",
+    destination: "APHRODITE GAS FIELD BLOCK 12",
+    cargo_type: "Subsea Drilling Mud & Drill Collars",
+    lat: 33.2000,
+    lon: 33.5200,
+    heading_degrees: 175,
+    speed_knots: 8.0,
+  },
+  {
+    mmsi: 500100018,
+    imo_number: 9505039,
+    name: "WALLENIUS CARMEN",
+    flag: "Sweden",
+    vessel_type: "Vehicle Carrier",
+    length_meters: 228,
+    draught_meters: 9.8,
+    call_sign: "SLWD",
+    destination: "AQABA CAR TERMINAL",
+    cargo_type: "Automobiles & Electric Vehicles (6,500 CEU)",
+    lat: 32.6500,
+    lon: 33.6000,
+    heading_degrees: 120,
+    speed_knots: 17.0,
+  },
+  {
+    mmsi: 500100019,
+    imo_number: 9437153,
+    name: "BBC COLORADO",
+    flag: "Antigua & Barbuda",
+    vessel_type: "General Cargo",
+    length_meters: 153,
+    draught_meters: 8.5,
+    call_sign: "V2FP8",
+    destination: "LIMASSOL HEAVY LIFT ANCHORAGE",
+    cargo_type: "Offshore Wind Turbine Generators & Steel",
+    lat: 33.9500,
+    lon: 33.6000,
+    heading_degrees: 235,
+    speed_knots: 12.0,
+  },
+];
+
 // Calibrated CORRIDOR_VESSEL_WAYPOINTS_MAP with > 2.5 km CPA guaranteed
 export const CORRIDOR_VESSEL_WAYPOINTS_MAP: Record<number, TimedWaypoint[]> = {
   500100001: [
-      { tMinutes: -360, lon: 34.1985, lat: 33.0197, heading: 284.0, speed: 18.2 },
-      { tMinutes: -180, lon: 33.1402, lat: 33.2399, heading: 284.0, speed: 18.2 },
-      { tMinutes: -42, lon: 32.3288, lat: 33.4086, heading: 284.0, speed: 18.2 },
-      { tMinutes: 0, lon: 32.0818, lat: 33.4600, heading: 284.0, speed: 18.2 },
-      { tMinutes: 180, lon: 31.0234, lat: 33.6801, heading: 284.0, speed: 18.2 },
+      { tMinutes: -360, lon: 34.5000, lat: 32.8000, heading: 270.0, speed: 19.0 },
+      { tMinutes: -180, lon: 33.6500, lat: 32.8000, heading: 270.0, speed: 19.0 },
+      { tMinutes: -42, lon: 33.0000, lat: 32.8000, heading: 270.0, speed: 19.0 },
+      { tMinutes: 0, lon: 32.7000, lat: 32.8000, heading: 270.0, speed: 19.0 },
+      { tMinutes: 180, lon: 31.4000, lat: 32.8000, heading: 270.0, speed: 19.0 },
   ],
   500100002: [
       { tMinutes: -360, lon: 30.9000, lat: 33.4049, heading: 98.0, speed: 17.6 },
@@ -2006,18 +2090,18 @@ export const CORRIDOR_VESSEL_WAYPOINTS_MAP: Record<number, TimedWaypoint[]> = {
       { tMinutes: 180, lon: 31.4732, lat: 33.5537, heading: 280.0, speed: 15.4 },
   ],
   500100018: [
-      { tMinutes: -360, lon: 31.7173, lat: 33.3665, heading: 106.0, speed: 16.2 },
-      { tMinutes: -180, lon: 32.6448, lat: 33.1433, heading: 106.0, speed: 16.2 },
-      { tMinutes: -42, lon: 33.3560, lat: 32.9721, heading: 106.0, speed: 16.2 },
-      { tMinutes: 0, lon: 33.5724, lat: 32.9200, heading: 106.0, speed: 16.2 },
-      { tMinutes: 180, lon: 34.5000, lat: 32.6967, heading: 106.0, speed: 16.2 },
+      { tMinutes: -360, lon: 31.8000, lat: 33.7000, heading: 120.0, speed: 17.0 },
+      { tMinutes: -180, lon: 32.5000, lat: 33.3000, heading: 120.0, speed: 17.0 },
+      { tMinutes: -42, lon: 33.0000, lat: 33.0000, heading: 120.0, speed: 17.0 },
+      { tMinutes: 0, lon: 33.6000, lat: 32.6500, heading: 120.0, speed: 17.0 },
+      { tMinutes: 180, lon: 34.3000, lat: 32.2500, heading: 120.0, speed: 17.0 },
   ],
   500100019: [
-      { tMinutes: -360, lon: 33.8350, lat: 34.4716, heading: 260.0, speed: 7.0 },
-      { tMinutes: -180, lon: 33.4175, lat: 34.4108, heading: 260.0, speed: 7.0 },
-      { tMinutes: -42, lon: 33.0974, lat: 34.3642, heading: 260.0, speed: 7.0 },
-      { tMinutes: 0, lon: 33.0000, lat: 34.3500, heading: 260.0, speed: 7.0 },
-      { tMinutes: 180, lon: 32.5825, lat: 34.2892, heading: 260.0, speed: 7.0 },
+      { tMinutes: -360, lon: 34.6000, lat: 34.6000, heading: 235.0, speed: 12.0 },
+      { tMinutes: -180, lon: 34.1000, lat: 34.3000, heading: 235.0, speed: 12.0 },
+      { tMinutes: -42, lon: 33.7500, lat: 34.0500, heading: 235.0, speed: 12.0 },
+      { tMinutes: 0, lon: 33.6000, lat: 33.9500, heading: 235.0, speed: 12.0 },
+      { tMinutes: 180, lon: 33.1000, lat: 33.6500, heading: 235.0, speed: 12.0 },
   ],
   500100020: [
       { tMinutes: -360, lon: 32.9216, lat: 32.7010, heading: 38.0, speed: 14.2 },
@@ -2034,11 +2118,11 @@ export const CORRIDOR_VESSEL_WAYPOINTS_MAP: Record<number, TimedWaypoint[]> = {
       { tMinutes: 180, lon: 31.8478, lat: 33.8747, heading: 285.0, speed: 13.5 },
   ],
   500100022: [
-      { tMinutes: -360, lon: 33.7200, lat: 33.6900, heading: 180.0, speed: 6.5 },
-      { tMinutes: -180, lon: 33.7200, lat: 33.3650, heading: 180.0, speed: 6.5 },
-      { tMinutes: -42, lon: 33.7200, lat: 33.1158, heading: 180.0, speed: 6.5 },
-      { tMinutes: 0, lon: 33.7200, lat: 33.0400, heading: 180.0, speed: 6.5 },
-      { tMinutes: 180, lon: 33.7200, lat: 32.7150, heading: 180.0, speed: 6.5 },
+      { tMinutes: -360, lon: 33.4000, lat: 34.5000, heading: 175.0, speed: 10.5 },
+      { tMinutes: -180, lon: 33.4500, lat: 33.9000, heading: 175.0, speed: 10.5 },
+      { tMinutes: -42, lon: 33.5000, lat: 33.4000, heading: 175.0, speed: 10.5 },
+      { tMinutes: 0, lon: 33.5200, lat: 33.2000, heading: 175.0, speed: 8.0 },
+      { tMinutes: 180, lon: 33.5500, lat: 32.7000, heading: 175.0, speed: 4.0 },
   ],
   500100023: [
       { tMinutes: -360, lon: 30.9974, lat: 32.9925, heading: 96.0, speed: 16.5 },
@@ -2048,11 +2132,11 @@ export const CORRIDOR_VESSEL_WAYPOINTS_MAP: Record<number, TimedWaypoint[]> = {
       { tMinutes: 180, lon: 33.9263, lat: 32.7338, heading: 96.0, speed: 16.5 },
   ],
   500100024: [
-      { tMinutes: -360, lon: 31.9691, lat: 33.9981, heading: 75.0, speed: 7.8 },
-      { tMinutes: -180, lon: 32.4245, lat: 34.0991, heading: 75.0, speed: 7.8 },
-      { tMinutes: -42, lon: 32.7737, lat: 34.1764, heading: 75.0, speed: 7.8 },
-      { tMinutes: 0, lon: 32.8800, lat: 34.2000, heading: 75.0, speed: 7.8 },
-      { tMinutes: 180, lon: 33.3355, lat: 34.3009, heading: 75.0, speed: 7.8 },
+      { tMinutes: -360, lon: 32.1000, lat: 34.4000, heading: 75.0, speed: 11.0 },
+      { tMinutes: -180, lon: 32.5500, lat: 34.5000, heading: 75.0, speed: 11.0 },
+      { tMinutes: -42, lon: 32.9000, lat: 34.5800, heading: 75.0, speed: 11.0 },
+      { tMinutes: 0, lon: 33.0500, lat: 34.6200, heading: 75.0, speed: 11.0 },
+      { tMinutes: 180, lon: 33.6000, lat: 34.7200, heading: 75.0, speed: 11.0 },
   ],
   500100025: [
       { tMinutes: -360, lon: 34.5000, lat: 33.1096, heading: 283.0, speed: 13.8 },
@@ -2086,11 +2170,22 @@ function generateShipWaypoints(ship: {
   ];
 }
 
-// Deterministic Timed Waypoint Tracks for Eastern Mediterranean Fleet
-export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: boolean; linkedSpillId?: string; waypoints: TimedWaypoint[] }[] = [
+// Deterministic Timed Waypoint Tracks for Eastern Mediterranean Fleet (10 Distinct Non-Overlapping Ships)
+export const MUMBAI_VESSEL_WAYPOINTS: {
+  mmsi: number;
+  name: string;
+  color: string;
+  vesselType: string;
+  isCulprit?: boolean;
+  linkedSpillId?: string;
+  waypoints: TimedWaypoint[];
+}[] = [
+  // 1. CULPRIT: VLCC Supertanker, Eastbound transit along 33.27°N
   {
     mmsi: 212000001,
     name: "MEDITERRANEAN TRADER",
+    color: "#ef4444",
+    vesselType: "VLCC Crude Carrier",
     isCulprit: true,
     linkedSpillId: "DARTIS-ow-0001",
     waypoints: [
@@ -2103,57 +2198,132 @@ export const MUMBAI_VESSEL_WAYPOINTS: { mmsi: number; name: string; isCulprit?: 
       { tMinutes: 180, lon: 33.9503, lat: 33.2900, heading: 95, speed: 13.5 },
     ],
   },
+  // 2. PASSENGER FERRY: High-speed North-Northeast transit (25°) to Limassol
   {
     mmsi: 212000002,
     name: "LEVANT STAR",
+    color: "#ec4899",
+    vesselType: "High-Speed Passenger Ferry",
     waypoints: [
-      { tMinutes: -360, lon: 33.0100, lat: 32.0400, heading: 15, speed: 14.0 },
-      { tMinutes: -180, lon: 33.2200, lat: 32.7200, heading: 15, speed: 14.0 },
-      { tMinutes: -42, lon: 33.3800, lat: 33.2400, heading: 15, speed: 14.0 },
-      { tMinutes: 0, lon: 33.4300, lat: 33.4000, heading: 15, speed: 14.0 },
-      { tMinutes: 180, lon: 33.6400, lat: 34.0800, heading: 15, speed: 14.0 },
+      { tMinutes: -360, lon: 32.8000, lat: 32.1000, heading: 25, speed: 18.5 },
+      { tMinutes: -180, lon: 33.0500, lat: 32.8500, heading: 25, speed: 18.5 },
+      { tMinutes: -42, lon: 33.2600, lat: 33.4500, heading: 25, speed: 18.5 },
+      { tMinutes: 0, lon: 33.3200, lat: 33.6500, heading: 25, speed: 18.5 },
+      { tMinutes: 180, lon: 33.5000, lat: 34.6000, heading: 25, speed: 18.5 },
     ],
   },
+  // 3. BULK CARRIER: Southeast diagonal transit (145°) across Western sector
   {
     mmsi: 212000003,
     name: "AEGEAN VOYAGER",
+    color: "#38bdf8",
+    vesselType: "Bulk Carrier",
     waypoints: [
-      { tMinutes: -360, lon: 31.8600, lat: 33.4200, heading: 95, speed: 12.5 },
-      { tMinutes: -180, lon: 32.6100, lat: 33.4100, heading: 95, speed: 12.5 },
-      { tMinutes: -42, lon: 33.1800, lat: 33.4000, heading: 95, speed: 12.5 },
-      { tMinutes: 0, lon: 33.3500, lat: 33.4000, heading: 95, speed: 12.5 },
-      { tMinutes: 180, lon: 34.1000, lat: 33.3900, heading: 95, speed: 12.5 },
+      { tMinutes: -360, lon: 31.5000, lat: 34.1000, heading: 145, speed: 13.0 },
+      { tMinutes: -180, lon: 31.9500, lat: 33.6500, heading: 145, speed: 13.0 },
+      { tMinutes: -42, lon: 32.3000, lat: 33.3000, heading: 145, speed: 13.0 },
+      { tMinutes: 0, lon: 32.4500, lat: 33.1500, heading: 145, speed: 13.0 },
+      { tMinutes: 180, lon: 32.9000, lat: 32.7000, heading: 145, speed: 13.0 },
     ],
   },
+  // 4. LPG GAS CARRIER: Northwest diagonal transit (305°) to Vasiliko Jetty
   {
     mmsi: 212000004,
     name: "AKROTIRI BREEZE",
+    color: "#f97316",
+    vesselType: "LPG Tanker",
     waypoints: [
-      { tMinutes: -360, lon: 34.2000, lat: 34.0800, heading: 242, speed: 11.8 },
-      { tMinutes: -180, lon: 33.5800, lat: 33.7900, heading: 242, speed: 11.8 },
-      { tMinutes: -42, lon: 33.1000, lat: 33.5700, heading: 242, speed: 11.8 },
-      { tMinutes: 0, lon: 32.9500, lat: 33.5000, heading: 242, speed: 11.8 },
-      { tMinutes: 180, lon: 32.3200, lat: 33.2100, heading: 242, speed: 11.8 },
+      { tMinutes: -360, lon: 34.4000, lat: 33.2000, heading: 305, speed: 14.0 },
+      { tMinutes: -180, lon: 33.8500, lat: 33.5500, heading: 305, speed: 14.0 },
+      { tMinutes: -42, lon: 33.4500, lat: 33.8000, heading: 305, speed: 14.0 },
+      { tMinutes: 0, lon: 33.1500, lat: 34.0000, heading: 305, speed: 14.0 },
+      { tMinutes: 180, lon: 32.6000, lat: 34.3500, heading: 305, speed: 14.0 },
     ],
   },
+  // 5. POLLUTION PATROL: Active tactical SAR surveillance sweep
   {
     mmsi: 212000005,
     name: "CYPRUS POLICE PATROL / EMSA",
+    color: "#10b981",
+    vesselType: "Pollution Control Vessel",
     waypoints: [
-      { tMinutes: -360, lon: 33.0400, lat: 34.6500, heading: 176, speed: 13.0 },
-      { tMinutes: -180, lon: 33.0450, lat: 34.0000, heading: 176, speed: 13.5 },
-      { tMinutes: -42, lon: 33.0500, lat: 33.4650, heading: 176, speed: 14.0 },
-      { tMinutes: -15, lon: 33.0530, lat: 33.3600, heading: 176, speed: 13.5 },
-      { tMinutes: 0, lon: 33.0550, lat: 33.3100, heading: 176, speed: 8.0 },
-      { tMinutes: 180, lon: 33.0600, lat: 33.2950, heading: 135, speed: 3.5 },
+      { tMinutes: -360, lon: 32.7000, lat: 34.2000, heading: 195, speed: 14.0 },
+      { tMinutes: -180, lon: 32.6000, lat: 33.6000, heading: 140, speed: 13.0 },
+      { tMinutes: -42, lon: 32.8500, lat: 33.4000, heading: 110, speed: 11.5 },
+      { tMinutes: 0, lon: 33.0000, lat: 33.4500, heading: 60, speed: 9.0 },
+      { tMinutes: 180, lon: 33.4000, lat: 33.6000, heading: 60, speed: 7.0 },
     ],
   },
-  // 6–10. Authentic Mediterranean Commercial Fleet Corridor Waypoints (trimmed to total 10 vessels)
-  ...CORRIDOR_TRAFFIC_FLEET.slice(0, 5).map((ship) => ({
-    mmsi: ship.mmsi,
-    name: ship.name,
-    waypoints: generateShipWaypoints(ship),
-  })),
+  // 6. ULTRA LARGE CONTAINER SHIP: Deep southern corridor Westbound transit (270°)
+  {
+    mmsi: 500100001,
+    name: "MSC SVEVA",
+    color: "#06b6d4",
+    vesselType: "Container Ship",
+    waypoints: [
+      { tMinutes: -360, lon: 34.5000, lat: 32.8000, heading: 270.0, speed: 19.0 },
+      { tMinutes: -180, lon: 33.6500, lat: 32.8000, heading: 270.0, speed: 19.0 },
+      { tMinutes: -42, lon: 33.0000, lat: 32.8000, heading: 270.0, speed: 19.0 },
+      { tMinutes: 0, lon: 32.7000, lat: 32.8000, heading: 270.0, speed: 19.0 },
+      { tMinutes: 180, lon: 31.4000, lat: 32.8000, heading: 270.0, speed: 19.0 },
+    ],
+  },
+  // 7. PRODUCT TANKER: Coastal southern shelf East-Northeast transit (75°)
+  {
+    mmsi: 500100024,
+    name: "STENA PROMETHEUS",
+    color: "#f59e0b",
+    vesselType: "Product Tanker",
+    waypoints: [
+      { tMinutes: -360, lon: 32.1000, lat: 34.4000, heading: 75.0, speed: 11.0 },
+      { tMinutes: -180, lon: 32.5500, lat: 34.5000, heading: 75.0, speed: 11.0 },
+      { tMinutes: -42, lon: 32.9000, lat: 34.5800, heading: 75.0, speed: 11.0 },
+      { tMinutes: 0, lon: 33.0500, lat: 34.6200, heading: 75.0, speed: 11.0 },
+      { tMinutes: 180, lon: 33.6000, lat: 34.7200, heading: 75.0, speed: 11.0 },
+    ],
+  },
+  // 8. OFFSHORE SUPPLY: Southbound energy block support transit (175°)
+  {
+    mmsi: 500100022,
+    name: "SEACOR BRAVE",
+    color: "#84cc16",
+    vesselType: "Offshore Supply Vessel",
+    waypoints: [
+      { tMinutes: -360, lon: 33.4000, lat: 34.5000, heading: 175.0, speed: 10.5 },
+      { tMinutes: -180, lon: 33.4500, lat: 33.9000, heading: 175.0, speed: 10.5 },
+      { tMinutes: -42, lon: 33.5000, lat: 33.4000, heading: 175.0, speed: 10.5 },
+      { tMinutes: 0, lon: 33.5200, lat: 33.2000, heading: 175.0, speed: 8.0 },
+      { tMinutes: 180, lon: 33.5500, lat: 32.7000, heading: 175.0, speed: 4.0 },
+    ],
+  },
+  // 9. VEHICLE CARRIER: Fast East-Southeast express route (120°)
+  {
+    mmsi: 500100018,
+    name: "WALLENIUS CARMEN",
+    color: "#a855f7",
+    vesselType: "Vehicle Carrier",
+    waypoints: [
+      { tMinutes: -360, lon: 31.8000, lat: 33.7000, heading: 120.0, speed: 17.0 },
+      { tMinutes: -180, lon: 32.5000, lat: 33.3000, heading: 120.0, speed: 17.0 },
+      { tMinutes: -42, lon: 33.0000, lat: 33.0000, heading: 120.0, speed: 17.0 },
+      { tMinutes: 0, lon: 33.6000, lat: 32.6500, heading: 120.0, speed: 17.0 },
+      { tMinutes: 180, lon: 34.3000, lat: 32.2500, heading: 120.0, speed: 17.0 },
+    ],
+  },
+  // 10. GENERAL CARGO: Southwest inbound Levantine transit (235°)
+  {
+    mmsi: 500100019,
+    name: "BBC COLORADO",
+    color: "#6366f1",
+    vesselType: "General Cargo",
+    waypoints: [
+      { tMinutes: -360, lon: 34.6000, lat: 34.6000, heading: 235.0, speed: 12.0 },
+      { tMinutes: -180, lon: 34.1000, lat: 34.3000, heading: 235.0, speed: 12.0 },
+      { tMinutes: -42, lon: 33.7500, lat: 34.0500, heading: 235.0, speed: 12.0 },
+      { tMinutes: 0, lon: 33.6000, lat: 33.9500, heading: 235.0, speed: 12.0 },
+      { tMinutes: 180, lon: 33.1000, lat: 33.6500, heading: 235.0, speed: 12.0 },
+    ],
+  },
 ];
 
 export const VESSEL_WAYPOINTS = MUMBAI_VESSEL_WAYPOINTS;
@@ -2469,7 +2639,7 @@ export class AutonomousSimulationEngine {
         anomaly_score: 96.5,
         current_position: {
           latitude: 33.275,
-          longitude: 33.150,
+          longitude: 33.1431,
           speed_knots: 13.5,
           heading_degrees: 95,
           rate_of_turn: 0.0,
@@ -2481,19 +2651,19 @@ export class AutonomousSimulationEngine {
         imo_number: 9512345,
         name: "LEVANT STAR",
         flag: "Cyprus",
-        vessel_type: "Container Ship",
-        length_meters: 295,
-        draught_meters: 13.5,
+        vessel_type: "High-Speed Passenger Ferry",
+        length_meters: 145,
+        draught_meters: 6.2,
         call_sign: "5BKA2",
-        destination: "LIMASSOL COMMERCIAL PORT",
+        destination: "LIMASSOL PASSENGER FERRY TERMINAL",
         nav_status: "Under way using engine",
-        cargo_type: "Containers (8,500 TEU)",
+        cargo_type: "Passengers & Accompanied Vehicles (1,200 PAX)",
         anomaly_score: 4.0,
         current_position: {
-          latitude: 33.280,
-          longitude: 33.200,
-          speed_knots: 14.2,
-          heading_degrees: 31,
+          latitude: 33.650,
+          longitude: 33.320,
+          speed_knots: 18.5,
+          heading_degrees: 25,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2509,13 +2679,13 @@ export class AutonomousSimulationEngine {
         call_sign: "SVXY",
         destination: "PORT SAID ANCHORAGE",
         nav_status: "Under way using engine",
-        cargo_type: "Dry Bulk Minerals",
-        anomaly_score: 29.2,
+        cargo_type: "Dry Bulk Minerals & Iron Ore",
+        anomaly_score: 18.2,
         current_position: {
-          latitude: 33.245,
-          longitude: 33.275,
-          speed_knots: 12.5,
-          heading_degrees: 114,
+          latitude: 33.150,
+          longitude: 32.450,
+          speed_knots: 13.0,
+          heading_degrees: 145,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2529,15 +2699,15 @@ export class AutonomousSimulationEngine {
         length_meters: 180,
         draught_meters: 9.4,
         call_sign: "3EZZ8",
-        destination: "VASILIKO OIL TERMINAL",
+        destination: "VASILIKO LPG JETTY",
         nav_status: "Under way using engine",
-        cargo_type: "Liquefied Gas (LPG)",
+        cargo_type: "Liquefied Gas (LPG, 45,000 m³)",
         anomaly_score: 12.7,
         current_position: {
-          latitude: 33.500,
-          longitude: 32.950,
-          speed_knots: 11.8,
-          heading_degrees: 242,
+          latitude: 34.000,
+          longitude: 33.150,
+          speed_knots: 14.0,
+          heading_degrees: 305,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2551,15 +2721,15 @@ export class AutonomousSimulationEngine {
         length_meters: 85,
         draught_meters: 4.2,
         call_sign: "5BCP1",
-        destination: "SAR DISCHARGE SECTOR",
+        destination: "SAR SECTOR PATROL",
         nav_status: "Engaged in response ops",
         cargo_type: "Tier-2 Booms & Offshore Skimmers",
         anomaly_score: 9.3,
         current_position: {
-          latitude: 33.25902604,
-          longitude: 33.05775642,
-          speed_knots: 6.0,
-          heading_degrees: 180,
+          latitude: 33.450,
+          longitude: 33.000,
+          speed_knots: 9.0,
+          heading_degrees: 60,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2567,7 +2737,7 @@ export class AutonomousSimulationEngine {
     ];
 
     // 5 Regional Mediterranean Corridor Commercial Fleet Vessels (total 10 with base vessels)
-    const syntheticTraffic: Vessel[] = CORRIDOR_TRAFFIC_FLEET.slice(0, 5).map((ship) => ({
+    const syntheticTraffic: Vessel[] = ACTIVE_CORRIDOR_FLEET.map((ship) => ({
       mmsi: ship.mmsi,
       imo_number: ship.imo_number,
       name: ship.name,

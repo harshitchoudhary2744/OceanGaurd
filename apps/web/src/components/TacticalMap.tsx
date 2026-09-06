@@ -176,6 +176,7 @@ export type TacticalShipType =
   | 'roro'
   | 'offshore'
   | 'patrol'
+  | 'passenger'
   | 'commercial';
 
 function getShipMarkerHtml(
@@ -264,18 +265,40 @@ function getShipMarkerHtml(
   // 2. PATROL CUTTER: Compact interceptor hull
   if (type === 'patrol') {
     return `
-      ${ringHtml || '<div class="marker-ring absolute -inset-1 rounded-full border border-cyan-500/50 bg-cyan-500/10 pointer-events-none"></div>'}
+      ${ringHtml || '<div class="marker-ring absolute -inset-1 rounded-full border border-emerald-500/50 bg-emerald-500/10 pointer-events-none"></div>'}
       <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 18px; height: 34px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-        <svg viewBox="0 0 24 48" width="16" height="30" class="drop-shadow-[0_0_6px_rgba(6,182,212,0.8)]" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 3 L6 15 L6 41 C6 44 8.5 46 12 46 C15.5 46 18 44 18 41 L18 15 Z" fill="#06b6d4" stroke="#ffffff" stroke-width="1.4" />
-          <path d="M12 6 L8 16 L8 39 C8 41 9.5 43 12 43 C14.5 43 16 41 16 39 L16 16 Z" fill="#0891b2" />
+        <svg viewBox="0 0 24 48" width="16" height="30" class="drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3 L6 15 L6 41 C6 44 8.5 46 12 46 C15.5 46 18 44 18 41 L18 15 Z" fill="#10b981" stroke="#ffffff" stroke-width="1.4" />
+          <path d="M12 6 L8 16 L8 39 C8 41 9.5 43 12 43 C14.5 43 16 41 16 39 L16 16 Z" fill="#047857" />
           <circle cx="12" cy="12" r="1.5" fill="#ffffff" />
           <rect x="8.5" y="18" width="7" height="13" rx="1.8" fill="#0f172a" stroke="#ffffff" stroke-width="0.9" />
-          <rect x="9.5" y="19.5" width="5" height="2.5" rx="0.5" fill="#67e8f9" />
+          <rect x="9.5" y="19.5" width="5" height="2.5" rx="0.5" fill="#6ee7b7" />
         </svg>
       </div>
-      <div class="marker-label absolute top-9 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded bg-slate-950/90 border border-cyan-700/70 text-[7.5px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-0.5 group-hover:scale-110 group-hover:text-[10px] transition-all duration-150 origin-top">
+      <div class="marker-label absolute top-9 left-1/2 -translate-x-1/2 px-1 py-0.5 rounded bg-slate-950/90 border border-emerald-700/70 text-[7.5px] font-mono text-emerald-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-0.5 group-hover:scale-110 group-hover:text-[10px] transition-all duration-150 origin-top">
         🛡️ PATROL <span class="marker-speed-val font-semibold">(${speedStr} kts)</span>
+      </div>
+    `;
+  }
+
+  // 3. PASSENGER FERRY: High-speed passenger / ferry hull
+  if (type === 'passenger') {
+    const strokeColor = isSelected ? '#f472b6' : '#ec4899';
+    return `
+      ${ringHtml}
+      <div class="marker-icon-container relative z-10 flex items-center justify-center pointer-events-none" style="width: 20px; height: 38px; transform: rotate(${heading}deg); transform-origin: center center; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+        <svg viewBox="0 0 28 58" width="17" height="32" class="drop-shadow-[0_2px_5px_rgba(236,72,153,0.6)]" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 3 C9.5 3 6.5 12 6.5 22 L6.5 50 C6.5 54 9.5 56 14 56 C18.5 56 21.5 54 21.5 50 L21.5 22 C21.5 12 18.5 3 14 3 Z" fill="#831843" stroke="${strokeColor}" stroke-width="1.4" />
+          <path d="M14 6 L8.5 18 L8.5 48 C8.5 51 10.5 53 14 53 C17.5 53 19.5 51 19.5 48 L19.5 18 Z" fill="#500724" />
+          <rect x="9.5" y="18" width="9" height="12" rx="1.5" fill="#fbcfe8" stroke="#ffffff" stroke-width="0.8" />
+          <rect x="10.5" y="20" width="7" height="3" rx="0.5" fill="#be185d" />
+          <rect x="10.5" y="25" width="7" height="3" rx="0.5" fill="#be185d" />
+          <line x1="14" y1="34" x2="14" y2="46" stroke="#f472b6" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+      </div>
+      <div class="${labelClass}">
+        <span>${labelPrefix}⛴️ ${displayShortName}</span>
+        <span class="marker-speed-val text-pink-300 font-mono">(${speedStr} kts)</span>
       </div>
     `;
   }
@@ -1133,14 +1156,25 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       });
 
       map.addLayer({
+        id: 'all-trajectories-glow',
+        type: 'line',
+        source: 'all-trajectories',
+        paint: {
+          'line-color': ['coalesce', ['get', 'color'], '#64748b'],
+          'line-width': ['case', ['boolean', ['get', 'isSelected'], false], 6, 2.8],
+          'line-opacity': ['case', ['boolean', ['get', 'isSelected'], false], 0.70, 0.20],
+        },
+      });
+
+      map.addLayer({
         id: 'all-trajectories-line',
         type: 'line',
         source: 'all-trajectories',
         paint: {
-          'line-color': '#64748b',
-          'line-width': 1.5,
-          'line-dasharray': [3, 3],
-          'line-opacity': 0.40,
+          'line-color': ['coalesce', ['get', 'color'], '#64748b'],
+          'line-width': ['case', ['boolean', ['get', 'isSelected'], false], 3.2, 1.8],
+          'line-dasharray': [3, 2],
+          'line-opacity': ['case', ['boolean', ['get', 'isSelected'], false], 1.0, 0.75],
         },
       });
 
@@ -1387,7 +1421,14 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (allTrajSrc && shouldShowTrails) {
       const bgFeatures = MUMBAI_VESSEL_WAYPOINTS.map((vw) => ({
         type: 'Feature' as const,
-        properties: { mmsi: vw.mmsi, name: vw.name },
+        properties: {
+          mmsi: vw.mmsi,
+          name: vw.name,
+          color: vw.color || '#38bdf8',
+          vesselType: vw.vesselType || 'Commercial',
+          isCulprit: !!vw.isCulprit,
+          isSelected: activeSuspect?.mmsi === vw.mmsi,
+        },
         geometry: {
           type: 'LineString' as const,
           coordinates: vw.waypoints.map((w) => [w.lon, w.lat]),
@@ -1611,6 +1652,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         shipType = 'culprit';
       } else if (isCoastGuard || rawType.includes('patrol') || rawType.includes('coast guard') || rawType.includes('police')) {
         shipType = 'patrol';
+      } else if (rawType.includes('passenger') || rawType.includes('ferry')) {
+        shipType = 'passenger';
       } else if (rawType.includes('container')) {
         shipType = 'container';
       } else if (rawType.includes('lng') || rawType.includes('gas') || rawType.includes('lpg')) {
@@ -1630,6 +1673,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           element.style.width = '38px';
           element.style.height = '58px';
           element.style.zIndex = isSelected ? '55' : '50';
+        } else if (shipType === 'passenger') {
+          element.style.width = '24px';
+          element.style.height = '40px';
+          element.style.zIndex = isSelected ? '45' : '23';
         } else if (shipType === 'container') {
           element.style.width = '26px';
           element.style.height = '44px';
