@@ -293,7 +293,7 @@ function getShipMarkerHtml(
           <rect x="9.5" y="34" width="5" height="4" rx="0.5" fill="#0e7490" stroke="#083344" stroke-width="0.5" />
         </svg>
       </div>
-      <div class="marker-label absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-cyan-700/70 text-[9px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-1">
+      <div class="marker-label absolute top-12 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-slate-950/90 border border-cyan-700/70 text-[9px] font-mono text-cyan-300 whitespace-nowrap pointer-events-none z-30 flex items-center gap-1">
         🛡️ CYPRUS CG PATROL <span class="marker-speed-val font-semibold">(${speedStr} kts)</span>
       </div>
     `;
@@ -948,8 +948,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       },
       center: centerCoordinates || baseOrigin,
       zoom: 10.4,
-      pitch: 32,
-      bearing: -12,
+      pitch: 0,
+      bearing: 0,
       attributionControl: false,
     });
 
@@ -1734,7 +1734,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           onSelectVesselRef.current(v.mmsi);
         });
 
-        marker = new maplibregl.Marker({ element: el })
+        marker = new maplibregl.Marker({ element: el, anchor: 'center' })
           .setLngLat([v.lon, v.lat])
           .addTo(map);
 

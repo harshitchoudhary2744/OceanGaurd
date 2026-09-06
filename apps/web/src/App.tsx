@@ -327,20 +327,29 @@ export function App() {
     }
   };
 
-  // Synchronized Replay Timer Loop
+  // Synchronized Replay Timer Loop with Adaptive Clear Pacing
   useEffect(() => {
     let interval: any = null;
     if (isPlaying) {
       interval = setInterval(() => {
         setTimeOffsetMinutes((prev) => {
-          const next = prev + playbackSpeed * 2;
+          // Normal transit: advance at steady pace.
+          // Critical Breach & Post-Discharge Zone (-60m to 0m):
+          // Slow down timestep so the illicit discharge, vessel evasion, and slick expansion
+          // can be clearly and deliberately observed without rushing through.
+          const isSpillObservationZone = prev >= -60 && prev < 0;
+          const advanceStep = isSpillObservationZone
+            ? Math.max(0.35, playbackSpeed * 0.45) // Smooth ~16 seconds of clear post-spill observation
+            : playbackSpeed * 2.0;
+
+          const next = prev + advanceStep;
           if (next >= 0) {
             setIsPlaying(false);
             return 0; // Cleanly park at LIVE
           }
-          return next;
+          return Number(next.toFixed(2));
         });
-      }, 140);
+      }, 120);
     }
     return () => clearInterval(interval);
   }, [isPlaying, playbackSpeed]);
