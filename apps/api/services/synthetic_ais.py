@@ -2,244 +2,326 @@ from datetime import datetime, timedelta, timezone
 import math
 import random
 
+# Exact synchronized waypoints for the 10 monitored vessels in the Eastern Mediterranean / Levantine Basin
+MONITORED_FLEET_WAYPOINTS = [
+    # 1. PRIMARY CULPRIT: VLCC Supertanker, Eastbound transit along 33.27°N
+    {
+        "mmsi": 212000001,
+        "imo_number": 9481234,
+        "name": "MEDITERRANEAN TRADER",
+        "flag": "Malta",
+        "vessel_type": "Very Large Crude Carrier (VLCC)",
+        "length_meters": 315.0,
+        "length": 315,
+        "draught_meters": 15.8,
+        "call_sign": "9HA4211",
+        "destination": "CYPRUS OFFSHORE TRANSIT",
+        "cargo_type": "Crude Oil (315,000 DWT)",
+        "is_culprit": True,
+        "waypoints": [
+            {"tMinutes": -360, "lon": 31.6160, "lat": 33.2400, "heading": 95.0, "speed": 13.5},
+            {"tMinutes": -180, "lon": 32.4232, "lat": 33.2500, "heading": 95.0, "speed": 13.5},
+            {"tMinutes": -65,  "lon": 32.9699, "lat": 33.2620, "heading": 95.0, "speed": 12.0},
+            {"tMinutes": -42,  "lon": 33.0421, "lat": 33.2684, "heading": 95.0, "speed": 5.4},
+            {"tMinutes": -15,  "lon": 33.0941, "lat": 33.2700, "heading": 95.0, "speed": 6.2},
+            {"tMinutes": 0,    "lon": 33.1431, "lat": 33.2750, "heading": 95.0, "speed": 13.5},
+            {"tMinutes": 180,  "lon": 33.9503, "lat": 33.2900, "heading": 95.0, "speed": 13.5},
+        ],
+    },
+    # 2. HIGH-SPEED PASSENGER FERRY: North-Northeast transit (25°) to Limassol
+    {
+        "mmsi": 212000002,
+        "imo_number": 9512345,
+        "name": "LEVANT STAR",
+        "flag": "Cyprus",
+        "vessel_type": "High-Speed Passenger Ferry",
+        "length_meters": 145.0,
+        "length": 145,
+        "draught_meters": 6.2,
+        "call_sign": "5BKA2",
+        "destination": "LIMASSOL PASSENGER FERRY TERMINAL",
+        "cargo_type": "Passengers & Accompanied Vehicles (1,200 PAX)",
+        "waypoints": [
+            {"tMinutes": -360, "lon": 32.8000, "lat": 32.1000, "heading": 25.0, "speed": 18.5},
+            {"tMinutes": -180, "lon": 33.0500, "lat": 32.8500, "heading": 25.0, "speed": 18.5},
+            {"tMinutes": -42,  "lon": 33.2600, "lat": 33.4500, "heading": 25.0, "speed": 18.5},
+            {"tMinutes": 0,    "lon": 33.3200, "lat": 33.6500, "heading": 25.0, "speed": 18.5},
+            {"tMinutes": 180,  "lon": 33.5000, "lat": 34.6000, "heading": 25.0, "speed": 18.5},
+        ],
+    },
+    # 3. CAPESIZE BULK CARRIER: Southeast diagonal transit (145°)
+    {
+        "mmsi": 212000003,
+        "imo_number": 9623456,
+        "name": "AEGEAN VOYAGER",
+        "flag": "Greece",
+        "vessel_type": "Capesize Bulk Carrier",
+        "length_meters": 225.0,
+        "length": 225,
+        "draught_meters": 11.8,
+        "call_sign": "SVXY",
+        "destination": "PORT SAID ANCHORAGE",
+        "cargo_type": "Dry Bulk Minerals & Iron Ore",
+        "waypoints": [
+            {"tMinutes": -360, "lon": 31.5000, "lat": 34.1000, "heading": 145.0, "speed": 13.0},
+            {"tMinutes": -180, "lon": 31.9500, "lat": 33.6500, "heading": 145.0, "speed": 13.0},
+            {"tMinutes": -42,  "lon": 32.3000, "lat": 33.3000, "heading": 145.0, "speed": 13.0},
+            {"tMinutes": 0,    "lon": 32.4500, "lat": 33.1500, "heading": 145.0, "speed": 13.0},
+            {"tMinutes": 180,  "lon": 32.9000, "lat": 32.7000, "heading": 145.0, "speed": 13.0},
+        ],
+    },
+    # 4. LPG TANKER: Northwest diagonal transit (305°) to Vasiliko Jetty
+    {
+        "mmsi": 212000004,
+        "imo_number": 9734567,
+        "name": "AKROTIRI BREEZE",
+        "flag": "Panama",
+        "vessel_type": "LPG Tanker",
+        "length_meters": 180.0,
+        "length": 180,
+        "draught_meters": 9.4,
+        "call_sign": "3EZZ8",
+        "destination": "VASILIKO LPG JETTY",
+        "cargo_type": "Liquefied Gas (LPG, 45,000 m³)",
+        "waypoints": [
+            {"tMinutes": -360, "lon": 34.4000, "lat": 33.2000, "heading": 305.0, "speed": 14.0},
+            {"tMinutes": -180, "lon": 33.8500, "lat": 33.5500, "heading": 305.0, "speed": 14.0},
+            {"tMinutes": -42,  "lon": 33.4500, "lat": 33.8000, "heading": 305.0, "speed": 14.0},
+            {"tMinutes": 0,    "lon": 33.1500, "lat": 34.0000, "heading": 305.0, "speed": 14.0},
+            {"tMinutes": 180,  "lon": 32.6000, "lat": 34.3500, "heading": 305.0, "speed": 14.0},
+        ],
+    },
+    # 5. POLLUTION PATROL: Active tactical SAR surveillance sweep (67°)
+    {
+        "mmsi": 212000005,
+        "imo_number": 9845678,
+        "name": "CYPRUS POLICE PATROL / EMSA",
+        "flag": "Cyprus (Coast Guard)",
+        "vessel_type": "Pollution Control Vessel",
+        "length_meters": 85.0,
+        "length": 85,
+        "draught_meters": 4.2,
+        "call_sign": "5BCP1",
+        "destination": "SAR SECTOR PATROL",
+        "cargo_type": "Tier-2 Booms & Offshore Skimmers",
+        "waypoints": [
+            {"tMinutes": -360, "lon": 32.7000, "lat": 34.2000, "heading": 67.0, "speed": 14.0},
+            {"tMinutes": -180, "lon": 32.6000, "lat": 33.6000, "heading": 67.0, "speed": 13.0},
+            {"tMinutes": -42,  "lon": 32.8500, "lat": 33.4000, "heading": 67.0, "speed": 11.5},
+            {"tMinutes": 0,    "lon": 33.0000, "lat": 33.4500, "heading": 67.0, "speed": 9.0},
+            {"tMinutes": 180,  "lon": 33.4000, "lat": 33.6000, "heading": 67.0, "speed": 7.0},
+        ],
+    },
+    # 6. CONTAINER SHIP: Deep southern corridor Westbound transit (270°)
+    {
+        "mmsi": 500100001,
+        "imo_number": 9708681,
+        "name": "MSC SVEVA",
+        "flag": "Panama",
+        "vessel_type": "Container Ship",
+        "length_meters": 395.0,
+        "length": 395,
+        "draught_meters": 15.5,
+        "call_sign": "3FVR2",
+        "destination": "ROTTERDAM COMMERCIAL GATEWAY",
+        "cargo_type": "Containerized Consumer Goods (19,224 TEU)",
+        "waypoints": [
+            {"tMinutes": -360, "lon": 34.5000, "lat": 32.8000, "heading": 270.0, "speed": 19.0},
+            {"tMinutes": -180, "lon": 33.6500, "lat": 32.8000, "heading": 270.0, "speed": 19.0},
+            {"tMinutes": -42,  "lon": 33.0000, "lat": 32.8000, "heading": 270.0, "speed": 19.0},
+            {"tMinutes": 0,    "lon": 32.7000, "lat": 32.8000, "heading": 270.0, "speed": 19.0},
+            {"tMinutes": 180,  "lon": 31.4000, "lat": 32.8000, "heading": 270.0, "speed": 19.0},
+        ],
+    },
+    # 7. PRODUCT TANKER: Coastal southern shelf East-Northeast transit (75°)
+    {
+        "mmsi": 500100024,
+        "imo_number": 9892345,
+        "name": "STENA PROMETHEUS",
+        "flag": "Cyprus",
+        "vessel_type": "Product Tanker",
+        "length_meters": 183.0,
+        "length": 183,
+        "draught_meters": 10.8,
+        "call_sign": "5BCR4",
+        "destination": "MONI MULTIBUOY MOORING",
+        "cargo_type": "Aviation Turbine Fuel Jet A-1 (49,900 DWT)",
+        "waypoints": [
+            {"tMinutes": -360, "lon": 32.1000, "lat": 34.4000, "heading": 75.0, "speed": 11.0},
+            {"tMinutes": -180, "lon": 32.5500, "lat": 34.5000, "heading": 75.0, "speed": 11.0},
+            {"tMinutes": -42,  "lon": 32.9000, "lat": 34.5800, "heading": 75.0, "speed": 11.0},
+            {"tMinutes": 0,    "lon": 33.0500, "lat": 34.6200, "heading": 75.0, "speed": 11.0},
+            {"tMinutes": 180,  "lon": 33.6000, "lat": 34.7200, "heading": 75.0, "speed": 11.0},
+        ],
+    },
+    # 8. OFFSHORE SUPPLY VESSEL: Southbound energy block support transit (176°)
+    {
+        "mmsi": 500100022,
+        "imo_number": 9768521,
+        "name": "SEACOR BRAVE",
+        "flag": "Marshall Islands",
+        "vessel_type": "Offshore Supply Vessel",
+        "length_meters": 88.0,
+        "length": 88,
+        "draught_meters": 5.8,
+        "call_sign": "V7KJ9",
+        "destination": "APHRODITE GAS FIELD BLOCK 12",
+        "cargo_type": "Subsea Drilling Mud & Drill Collars",
+        "waypoints": [
+            {"tMinutes": -360, "lon": 33.4000, "lat": 34.5000, "heading": 176.0, "speed": 10.5},
+            {"tMinutes": -180, "lon": 33.4500, "lat": 33.9000, "heading": 176.0, "speed": 10.5},
+            {"tMinutes": -42,  "lon": 33.5000, "lat": 33.4000, "heading": 176.0, "speed": 10.5},
+            {"tMinutes": 0,    "lon": 33.5200, "lat": 33.2000, "heading": 176.0, "speed": 8.0},
+            {"tMinutes": 180,  "lon": 33.5500, "lat": 32.7000, "heading": 176.0, "speed": 4.0},
+        ],
+    },
+    # 9. VEHICLE CARRIER: Fast East-Southeast express route (124°)
+    {
+        "mmsi": 500100018,
+        "imo_number": 9505039,
+        "name": "WALLENIUS CARMEN",
+        "flag": "Sweden",
+        "vessel_type": "Vehicle Carrier",
+        "length_meters": 228.0,
+        "length": 228,
+        "draught_meters": 9.8,
+        "call_sign": "SLWD",
+        "destination": "AQABA CAR TERMINAL",
+        "cargo_type": "Automobiles & Electric Vehicles (6,500 CEU)",
+        "waypoints": [
+            {"tMinutes": -360, "lon": 31.8000, "lat": 33.7000, "heading": 124.0, "speed": 17.0},
+            {"tMinutes": -180, "lon": 32.5000, "lat": 33.3000, "heading": 124.0, "speed": 17.0},
+            {"tMinutes": -42,  "lon": 33.0000, "lat": 33.0000, "heading": 124.0, "speed": 17.0},
+            {"tMinutes": 0,    "lon": 33.6000, "lat": 32.6500, "heading": 124.0, "speed": 17.0},
+            {"tMinutes": 180,  "lon": 34.3000, "lat": 32.2500, "heading": 124.0, "speed": 17.0},
+        ],
+    },
+    # 10. GENERAL CARGO: Southwest inbound Levantine transit (233°)
+    {
+        "mmsi": 500100019,
+        "imo_number": 9439987,
+        "name": "BBC COLORADO",
+        "flag": "Antigua & Barbuda",
+        "vessel_type": "General Cargo",
+        "length_meters": 153.0,
+        "length": 153,
+        "draught_meters": 7.8,
+        "call_sign": "V2FP8",
+        "destination": "LIMASSOL BREAKWATER",
+        "cargo_type": "Project Industrial Modules & Steel Coils",
+        "waypoints": [
+            {"tMinutes": -360, "lon": 34.6000, "lat": 34.6000, "heading": 233.0, "speed": 12.0},
+            {"tMinutes": -180, "lon": 34.1000, "lat": 34.3000, "heading": 233.0, "speed": 12.0},
+            {"tMinutes": -42,  "lon": 33.7500, "lat": 34.0500, "heading": 233.0, "speed": 12.0},
+            {"tMinutes": 0,    "lon": 33.6000, "lat": 33.9500, "heading": 233.0, "speed": 12.0},
+            {"tMinutes": 180,  "lon": 33.1000, "lat": 33.6500, "heading": 233.0, "speed": 12.0},
+        ],
+    },
+]
 
-def _move(lat, lon, distance_nm, heading_deg):
+
+def _interpolate_waypoint_pos(waypoints, t_offset_minutes):
     """
-    Move a point by distance in nautical miles along a heading.
-    Good enough for synthetic AIS-scale trajectories.
+    Interpolate vessel coordinates, bearing, and speed along exact timed waypoints.
+    Guarantees the vessel position is 100% coincident with its rendered trajectory line.
     """
-    heading = math.radians(heading_deg)
+    if t_offset_minutes <= waypoints[0]["tMinutes"]:
+        w = waypoints[0]
+        return w["lon"], w["lat"], w["heading"], w["speed"]
+    if t_offset_minutes >= waypoints[-1]["tMinutes"]:
+        w = waypoints[-1]
+        return w["lon"], w["lat"], w["heading"], w["speed"]
 
-    dlat = distance_nm * math.cos(heading) / 60.0
-    dlon = distance_nm * math.sin(heading) / (60.0 * math.cos(math.radians(lat)))
+    for i in range(len(waypoints) - 1):
+        w1 = waypoints[i]
+        w2 = waypoints[i + 1]
+        if w1["tMinutes"] <= t_offset_minutes <= w2["tMinutes"]:
+            seg_span = w2["tMinutes"] - w1["tMinutes"]
+            prog = 0.0 if seg_span == 0 else (t_offset_minutes - w1["tMinutes"]) / seg_span
 
-    return lat + dlat, lon + dlon
+            lon = w1["lon"] + (w2["lon"] - w1["lon"]) * prog
+            lat = w1["lat"] + (w2["lat"] - w1["lat"]) * prog
 
+            # Great-circle bearing
+            d_lon = math.radians(w2["lon"] - w1["lon"])
+            lat1_r = math.radians(w1["lat"])
+            lat2_r = math.radians(w2["lat"])
+            y = math.sin(d_lon) * math.cos(lat2_r)
+            x = math.cos(lat1_r) * math.sin(lat2_r) - math.sin(lat1_r) * math.cos(lat2_r) * math.cos(d_lon)
+            heading = (math.degrees(math.atan2(y, x)) + 360) % 360
 
-def _trajectory(
-    mmsi,
-    start_lat,
-    start_lon,
-    heading,
-    speed,
-    start_time,
-    points=25,
-    interval_min=15,
-    speed_drop_at=None,
-    gap_at=None,
-    loiter_at=None,
-):
-    records = []
+            speed = w1["speed"] + (w2["speed"] - w1["speed"]) * prog
+            return round(lon, 6), round(lat, 6), round(heading, 1), round(speed, 1)
 
-    lat = start_lat
-    lon = start_lon
-    current_heading = heading
-    current_speed = speed
-
-    for i in range(points):
-        timestamp = start_time + timedelta(minutes=i * interval_min)
-
-        # Deliberate AIS gap
-        if gap_at is not None and i == gap_at:
-            timestamp += timedelta(minutes=45)
-
-        # Deliberate speed drop
-        if speed_drop_at is not None and i >= speed_drop_at:
-            current_speed = 2.5
-
-        # Deliberate loitering / heading changes
-        if loiter_at is not None and i >= loiter_at:
-            current_speed = 2.0
-            current_heading = (heading + ((i - loiter_at) * 55)) % 360
-
-        records.append({
-            "mmsi": mmsi,
-            "timestamp": timestamp.isoformat(),
-            "latitude": round(lat, 6),
-            "longitude": round(lon, 6),
-            "speed": round(current_speed, 2),
-            "speed_knots": round(current_speed, 2),
-            "heading": round(current_heading, 1),
-            "heading_degrees": round(current_heading, 1),
-        })
-
-        # Move according to speed and interval
-        distance_nm = current_speed * interval_min / 60.0
-        lat, lon = _move(lat, lon, distance_nm, current_heading)
-
-    return records
+    w = waypoints[-1]
+    return w["lon"], w["lat"], w["heading"], w["speed"]
 
 
 def generate_synthetic_ais(center_lat=33.25902604, center_lon=33.05775642):
     """
-    Generate deterministic synthetic AIS around the DARTIS ow-0001 benchmark location.
-    Coordinates: 33.25902604° N, 33.05775642° E (Cyprus / Levantine Basin)
+    Generate deterministic synthetic AIS for the 10 distinct vessels around the DARTIS benchmark scene.
+    Every vessel's telemetry and current position are mathematically locked to their trajectory waypoints.
     """
     random.seed(42)
 
-    scenario_time = datetime(
-        2019, 1, 1, 3, 42, 35, tzinfo=timezone.utc
-    )
+    scenario_time = datetime(2019, 1, 1, 3, 42, 35, tzinfo=timezone.utc)
+    # 6-hour historical lookback window (from T-360 min to T0)
+    start_time = scenario_time - timedelta(hours=6)
 
-    # Scenario vessels are defined relative to the DARTIS ow-0001 spill location.
-    # The primary suspect (MEDITERRANEAN TRADER) transits east-southeast along 095°,
-    # slow-steaming at the discharge coordinates with an AIS gap.
-    vessels = [
-        {
-            "mmsi": 212000001,
-            "imo_number": 9481234,
-            "name": "MEDITERRANEAN TRADER",
-            "flag": "Malta",
-            "vessel_type": "Very Large Crude Carrier (VLCC)",
-            "length_meters": 315.0,
-            "length": 315,
-            "draught_meters": 15.8,
-            "call_sign": "9HA4211",
-            "destination": "CYPRUS OFFSHORE TRANSIT",
-            "lat": 33.373641,
-            "lon": 31.603408,
-            "heading": 95,
-            "speed": 13.8,
-            "speed_drop_at": 21,
-            "gap_at": 21,
-            "loiter_at": 21,
-        },
-        {
-            "mmsi": 209123000,
-            "imo_number": 9512345,
-            "name": "LEVANT STAR",
-            "flag": "Cyprus",
-            "vessel_type": "Container Ship",
-            "length_meters": 295.0,
-            "length": 295,
-            "draught_meters": 13.5,
-            "call_sign": "5BKA2",
-            "destination": "LIMASSOL COMMERCIAL PORT",
-            "lat": center_lat - 0.35,
-            "lon": center_lon - 0.15,
-            "heading": 35,
-            "speed": 14.2,
-        },
-        {
-            "mmsi": 239456000,
-            "imo_number": 9623456,
-            "name": "AEGEAN VOYAGER",
-            "flag": "Greece",
-            "vessel_type": "Bulk Carrier",
-            "length_meters": 225.0,
-            "length": 225,
-            "draught_meters": 11.8,
-            "call_sign": "SVXY",
-            "destination": "PORT SAID ANCHORAGE",
-            "lat": center_lat + 0.25,
-            "lon": center_lon - 0.30,
-            "heading": 110,
-            "speed": 12.5,
-            "speed_drop_at": 15,
-        },
-        {
-            "mmsi": 212789000,
-            "imo_number": 9734567,
-            "name": "AKROTIRI BREEZE",
-            "flag": "Cyprus",
-            "vessel_type": "Product Tanker",
-            "length_meters": 185.0,
-            "length": 185,
-            "draught_meters": 9.5,
-            "call_sign": "5BAK7",
-            "destination": "VASILIKO OIL TERMINAL",
-            "lat": center_lat + 0.35,
-            "lon": center_lon + 0.45,
-            "heading": 285,
-            "speed": 11.0,
-            "gap_at": 10,
-        },
-        {
-            "mmsi": 212999000,
-            "imo_number": 9899001,
-            "name": "CYPRUS POLICE PATROL / EMSA",
-            "flag": "Cyprus",
-            "vessel_type": "Pollution Control Vessel",
-            "length_meters": 65.0,
-            "length": 65,
-            "draught_meters": 4.2,
-            "call_sign": "5BCP1",
-            "destination": "DARTIS INCIDENT PATROL",
-            "lat": center_lat + 0.15,
-            "lon": center_lon + 0.10,
-            "heading": 220,
-            "speed": 18.0,
-            "loiter_at": 12,
-        },
-    ]
+    vessels_list = []
+    telemetry_records = []
 
-    # Normal regional commercial maritime traffic in Eastern Mediterranean / Levantine Basin
-    corridor_fleet = [
-        {"mmsi": 500100001, "name": "MSC SVEVA", "flag": "Panama", "vessel_type": "Container Ship", "length": 395, "call_sign": "3FVR2", "destination": "ROTTERDAM", "lat": 33.340, "lon": 32.720, "heading": 284, "speed": 18.2},
-        {"mmsi": 500100002, "name": "CMA CGM TIGRIS", "flag": "Malta", "vessel_type": "Container Ship", "length": 300, "call_sign": "9HA3812", "destination": "PORT SAID", "lat": 33.120, "lon": 32.850, "heading": 102, "speed": 17.6},
-        {"mmsi": 500100003, "name": "EVER GOLDEN", "flag": "Panama", "vessel_type": "Container Ship", "length": 400, "call_sign": "3EPA7", "destination": "PIRAEUS", "lat": 33.410, "lon": 33.480, "heading": 286, "speed": 18.8},
-        {"mmsi": 500100004, "name": "MAERSK MC-KINNEY", "flag": "Denmark", "vessel_type": "Container Ship", "length": 399, "call_sign": "OZHC2", "destination": "SUEZ CANAL", "lat": 33.080, "lon": 33.320, "heading": 104, "speed": 16.9},
-        {"mmsi": 500100005, "name": "HAPAG AL JASRAH", "flag": "Germany", "vessel_type": "Container Ship", "length": 368, "call_sign": "DGDH2", "destination": "VALENCIA", "lat": 33.380, "lon": 33.820, "heading": 285, "speed": 17.2},
-        {"mmsi": 500100006, "name": "COSCO GALAXY", "flag": "Hong Kong", "vessel_type": "Container Ship", "length": 400, "call_sign": "VRTY5", "destination": "SINGAPORE", "lat": 32.950, "lon": 32.610, "heading": 101, "speed": 18.4},
-        {"mmsi": 500100007, "name": "FRONT ALTAIR", "flag": "Marshall Islands", "vessel_type": "Crude Oil Tanker", "length": 333, "call_sign": "V7HJ3", "destination": "TRIESTE", "lat": 33.210, "lon": 32.450, "heading": 282, "speed": 13.6},
-        {"mmsi": 500100008, "name": "NORDIC PASSAGE", "flag": "Liberia", "vessel_type": "Suezmax Tanker", "length": 274, "call_sign": "A8ZZ9", "destination": "SIDI KERIR", "lat": 32.980, "lon": 33.650, "heading": 98, "speed": 13.1},
-        {"mmsi": 500100009, "name": "MINERVA ELEONORA", "flag": "Greece", "vessel_type": "Aframax Tanker", "length": 243, "call_sign": "SVBG4", "destination": "VASILIKO", "lat": 34.520, "lon": 33.150, "heading": 268, "speed": 12.4},
-        {"mmsi": 500100010, "name": "EURONAV CAP VICTOR", "flag": "Belgium", "vessel_type": "Crude Oil Tanker", "length": 277, "call_sign": "ONCV", "destination": "FOS SUR MER", "lat": 33.480, "lon": 32.950, "heading": 287, "speed": 14.0},
-        {"mmsi": 500100011, "name": "GASLOG SYDNEY", "flag": "Bermuda", "vessel_type": "LNG Carrier", "length": 285, "call_sign": "ZCEQ5", "destination": "DAMIETTA", "lat": 33.020, "lon": 32.980, "heading": 105, "speed": 16.4},
-        {"mmsi": 500100012, "name": "GOLAR ICE", "flag": "Marshall Islands", "vessel_type": "LNG Carrier", "length": 288, "call_sign": "V7TR4", "destination": "BARCELONA", "lat": 33.450, "lon": 33.620, "heading": 283, "speed": 15.7},
-        {"mmsi": 500100013, "name": "BERGE OLYMPUS", "flag": "Isle of Man", "vessel_type": "Bulk Carrier", "length": 300, "call_sign": "MDYJ8", "destination": "PORT SAID", "lat": 33.150, "lon": 33.780, "heading": 100, "speed": 12.2},
-        {"mmsi": 500100014, "name": "STAR BULK GEMINI", "flag": "Marshall Islands", "vessel_type": "Bulk Carrier", "length": 229, "call_sign": "V7PL2", "destination": "BEIRUT", "lat": 33.620, "lon": 34.120, "heading": 34, "speed": 12.6},
-        {"mmsi": 500100015, "name": "OLDENDORFF DIETRICH", "flag": "Liberia", "vessel_type": "Bulk Carrier", "length": 255, "call_sign": "D5MK8", "destination": "ALEXANDRIA", "lat": 33.850, "lon": 34.280, "heading": 212, "speed": 11.8},
-        {"mmsi": 500100016, "name": "PACIFIC VALOUR", "flag": "Singapore", "vessel_type": "Bulk Carrier", "length": 199, "call_sign": "9V8432", "destination": "LARNACA", "lat": 34.780, "lon": 33.720, "heading": 88, "speed": 12.0},
-        {"mmsi": 500100017, "name": "GRIMALDI NIGERIA", "flag": "Italy", "vessel_type": "Ro-Ro Cargo", "length": 214, "call_sign": "IBLC", "destination": "SALERNO", "lat": 33.520, "lon": 33.180, "heading": 280, "speed": 15.4},
-        {"mmsi": 500100018, "name": "WALLENIUS CARMEN", "flag": "Sweden", "vessel_type": "Vehicle Carrier", "length": 228, "call_sign": "SLWD", "destination": "AQABA", "lat": 33.050, "lon": 33.450, "heading": 106, "speed": 16.2},
-        {"mmsi": 500100019, "name": "BBC COLORADO", "flag": "Antigua & Barbuda", "vessel_type": "General Cargo", "length": 153, "call_sign": "V2FP8", "destination": "LIMASSOL", "lat": 34.610, "lon": 33.240, "heading": 262, "speed": 11.4},
-        {"mmsi": 500100020, "name": "ARK FORWARDER", "flag": "Cyprus", "vessel_type": "Ro-Ro Cargo", "length": 182, "call_sign": "5BLN3", "destination": "TRIPOLI", "lat": 34.150, "lon": 34.420, "heading": 38, "speed": 15.0},
-        {"mmsi": 500100021, "name": "ALMI HORIZON", "flag": "Liberia", "vessel_type": "Suezmax Tanker", "length": 274, "call_sign": "D5NX4", "destination": "GENOA", "lat": 33.360, "lon": 33.550, "heading": 285, "speed": 13.5},
-        {"mmsi": 500100022, "name": "SEACOR BRAVE", "flag": "Marshall Islands", "vessel_type": "Offshore Supply Vessel", "length": 88, "call_sign": "V7KJ9", "destination": "APHRODITE FIELD", "lat": 33.100, "lon": 33.880, "heading": 195, "speed": 10.4},
-        {"mmsi": 500100023, "name": "MARAN GAS APHRODITE", "flag": "Greece", "vessel_type": "LNG Carrier", "length": 294, "call_sign": "SVAX8", "destination": "IDKU", "lat": 32.920, "lon": 33.150, "heading": 96, "speed": 16.5},
-        {"mmsi": 500100024, "name": "STENA PROMETHEUS", "flag": "Cyprus", "vessel_type": "Product Tanker", "length": 183, "call_sign": "5BCR4", "destination": "MONI", "lat": 34.680, "lon": 33.380, "heading": 75, "speed": 12.8},
-        {"mmsi": 500100025, "name": "OLYMPIC GLORY", "flag": "Greece", "vessel_type": "Crude Oil Tanker", "length": 274, "call_sign": "SYGF", "destination": "AUGUSTA", "lat": 33.420, "lon": 32.550, "heading": 283, "speed": 13.8},
-    ]
-    vessels.extend(corridor_fleet)
+    for ship in MONITORED_FLEET_WAYPOINTS:
+        wps = ship["waypoints"]
+        # Position at t=0 (satellite observation timestamp)
+        p0_lon, p0_lat, p0_heading, p0_speed = _interpolate_waypoint_pos(wps, 0)
 
-    telemetry = []
+        vessels_list.append({
+            "mmsi": ship["mmsi"],
+            "imo_number": ship["imo_number"],
+            "name": ship["name"],
+            "flag": ship["flag"],
+            "vessel_type": ship["vessel_type"],
+            "length_meters": ship["length_meters"],
+            "draught_meters": ship["draught_meters"],
+            "call_sign": ship["call_sign"],
+            "destination": ship["destination"],
+            "cargo_type": ship["cargo_type"],
+            "lat": p0_lat,
+            "lon": p0_lon,
+            "heading": p0_heading,
+            "speed": p0_speed,
+        })
 
-    for vessel in vessels:
-        telemetry.extend(
-            _trajectory(
-                mmsi=vessel["mmsi"],
-                start_lat=vessel["lat"],
-                start_lon=vessel["lon"],
-                heading=vessel["heading"],
-                speed=vessel["speed"],
-                start_time=scenario_time - timedelta(hours=6),
-                points=25,
-                interval_min=15,
-                speed_drop_at=vessel.get("speed_drop_at"),
-                gap_at=vessel.get("gap_at"),
-                loiter_at=vessel.get("loiter_at"),
-            )
-        )
+        # 25 deterministic telemetry points (every 15 minutes from T-360 to T0)
+        for i in range(25):
+            t_offset = -360 + (i * 15)
+            timestamp = start_time + timedelta(minutes=i * 15)
+
+            # Check if this is the primary culprit's AIS dark window (-42m to -12m)
+            is_dark_point = (ship["mmsi"] == 212000001 and -42 <= t_offset <= -15)
+
+            pt_lon, pt_lat, pt_heading, pt_speed = _interpolate_waypoint_pos(wps, t_offset)
+
+            # During dark window for culprit, slow-steaming at discharge location
+            if is_dark_point:
+                pt_speed = 5.4
+
+            telemetry_records.append({
+                "mmsi": ship["mmsi"],
+                "timestamp": timestamp.isoformat(),
+                "latitude": pt_lat,
+                "longitude": pt_lon,
+                "speed": pt_speed,
+                "speed_knots": pt_speed,
+                "heading": pt_heading,
+                "heading_degrees": pt_heading,
+                "nav_status": "Engaged in response ops" if ship["mmsi"] == 212000005 else "Under way using engine",
+            })
 
     return {
         "scenario_time": scenario_time.isoformat(),
-        "vessels": [
-            {
-                k: v
-                for k, v in vessel.items()
-                if k not in {
-                    "lat",
-                    "lon",
-                    "heading",
-                    "speed",
-                    "speed_drop_at",
-                    "gap_at",
-                    "loiter_at",
-                }
-            }
-            for vessel in vessels
-        ],
-        "telemetry": telemetry,
+        "vessels": vessels_list,
+        "telemetry": telemetry_records,
         "source": "SYNTHETIC_AIS_REPLAY",
     }

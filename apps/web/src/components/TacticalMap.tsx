@@ -31,7 +31,9 @@ import {
   interpolateVesselPosition,
   MUMBAI_INCIDENTS,
   MUMBAI_VESSEL_WAYPOINTS,
-  MARITIME_SPATIAL_ASSETS
+  MARITIME_SPATIAL_ASSETS,
+  CANONICAL_MMSIS,
+  getCanonicalMmsi
 } from '../lib/simulationEngine';
 
 // Precise Great-Circle Bearing (degrees clockwise from North)
@@ -548,9 +550,10 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   // Active Inspected Suspect Vessel
   const activeSuspect = useMemo(() => {
     if (!suspects || suspects.length === 0) return null;
+    const canSelected = selectedVesselMmsi ? getCanonicalMmsi(selectedVesselMmsi) : null;
     return (
-      suspects.find((s) => s.mmsi === selectedVesselMmsi) ||
-      suspects.find((s) => s.mmsi === currentIncident.culpritMmsi) ||
+      suspects.find((s) => getCanonicalMmsi(s.mmsi) === canSelected) ||
+      suspects.find((s) => getCanonicalMmsi(s.mmsi) === currentIncident.culpritMmsi) ||
       suspects[0]
     );
   }, [suspects, selectedVesselMmsi, currentIncident]);
@@ -1419,6 +1422,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const allTrajSrc = map.getSource('all-trajectories') as maplibregl.GeoJSONSource;
     const shouldShowTrails = showTrails;
     if (allTrajSrc && shouldShowTrails) {
+      const canSuspectMmsi = activeSuspect?.mmsi ? getCanonicalMmsi(activeSuspect.mmsi) : undefined;
       const bgFeatures = MUMBAI_VESSEL_WAYPOINTS.map((vw) => ({
         type: 'Feature' as const,
         properties: {
@@ -1427,7 +1431,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           color: vw.color || '#38bdf8',
           vesselType: vw.vesselType || 'Commercial',
           isCulprit: !!vw.isCulprit,
-          isSelected: activeSuspect?.mmsi === vw.mmsi,
+          isSelected: canSuspectMmsi === vw.mmsi,
         },
         geometry: {
           type: 'LineString' as const,
@@ -1442,7 +1446,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     // 9. Update Active Inspected Culprit Trajectory Track
     const trajSrc = map.getSource('culprit-trajectory') as maplibregl.GeoJSONSource;
     if (trajSrc && shouldShowTrails) {
-      const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === activeSuspect?.mmsi);
+      const canSuspectMmsi = activeSuspect?.mmsi ? getCanonicalMmsi(activeSuspect.mmsi) : undefined;
+      const activeWaypointTrack = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === canSuspectMmsi);
       let lineCoords: number[][] = [];
 
       if (activeWaypointTrack && activeWaypointTrack.waypoints.length > 1) {
@@ -1621,31 +1626,30 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
 
-    const displayVessels = scrubbedVessels || vessels.map((v) => {
-      const interp = interpolateVesselPosition(v.mmsi, 0, 'mediterranean_dartis', v.current_position ? {
-        longitude: v.current_position.longitude,
-        latitude: v.current_position.latitude,
-        heading_degrees: v.current_position.heading_degrees,
-        speed_knots: v.current_position.speed_knots,
-      } : undefined);
+    // Strictly construct the 10 canonical monitored vessels, 100% locked to their physical trajectory lines
+    const displayVessels = CANONICAL_MMSIS.map((canMmsi) => {
+      const interp = interpolateVesselPosition(canMmsi, timeOffsetMinutes);
       return {
-        mmsi: v.mmsi,
+        mmsi: canMmsi,
         lon: interp.lon,
         lat: interp.lat,
         heading: interp.heading,
         speed: interp.speed,
+        isAisDark: interp.isAisDark,
       };
     });
 
     displayVessels.forEach((v) => {
-      const isSelected = activeSuspect?.mmsi === v.mmsi;
+      const canSuspectMmsi = activeSuspect?.mmsi ? getCanonicalMmsi(activeSuspect.mmsi) : undefined;
+      const isSelected = canSuspectMmsi === v.mmsi;
       const isIncidentCulprit = currentIncident.culpritMmsi === v.mmsi || v.mmsi === 212000001;
       const isCoastGuard = v.mmsi === 419000999 || v.mmsi === 212000005;
-      const fullVessel = vessels.find((item) => item.mmsi === v.mmsi);
-      const name = fullVessel?.name || `MMSI ${v.mmsi}`;
+      const fullVessel = vessels.find((item) => getCanonicalMmsi(item.mmsi) === v.mmsi);
+      const waypointDef = MUMBAI_VESSEL_WAYPOINTS.find((w) => w.mmsi === v.mmsi);
+      const name = fullVessel?.name || waypointDef?.name || `MMSI ${v.mmsi}`;
       const markerKey = `vessel-${v.mmsi}`;
-      const isAisDark = !!(v as any).isAisDark;
-      const rawType = (fullVessel?.vessel_type || '').toLowerCase();
+      const isAisDark = !!v.isAisDark;
+      const rawType = (fullVessel?.vessel_type || waypointDef?.vesselType || '').toLowerCase();
 
       let shipType: TacticalShipType = 'commercial';
       if (isIncidentCulprit) {
@@ -1769,7 +1773,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         delete markersRef.current[key];
       }
     });
-  }, [mapLoaded, vessels, scrubbedVessels, activeSuspect, currentIncident]);
+  }, [mapLoaded, vessels, scrubbedVessels, activeSuspect, currentIncident, timeOffsetMinutes]);
 
   return (
     <div className="relative w-full h-full bg-[#0b0f19] overflow-hidden select-none isolate z-0">

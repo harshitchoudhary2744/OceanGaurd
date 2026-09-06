@@ -405,8 +405,41 @@ export function calculatePolygonMetrics(
   };
 }
 
-// Calculate vessel kinematic anomaly breakdown and composite risk score
-// Individualized Forensic Attribution Profiles for 30 Corridor Vessels
+export const CANONICAL_MMSIS: number[] = [
+  212000001, // MEDITERRANEAN TRADER (VLCC Supertanker, Culprit)
+  212000002, // LEVANT STAR (High-Speed Passenger Ferry)
+  212000003, // AEGEAN VOYAGER (Bulk Carrier)
+  212000004, // AKROTIRI BREEZE (LPG Tanker)
+  212000005, // CYPRUS POLICE PATROL / EMSA (Pollution Control Vessel)
+  500100001, // MSC SVEVA (Container Ship)
+  500100024, // STENA PROMETHEUS (Product Tanker)
+  500100022, // SEACOR BRAVE (Offshore Supply Vessel)
+  500100018, // WALLENIUS CARMEN (Vehicle Carrier)
+  500100019, // BBC COLORADO (General Cargo)
+];
+
+export const CANONICAL_MMSI_MAP: Record<number, number> = {
+  209123000: 212000002, // Legacy Levant Star -> 212000002
+  239456000: 212000003, // Legacy Aegean Voyager -> 212000003
+  212789000: 212000004, // Legacy Akrotiri Breeze -> 212000004
+  212999000: 212000005, // Legacy Cyprus Police Patrol -> 212000005
+  212000001: 212000001,
+  212000002: 212000002,
+  212000003: 212000003,
+  212000004: 212000004,
+  212000005: 212000005,
+  500100001: 500100001,
+  500100024: 500100024,
+  500100022: 500100022,
+  500100018: 500100018,
+  500100019: 500100019,
+};
+
+export function getCanonicalMmsi(mmsi: number): number {
+  return CANONICAL_MMSI_MAP[mmsi] || mmsi;
+}
+
+// Individualized Forensic Attribution Profiles for the 10 Monitored Vessels
 interface VesselForensicSpec {
   cpaKm: number;
   speedDropKts: number;
@@ -426,14 +459,31 @@ const VESSEL_ANOMALY_PROFILES: Record<number, VesselForensicSpec> = {
     cargoMultiplier: 1.25,
     rationale: "Ranked #1 (CRITICAL ANOMALY): Direct spatial overpass (0.16 km CPA) of breach origin at T-42 min. Executed an acute 8.4 kt speed drop down to 5.4 kts during an unnotified 42-minute AIS transponder blackout matching the exact discharge window. Heavy crude oil carrier profile.",
   },
-  // 2. AEGEAN VOYAGER (Container / Bulker)
+  // 2. LEVANT STAR (High-Speed Passenger Ferry)
   212000002: {
+    cpaKm: 28.6,
+    speedDropKts: 0.0,
+    aisGapMin: 0.0,
+    loiteringScore: 9.0,
+    cargoMultiplier: 0.85,
+    rationale: "Ranked #2 (LOW RISK): High-speed passenger ferry on NNE transit to Limassol (28.6 km CPA). Compliant commercial passage at 18.5 kts with unbroken AIS telemetry.",
+  },
+  209123000: {
+    cpaKm: 28.6,
+    speedDropKts: 0.0,
+    aisGapMin: 0.0,
+    loiteringScore: 9.0,
+    cargoMultiplier: 0.85,
+    rationale: "Ranked #2 (LOW RISK): High-speed passenger ferry on NNE transit to Limassol (28.6 km CPA). Compliant commercial passage at 18.5 kts with unbroken AIS telemetry.",
+  },
+  // 3. AEGEAN VOYAGER (Bulk Carrier)
+  212000003: {
     cpaKm: 14.8,
     speedDropKts: 5.4,
     aisGapMin: 0.0,
     loiteringScore: 45.0,
     cargoMultiplier: 0.85,
-    rationale: "Ranked #2 (MODERATE OBSERVATION): Minor deceleration (-5.4 kts) and course loitering detected 14.8 km north of origin. Maintained continuous AIS broadcast with standard container cargo. Secondary interest only.",
+    rationale: "Ranked #3 (MODERATE OBSERVATION): Minor deceleration (-5.4 kts) and course loitering detected 14.8 km north of origin. Maintained continuous AIS broadcast with standard dry bulk cargo. Exonerated by distance and cargo.",
   },
   239456000: {
     cpaKm: 14.8,
@@ -441,34 +491,16 @@ const VESSEL_ANOMALY_PROFILES: Record<number, VesselForensicSpec> = {
     aisGapMin: 0.0,
     loiteringScore: 45.0,
     cargoMultiplier: 0.85,
-    rationale: "Ranked #2 (MODERATE OBSERVATION): Minor deceleration (-5.4 kts) and course loitering detected 14.8 km north of origin. Maintained continuous AIS broadcast with standard container cargo. Secondary interest only.",
+    rationale: "Ranked #3 (MODERATE OBSERVATION): Minor deceleration (-5.4 kts) and course loitering detected 14.8 km north of origin. Maintained continuous AIS broadcast with standard dry bulk cargo. Exonerated by distance and cargo.",
   },
-  // 3. FRONT ALTAIR (VLCC Crude Tanker)
-  500100007: {
-    cpaKm: 18.4,
-    speedDropKts: 1.2,
-    aisGapMin: 0.0,
-    loiteringScore: 14.0,
-    cargoMultiplier: 1.20,
-    rationale: "Ranked #3 (LOW RISK / ELEVATED CARGO): Crude tanker transiting international deep-sea westbound corridor 18.4 km southwest of origin. Steady 13.6 kt transit with active transponder. Elevated cargo risk multiplier (1.20x) but zero breach correlation.",
-  },
-  // 4. MINERVA ELEONORA (Aframax Product Tanker)
-  500100009: {
-    cpaKm: 22.8,
-    speedDropKts: 2.8,
-    aisGapMin: 0.0,
-    loiteringScore: 26.0,
-    cargoMultiplier: 1.15,
-    rationale: "Ranked #4 (LOW RISK): Aframax tanker maneuvering on approach to Vasiliko Oil Terminal (22.8 km CPA). Routine pilot deceleration (-2.8 kts); continuous telemetry confirms lawful passage.",
-  },
-  // 5. AKROTIRI BREEZE (Coastal Fishery Trawler)
-  212000003: {
+  // 4. AKROTIRI BREEZE (LPG Tanker)
+  212000004: {
     cpaKm: 38.2,
     speedDropKts: 3.5,
     aisGapMin: 18.0,
     loiteringScore: 32.0,
     cargoMultiplier: 0.60,
-    rationale: "Ranked #5 (LOW RISK): Local coastal vessel operating in Akrotiri fishery fairway (38.2 km CPA). Intermittent 18-min AIS terrain shadow behind Cape Gata; low-risk diesel trawler exonerated by trajectory separation.",
+    rationale: "Ranked #4 (LOW RISK): Cryogenic LPG carrier on approach to Vasiliko LPG Jetty (38.2 km CPA). Non-polluting liquefied gas cargo profile exonerated by trajectory separation.",
   },
   212789000: {
     cpaKm: 38.2,
@@ -476,25 +508,42 @@ const VESSEL_ANOMALY_PROFILES: Record<number, VesselForensicSpec> = {
     aisGapMin: 18.0,
     loiteringScore: 32.0,
     cargoMultiplier: 0.60,
-    rationale: "Ranked #5 (LOW RISK): Local coastal vessel operating in Akrotiri fishery fairway (38.2 km CPA). Intermittent 18-min AIS terrain shadow behind Cape Gata; low-risk diesel trawler exonerated by trajectory separation.",
+    rationale: "Ranked #4 (LOW RISK): Cryogenic LPG carrier on approach to Vasiliko LPG Jetty (38.2 km CPA). Non-polluting liquefied gas cargo profile exonerated by trajectory separation.",
   },
-  // 6. EURONAV CAP VICTOR (Suezmax Tanker)
-  500100010: {
-    cpaKm: 24.5,
+  // 5. CYPRUS POLICE PATROL / EMSA (Patrol Cutter)
+  212000005: {
+    cpaKm: 0.08,
+    speedDropKts: 16.0,
+    aisGapMin: 0.0,
+    loiteringScore: 82.0,
+    cargoMultiplier: 0.12,
+    rationale: "Ranked #5 (OFFICIAL EMERGENCY RESPONDER): Official Coast Guard cutter responding to slick locus. High-speed sprint followed by station-keeping at T=0. Exonerated by 0.12x emergency responder multiplier.",
+  },
+  212999000: {
+    cpaKm: 0.08,
+    speedDropKts: 16.0,
+    aisGapMin: 0.0,
+    loiteringScore: 82.0,
+    cargoMultiplier: 0.12,
+    rationale: "Ranked #5 (OFFICIAL EMERGENCY RESPONDER): Official Coast Guard cutter responding to slick locus. High-speed sprint followed by station-keeping at T=0. Exonerated by 0.12x emergency responder multiplier.",
+  },
+  // 6. MSC SVEVA (Container Ship)
+  500100001: {
+    cpaKm: 48.5,
     speedDropKts: 0.0,
     aisGapMin: 0.0,
-    loiteringScore: 10.0,
-    cargoMultiplier: 1.20,
-    rationale: "Ranked #6 (LOW RISK): Heavy crude carrier maintaining steady 14.0 kts in westbound lane (24.5 km CPA). Unbroken AIS trail and zero speed anomalies.",
+    loiteringScore: 5.0,
+    cargoMultiplier: 0.85,
+    rationale: "Ranked #6 (LOW RISK): Ultra Large Container Vessel transiting deep-sea westbound corridor (48.5 km CPA). Unbroken 19.0 kt cruise.",
   },
-  // 7. ALMI HORIZON (Suezmax Tanker)
-  500100021: {
-    cpaKm: 31.2,
-    speedDropKts: 0.0,
+  // 7. STENA PROMETHEUS (Product Tanker)
+  500100024: {
+    cpaKm: 42.1,
+    speedDropKts: 1.0,
     aisGapMin: 0.0,
-    loiteringScore: 8.0,
-    cargoMultiplier: 1.18,
-    rationale: "Ranked #7 (LOW RISK): Suezmax tanker transiting to Genoa (31.2 km CPA). Constant 13.5 kt speed, continuous AIS broadcasting, and compliant corridor routing.",
+    loiteringScore: 12.0,
+    cargoMultiplier: 1.10,
+    rationale: "Ranked #7 (LOW RISK): Product tanker on coastal shelf transit (42.1 km CPA). Steady 11.0 kt speed and compliant coastal routing.",
   },
   // 8. SEACOR BRAVE (Offshore Supply Vessel)
   500100022: {
@@ -503,213 +552,25 @@ const VESSEL_ANOMALY_PROFILES: Record<number, VesselForensicSpec> = {
     aisGapMin: 0.0,
     loiteringScore: 22.0,
     cargoMultiplier: 0.70,
-    rationale: "Ranked #8 (LOW RISK): Offshore supply vessel heading south to Aphrodite Gas Field (44.5 km CPA). Minor maneuvering near offshore platforms; non-polluting support cargo.",
+    rationale: "Ranked #8 (LOW RISK): Offshore supply vessel heading south to energy exploration block (44.5 km CPA). Minor maneuvering near offshore platforms; non-polluting support cargo.",
   },
-  // 9. CYPRUS POLICE PATROL / EMSA (Patrol Cutter)
-  212000005: {
-    cpaKm: 0.08,
-    speedDropKts: 16.0,
-    aisGapMin: 0.0,
-    loiteringScore: 82.0,
-    cargoMultiplier: 0.12,
-    rationale: "Ranked #9 (OFFICIAL EMERGENCY RESPONDER): Official Coast Guard cutter responding to slick locus. High-speed sprint followed by station-keeping at T=0. Exonerated by 0.12x emergency responder multiplier.",
-  },
-  // 10. OLYMPIC GLORY (Crude Tanker)
-  500100025: {
-    cpaKm: 51.8,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 6.0,
-    cargoMultiplier: 1.18,
-    rationale: "Ranked #10 (LOW RISK): Crude tanker transiting international deep-sea westbound corridor (51.8 km CPA). Nominal 13.8 kt passage with active transponder.",
-  },
-  // 11. STENA PROMETHEUS (Product Tanker)
-  500100024: {
-    cpaKm: 42.1,
-    speedDropKts: 1.0,
-    aisGapMin: 0.0,
-    loiteringScore: 12.0,
-    cargoMultiplier: 1.10,
-    rationale: "Ranked #11 (LOW RISK): Product tanker inbound to Moni offshore buoy mooring (42.1 km CPA). Lawful coastal routing and steady 12.8 kt telemetry.",
-  },
-  // 12. LEVANT STAR (Container Feeder)
-  212000004: {
-    cpaKm: 28.6,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 9.0,
-    cargoMultiplier: 0.85,
-    rationale: "Ranked #12 (LOW RISK): Feeder container ship on approach to Limassol Commercial Port (28.6 km CPA). Compliant commercial passage at 14.2 kts.",
-  },
-  209123000: {
-    cpaKm: 28.6,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 9.0,
-    cargoMultiplier: 0.85,
-    rationale: "Ranked #12 (LOW RISK): Feeder container ship on approach to Limassol Commercial Port (28.6 km CPA). Compliant commercial passage at 14.2 kts.",
-  },
-  // 13. EVER GOLDEN (Container Ship)
-  500100003: {
-    cpaKm: 46.2,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 5.0,
-    cargoMultiplier: 0.85,
-    rationale: "Ranked #13 (LOW RISK): Ultra Large Container Vessel (20,124 TEU) on deep-sea corridor (46.2 km CPA). Unbroken 18.8 kt high-speed cruise with zero deviations.",
-  },
-  // 14. MSC SVEVA (Container Ship)
-  500100001: {
-    cpaKm: 48.5,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 5.0,
-    cargoMultiplier: 0.85,
-    rationale: "Ranked #14 (LOW RISK): Mega container vessel (19,224 TEU) on Suez-Rotterdam deep-water trunk lane (48.5 km CPA). Flawless 18.2 kt cruise.",
-  },
-  // 15. CMA CGM TIGRIS (Container Ship)
-  500100002: {
-    cpaKm: 36.4,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 6.0,
-    cargoMultiplier: 0.85,
-    rationale: "Ranked #15 (LOW RISK): Eastbound container ship on Port Said fairway (36.4 km CPA). Continuous AIS signal and nominal 17.6 kt speed.",
-  },
-  // 16. MAERSK MC-KINNEY (Container Ship)
-  500100004: {
-    cpaKm: 39.8,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 5.0,
-    cargoMultiplier: 0.85,
-    rationale: "Ranked #16 (LOW RISK): Triple-E container vessel transiting to Suez southbound convoy (39.8 km CPA). 16.9 kts steady passage.",
-  },
-  // 17. HAPAG AL JASRAH (Container Ship)
-  500100005: {
-    cpaKm: 54.2,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 4.0,
-    cargoMultiplier: 0.85,
-    rationale: "Ranked #17 (LOW RISK): Container vessel in westbound transit toward Valencia (54.2 km CPA). Standard deep-water navigation at 17.2 kts.",
-  },
-  // 18. COSCO GALAXY (Container Ship)
-  500100006: {
-    cpaKm: 58.0,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 4.0,
-    cargoMultiplier: 0.85,
-    rationale: "Ranked #18 (LOW RISK): 21,000 TEU container carrier transiting eastbound (58.0 km CPA). Continuous telemetry at 18.4 kts.",
-  },
-  // 19. NORDIC PASSAGE (Suezmax Tanker in Ballast)
-  500100008: {
-    cpaKm: 62.5,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 5.0,
-    cargoMultiplier: 1.05,
-    rationale: "Ranked #19 (LOW RISK): Suezmax tanker in segregated clean ballast to Sidi Kerir (62.5 km CPA). 13.1 kts steady passage.",
-  },
-  // 20. GASLOG SYDNEY (LNG Carrier)
-  500100011: {
-    cpaKm: 41.0,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 4.0,
-    cargoMultiplier: 0.65,
-    rationale: "Ranked #20 (LOW RISK): Cryogenic LNG carrier transiting from Damietta (41.0 km CPA). Steady 16.4 kts; cryogenic methane poses zero persistent oil slick hazard.",
-  },
-  // 21. GOLAR ICE (LNG Carrier)
-  500100012: {
-    cpaKm: 49.5,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 4.0,
-    cargoMultiplier: 0.65,
-    rationale: "Ranked #21 (LOW RISK): LNG carrier transiting to Barcelona regasification terminal (49.5 km CPA). 15.7 kts uninterrupted cruise.",
-  },
-  // 22. MARAN GAS APHRODITE (LNG Carrier)
-  500100023: {
-    cpaKm: 56.2,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 4.0,
-    cargoMultiplier: 0.65,
-    rationale: "Ranked #22 (LOW RISK): Clean LNG carrier heading to Idku liquefaction terminal (56.2 km CPA). Non-polluting cargo profile.",
-  },
-  // 23. BERGE OLYMPUS (Bulk Carrier)
-  500100013: {
-    cpaKm: 68.4,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 4.0,
-    cargoMultiplier: 0.80,
-    rationale: "Ranked #23 (LOW RISK): Capesize bulk carrier carrying dry iron ore (68.4 km CPA). Low-risk dry bulk freight at 12.2 kts.",
-  },
-  // 24. STAR BULK GEMINI (Bulk Carrier)
-  500100014: {
-    cpaKm: 82.0,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 3.0,
-    cargoMultiplier: 0.80,
-    rationale: "Ranked #24 (LOW RISK): Bulk carrier transiting Levant coastal trunk to Beirut (82.0 km CPA). Unrelated north-northeast passage.",
-  },
-  // 25. OLDENDORFF DIETRICH (Bulk Carrier)
-  500100015: {
-    cpaKm: 95.0,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 3.0,
-    cargoMultiplier: 0.80,
-    rationale: "Ranked #25 (LOW RISK): Dry bulk fertilizer carrier transiting south to Alexandria (95.0 km CPA). Nominal passage.",
-  },
-  // 26. PACIFIC VALOUR (Bulk Carrier)
-  500100016: {
-    cpaKm: 74.0,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 5.0,
-    cargoMultiplier: 0.80,
-    rationale: "Ranked #26 (LOW RISK): Bulk carrier inbound to Larnaca Bulk Wharf (74.0 km CPA). Compliant commercial passage at 12.0 kts.",
-  },
-  // 27. GRIMALDI NIGERIA (Ro-Ro Cargo)
-  500100017: {
-    cpaKm: 45.0,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 5.0,
-    cargoMultiplier: 0.75,
-    rationale: "Ranked #27 (LOW RISK): Ro-Ro freight carrier transiting toward Salerno (45.0 km CPA). Commercial rolling stock; zero slick correlation.",
-  },
-  // 28. WALLENIUS CARMEN (Vehicle Carrier)
+  // 9. WALLENIUS CARMEN (Vehicle Carrier)
   500100018: {
-    cpaKm: 47.2,
+    cpaKm: 52.3,
     speedDropKts: 0.0,
     aisGapMin: 0.0,
     loiteringScore: 4.0,
     cargoMultiplier: 0.75,
-    rationale: "Ranked #28 (LOW RISK): Pure car and truck carrier heading to Aqaba (47.2 km CPA). Non-polluting automotive freight at 16.2 kts.",
+    rationale: "Ranked #9 (LOW RISK): Pure car and truck carrier heading ESE (52.3 km CPA). Non-polluting automotive freight at 17.0 kts.",
   },
-  // 29. BBC COLORADO (General Cargo)
+  // 10. BBC COLORADO (General Cargo)
   500100019: {
-    cpaKm: 64.0,
+    cpaKm: 46.0,
     speedDropKts: 0.5,
     aisGapMin: 0.0,
     loiteringScore: 6.0,
     cargoMultiplier: 0.80,
-    rationale: "Ranked #29 (LOW RISK): General cargo ship carrying offshore wind turbine equipment (64.0 km CPA). Heading to Limassol at 11.4 kts.",
-  },
-  // 30. ARK FORWARDER (Ro-Ro Cargo)
-  500100020: {
-    cpaKm: 108.0,
-    speedDropKts: 0.0,
-    aisGapMin: 0.0,
-    loiteringScore: 2.0,
-    cargoMultiplier: 0.75,
-    rationale: "Ranked #30 (LOW RISK): Ro-Ro cargo vessel transiting distant eastern Levant corridor (108.0 km CPA). Far outside surveillance incident envelope.",
+    rationale: "Ranked #10 (LOW RISK): General cargo ship carrying wind turbine blades (46.0 km CPA). Southwest transit to Limassol at 12.0 kts.",
   },
 };
 
@@ -729,7 +590,8 @@ export function calculateVesselKinematicAnomaly(
   const isPatrol = (vessel.vessel_type || "").includes("Pollution") || (vessel.vessel_type || "").includes("Patrol") || (vessel.vessel_type || "").includes("Coast Guard") || vessel.mmsi === 212000005;
 
   // Retrieve individualized forensic profile if registered
-  const profile = vessel.mmsi ? VESSEL_ANOMALY_PROFILES[vessel.mmsi] : undefined;
+  const canMmsi = vessel.mmsi ? getCanonicalMmsi(vessel.mmsi) : undefined;
+  const profile = canMmsi ? VESSEL_ANOMALY_PROFILES[canMmsi] : undefined;
 
   let minCpaKm = profile ? profile.cpaKm : 99.0;
   if (!profile) {
@@ -1915,7 +1777,7 @@ export const ACTIVE_CORRIDOR_FLEET: CorridorShipDef[] = [
     cargo_type: "Aviation Turbine Fuel Jet A-1 (49,900 DWT)",
     lat: 34.6200,
     lon: 33.0500,
-    heading_degrees: 75,
+    heading_degrees: 72.0,
     speed_knots: 11.0,
   },
   {
@@ -1931,7 +1793,7 @@ export const ACTIVE_CORRIDOR_FLEET: CorridorShipDef[] = [
     cargo_type: "Subsea Drilling Mud & Drill Collars",
     lat: 33.2000,
     lon: 33.5200,
-    heading_degrees: 175,
+    heading_degrees: 175.2,
     speed_knots: 8.0,
   },
   {
@@ -1947,7 +1809,7 @@ export const ACTIVE_CORRIDOR_FLEET: CorridorShipDef[] = [
     cargo_type: "Automobiles & Electric Vehicles (6,500 CEU)",
     lat: 32.6500,
     lon: 33.6000,
-    heading_degrees: 120,
+    heading_degrees: 124.6,
     speed_knots: 17.0,
   },
   {
@@ -1963,7 +1825,7 @@ export const ACTIVE_CORRIDOR_FLEET: CorridorShipDef[] = [
     cargo_type: "Offshore Wind Turbine Generators & Steel",
     lat: 33.9500,
     lon: 33.6000,
-    heading_degrees: 235,
+    heading_degrees: 231.2,
     speed_knots: 12.0,
   },
 ];
@@ -2343,11 +2205,35 @@ export function interpolateVesselPosition(
   _scenario: string = 'mediterranean_dartis',
   vesselCurrentPos?: { longitude: number; latitude: number; heading_degrees: number; speed_knots: number }
 ): { lon: number; lat: number; heading: number; speed: number; isAisDark?: boolean } {
-  const isAisDarkWindow = (mmsi === 212000001 && timeOffsetMinutes >= -42 && timeOffsetMinutes <= -12);
-  const vesselTrack = MUMBAI_VESSEL_WAYPOINTS.find((t) => t.mmsi === mmsi);
+  const canMmsi = getCanonicalMmsi(mmsi);
+  const isAisDarkWindow = (canMmsi === 212000001 && timeOffsetMinutes >= -42 && timeOffsetMinutes <= -12);
+  const vesselTrack = MUMBAI_VESSEL_WAYPOINTS.find((t) => t.mmsi === canMmsi);
 
   if (vesselTrack && vesselTrack.waypoints.length) {
     const wps = vesselTrack.waypoints;
+
+    // Exact match for t=0
+    if (timeOffsetMinutes === 0) {
+      const zeroIdx = wps.findIndex((w) => w.tMinutes === 0);
+      if (zeroIdx !== -1) {
+        const wp = wps[zeroIdx];
+        let heading: number;
+        if (zeroIdx > 0) {
+          heading = Math.round(calculateBearing(wps[zeroIdx - 1].lon, wps[zeroIdx - 1].lat, wp.lon, wp.lat));
+        } else if (zeroIdx < wps.length - 1) {
+          heading = Math.round(calculateBearing(wp.lon, wp.lat, wps[zeroIdx + 1].lon, wps[zeroIdx + 1].lat));
+        } else {
+          heading = wp.heading;
+        }
+        return {
+          lon: wp.lon,
+          lat: wp.lat,
+          heading,
+          speed: wp.speed,
+          isAisDark: isAisDarkWindow,
+        };
+      }
+    }
 
     if (timeOffsetMinutes <= wps[0].tMinutes) {
       const heading0 = wps.length > 1
@@ -2393,26 +2279,25 @@ export function interpolateVesselPosition(
         if (segDistKm > 0.02) {
           const currentBearing = calculateBearing(w1.lon, w1.lat, w2.lon, w2.lat);
 
-          // Smooth turn transition when approaching a bend (last 20% of segment into next segment)
-          if (progress > 0.80 && i < wps.length - 2) {
+          // Smooth turn transition when approaching a bend (last 15% of segment into next segment)
+          if (progress > 0.85 && i < wps.length - 2) {
             const nextW1 = wps[i + 1];
             const nextW2 = wps[i + 2];
             const nextDistKm = Math.hypot((nextW2.lon - nextW1.lon) * Math.cos((nextW1.lat * Math.PI) / 180), nextW2.lat - nextW1.lat) * 111.32;
             if (nextDistKm > 0.02) {
               const nextBearing = calculateBearing(nextW1.lon, nextW1.lat, nextW2.lon, nextW2.lat);
-              const turnFactor = (progress - 0.80) / 0.40; // reaches 0.5 at waypoint apex
+              const turnFactor = (progress - 0.85) / 0.30;
               heading = interpolateAngle(currentBearing, nextBearing, turnFactor);
             } else {
               heading = Math.round(currentBearing);
             }
-          } else if (progress < 0.20 && i > 0) {
-            // Smooth turn exit coming out of bend (first 20% of segment)
+          } else if (progress < 0.15 && i > 0) {
             const prevW1 = wps[i - 1];
             const prevW2 = wps[i];
             const prevDistKm = Math.hypot((prevW2.lon - prevW1.lon) * Math.cos((prevW1.lat * Math.PI) / 180), prevW2.lat - prevW1.lat) * 111.32;
             if (prevDistKm > 0.02) {
               const prevBearing = calculateBearing(prevW1.lon, prevW1.lat, prevW2.lon, prevW2.lat);
-              const turnFactor = 0.5 + (progress / 0.20) * 0.5;
+              const turnFactor = 0.5 + (progress / 0.15) * 0.5;
               heading = interpolateAngle(prevBearing, currentBearing, turnFactor);
             } else {
               heading = Math.round(currentBearing);
@@ -2421,11 +2306,9 @@ export function interpolateVesselPosition(
             heading = Math.round(currentBearing);
           }
         } else {
-          // Stationary/slow loitering: retain waypoint heading without jitter
           heading = w1.heading;
         }
 
-        // Smooth speed interpolation
         const speed = Number((w1.speed + (w2.speed - w1.speed) * progress).toFixed(1));
 
         return {
@@ -2641,7 +2524,7 @@ export class AutonomousSimulationEngine {
           latitude: 33.275,
           longitude: 33.1431,
           speed_knots: 13.5,
-          heading_degrees: 95,
+          heading_degrees: 83.0,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2663,7 +2546,7 @@ export class AutonomousSimulationEngine {
           latitude: 33.650,
           longitude: 33.320,
           speed_knots: 18.5,
-          heading_degrees: 25,
+          heading_degrees: 14.0,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2685,7 +2568,7 @@ export class AutonomousSimulationEngine {
           latitude: 33.150,
           longitude: 32.450,
           speed_knots: 13.0,
-          heading_degrees: 145,
+          heading_degrees: 140.0,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2707,7 +2590,7 @@ export class AutonomousSimulationEngine {
           latitude: 34.000,
           longitude: 33.150,
           speed_knots: 14.0,
-          heading_degrees: 305,
+          heading_degrees: 308.9,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2729,7 +2612,7 @@ export class AutonomousSimulationEngine {
           latitude: 33.450,
           longitude: 33.000,
           speed_knots: 9.0,
-          heading_degrees: 60,
+          heading_degrees: 68.2,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },

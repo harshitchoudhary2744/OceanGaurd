@@ -40,7 +40,9 @@ import {
   MUMBAI_INCIDENTS,
   MMSI_TO_INCIDENT,
   generateDashboardAlerts,
-  registerCustomSpillIncident
+  registerCustomSpillIncident,
+  CANONICAL_MMSIS,
+  getCanonicalMmsi
 } from './lib/simulationEngine';
 
 export function App() {
@@ -207,11 +209,19 @@ export function App() {
       ]);
 
       if (spillsData?.features?.length) setSpills(spillsData);
-      if (vesselsData?.length) setVessels(vesselsData);
+      if (vesselsData?.length) {
+        const canonicalFleet = vesselsData
+          .filter((v: Vessel) => CANONICAL_MMSIS.includes(getCanonicalMmsi(v.mmsi)))
+          .map((v: Vessel) => ({ ...v, mmsi: getCanonicalMmsi(v.mmsi) }));
+        setVessels(canonicalFleet);
+      }
       if (suspectsData?.length) {
-        setSuspects(suspectsData);
+        const canonicalSuspects = suspectsData
+          .filter((s: SuspectVessel) => CANONICAL_MMSIS.includes(getCanonicalMmsi(s.mmsi)))
+          .map((s: SuspectVessel) => ({ ...s, mmsi: getCanonicalMmsi(s.mmsi) }));
+        setSuspects(canonicalSuspects);
         const config = MUMBAI_INCIDENTS[selectedSpillId];
-        setSelectedVesselMmsi(config?.culpritMmsi || suspectsData[0].mmsi);
+        setSelectedVesselMmsi(config?.culpritMmsi || canonicalSuspects[0]?.mmsi || 212000001);
       }
       if (vectorData?.length) setVectorMatches(vectorData);
       if (metoceanData) setMetocean(metoceanData);
@@ -300,8 +310,9 @@ export function App() {
 
   // Handle Anomaly / Vessel Click Selection (Bidirectional synchronization)
   const handleSelectVessel = (mmsi: number) => {
-    setSelectedVesselMmsi(mmsi);
-    const targetSpillId = MMSI_TO_INCIDENT[mmsi] || selectedSpillId;
+    const canMmsi = getCanonicalMmsi(mmsi);
+    setSelectedVesselMmsi(canMmsi);
+    const targetSpillId = MMSI_TO_INCIDENT[canMmsi] || selectedSpillId;
 
     if (targetSpillId !== selectedSpillId) {
       setSelectedSpillId(targetSpillId);
@@ -348,19 +359,12 @@ export function App() {
     return () => clearInterval(interval);
   }, [isPlaying, playbackSpeed]);
 
-  // Interpolated Vessel Positions: All 30 corridor and culprit vessels replay dynamically along their kinematic tracks
+  // Interpolated Vessel Positions: Strictly the 10 canonical monitored vessels replay dynamically along their kinematic tracks
   const scrubbedVessels = useMemo(() => {
-    return vessels.map((v) => {
-      const curPos = v.current_position ? {
-        longitude: v.current_position.longitude,
-        latitude: v.current_position.latitude,
-        heading_degrees: v.current_position.heading_degrees,
-        speed_knots: v.current_position.speed_knots,
-      } : undefined;
-
-      const interp = interpolateVesselPosition(v.mmsi, timeOffsetMinutes, 'mediterranean_dartis', curPos);
+    return CANONICAL_MMSIS.map((canMmsi) => {
+      const interp = interpolateVesselPosition(canMmsi, timeOffsetMinutes);
       return {
-        mmsi: v.mmsi,
+        mmsi: canMmsi,
         lon: interp.lon,
         lat: interp.lat,
         heading: interp.heading,
@@ -368,7 +372,7 @@ export function App() {
         isAisDark: interp.isAisDark,
       };
     });
-  }, [timeOffsetMinutes, vessels]);
+  }, [timeOffsetMinutes]);
 
   // Selected Spill Feature
   const selectedSpillFeature = useMemo<SpillGeoFeature | null>(() => {

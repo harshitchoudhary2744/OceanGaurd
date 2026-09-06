@@ -488,30 +488,11 @@ def download_forensic_audit_pdf(spill_id: str):
 
 @app.get("/api/v1/vessels")
 def get_vessels_fleet():
-    """Returns list of monitored vessels with latest telemetry state"""
-    merged_vessels = {}
-    for v in SYNTHETIC_AIS.get("vessels", []):
-        merged_vessels[v["mmsi"]] = dict(v)
-    for v in _FIXTURE_DATA.get("vessels", []):
-        merged_vessels[v["mmsi"]] = {**merged_vessels.get(v["mmsi"], {}), **v}
-
-    telemetry = SYNTHETIC_AIS.get("telemetry", []) + _FIXTURE_DATA.get("telemetry", [])
-
-    results = []
-    for mmsi, v in merged_vessels.items():
-        v_points = [t for t in telemetry if t["mmsi"] == mmsi]
-        latest_point = v_points[-1] if v_points else None
-        results.append({
-            **v,
-            "current_position": {
-                "latitude": latest_point.get("latitude", 33.259026) if latest_point else 33.259026,
-                "longitude": latest_point.get("longitude", 33.057756) if latest_point else 33.057756,
-                "speed_knots": latest_point.get("speed", latest_point.get("speed_knots", 14.0)) if latest_point else 14.0,
-                "heading_degrees": latest_point.get("heading", latest_point.get("heading_degrees", 128.0)) if latest_point else 128.0,
-                "timestamp": latest_point.get("timestamp") if latest_point else None,
-            }
-        })
-    return {"vessels": results}
+    """Returns list of monitored vessels with latest telemetry state (10 distinct vessels)"""
+    vessels = _FIXTURE_DATA.get("vessels", [])
+    if not vessels and SYNTHETIC_AIS.get("vessels"):
+        vessels = SYNTHETIC_AIS["vessels"]
+    return {"vessels": vessels}
 
 
 @app.get("/api/v1/metocean")
@@ -706,27 +687,19 @@ async def websocket_telemetry_feed(websocket: WebSocket):
             await asyncio.sleep(2.0)
             tick_counter += 1
             
-            # Simulated micro-movement for active vessels
+            # Real-time telemetry feed for the 10 monitored vessels
             ticks = []
             for v in _FIXTURE_DATA.get("vessels", []):
-                mmsi = v["mmsi"]
-                v_pts = [t for t in _FIXTURE_DATA.get("telemetry", []) if t["mmsi"] == mmsi]
-                if v_pts:
-                    last_pt = v_pts[-1]
-                    # Micro advance along heading
-                    hdg_rad = (last_pt["heading_degrees"] * 3.14159) / 180.0
-                    d_lon = 0.0003 * math.sin(hdg_rad)
-                    d_lat = 0.0003 * math.cos(hdg_rad)
-                    
-                    ticks.append({
-                        "mmsi": mmsi,
-                        "name": v["name"],
-                        "longitude": round(last_pt["longitude"] + d_lon, 6),
-                        "latitude": round(last_pt["latitude"] + d_lat, 6),
-                        "speed_knots": last_pt["speed_knots"],
-                        "heading_degrees": last_pt["heading_degrees"],
-                        "timestamp": datetime.utcnow().isoformat() + "Z"
-                    })
+                cur_pos = v.get("current_position", {})
+                ticks.append({
+                    "mmsi": v["mmsi"],
+                    "name": v["name"],
+                    "longitude": cur_pos.get("longitude", 33.1431),
+                    "latitude": cur_pos.get("latitude", 33.2750),
+                    "speed_knots": cur_pos.get("speed_knots", 13.5),
+                    "heading_degrees": cur_pos.get("heading_degrees", 83.0),
+                    "timestamp": datetime.utcnow().isoformat() + "Z"
+                })
 
             await websocket.send_json({
                 "type": "TELEMETRY_TICK",

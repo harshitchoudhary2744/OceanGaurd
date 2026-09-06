@@ -1,189 +1,69 @@
-import json
 import os
+import sys
+import json
 from datetime import datetime, timezone
 
+# Ensure project root is in python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+try:
+    from apps.api.services.synthetic_ais import generate_synthetic_ais, MONITORED_FLEET_WAYPOINTS
+except ImportError:
+    from services.synthetic_ais import generate_synthetic_ais, MONITORED_FLEET_WAYPOINTS
+
+
 def generate_demo_data():
+    """
+    Generate deterministic Eastern Mediterranean / Levantine Basin demo fixture data
+    for the 10 monitored vessels, fully synchronized with tactical map waypoints.
+    """
     base_time = datetime(2019, 1, 1, 3, 42, 35, tzinfo=timezone.utc)
-    
-    # 1. Vessels operating in Eastern Mediterranean / Cyprus Levantine Basin
-    vessels = [
-        {
-            "mmsi": 212000001,
-            "imo_number": 9481234,
-            "name": "MEDITERRANEAN TRADER",
-            "flag": "Malta",
-            "vessel_type": "Very Large Crude Carrier (VLCC)",
-            "length_meters": 315.0,
-            "draught_meters": 15.8,
-            "call_sign": "9HA4211",
-            "destination": "CYPRUS OFFSHORE TRANSIT",
-            "current_position": {
-                "latitude": 33.285,
-                "longitude": 33.130,
-                "speed_knots": 13.5,
-                "heading_degrees": 95.0,
-                "timestamp": base_time.isoformat()
-            }
-        },
-        {
-            "mmsi": 209123000,
-            "imo_number": 9512345,
-            "name": "LEVANT STAR",
-            "flag": "Cyprus",
-            "vessel_type": "Container Ship",
-            "length_meters": 295.0,
-            "draught_meters": 13.5,
-            "call_sign": "5BKA2",
-            "destination": "LIMASSOL COMMERCIAL PORT",
-            "current_position": {
-                "latitude": 33.320,
-                "longitude": 33.080,
-                "speed_knots": 14.2,
-                "heading_degrees": 35.0,
-                "timestamp": base_time.isoformat()
-            }
-        },
-        {
-            "mmsi": 239456000,
-            "imo_number": 9623456,
-            "name": "AEGEAN VOYAGER",
-            "flag": "Greece",
-            "vessel_type": "Bulk Carrier",
-            "length_meters": 225.0,
-            "draught_meters": 11.8,
-            "call_sign": "SVXY",
-            "destination": "PORT SAID ANCHORAGE",
-            "current_position": {
-                "latitude": 33.240,
-                "longitude": 33.220,
-                "speed_knots": 12.5,
-                "heading_degrees": 110.0,
-                "timestamp": base_time.isoformat()
-            }
-        },
-        {
-            "mmsi": 212789000,
-            "imo_number": 9734567,
-            "name": "AKROTIRI BREEZE",
-            "flag": "Cyprus",
-            "vessel_type": "Product Tanker",
-            "length_meters": 185.0,
-            "draught_meters": 9.5,
-            "call_sign": "5BAK7",
-            "destination": "VASILIKO OIL TERMINAL",
-            "current_position": {
-                "latitude": 33.290,
-                "longitude": 32.980,
-                "speed_knots": 11.0,
-                "heading_degrees": 285.0,
-                "timestamp": base_time.isoformat()
-            }
-        },
-        {
-            "mmsi": 212999000,
-            "imo_number": 9899001,
-            "name": "CYPRUS POLICE PATROL / EMSA",
-            "flag": "Cyprus",
-            "vessel_type": "Pollution Control Vessel",
-            "length_meters": 65.0,
-            "draught_meters": 4.2,
-            "call_sign": "5BCP1",
-            "destination": "DARTIS INCIDENT PATROL",
-            "current_position": {
-                "latitude": 33.270,
-                "longitude": 33.090,
-                "speed_knots": 18.0,
-                "heading_degrees": 220.0,
-                "timestamp": base_time.isoformat()
-            }
-        }
-    ]
+    ais_data = generate_synthetic_ais()
 
-    # 2. Kinematic Telemetry
-    telemetry = [
-        {
-            "mmsi": 212000001,
-            "timestamp": "2018-12-31T21:42:35+00:00",
-            "latitude": 33.240,
-            "longitude": 32.850,
-            "speed_knots": 13.8,
-            "heading_degrees": 95.0,
-            "nav_status": "Under way using engine"
-        },
-        {
-            "mmsi": 212000001,
-            "timestamp": "2019-01-01T00:42:35+00:00",
-            "latitude": 33.255,
-            "longitude": 32.950,
-            "speed_knots": 13.8,
-            "heading_degrees": 95.0,
-            "nav_status": "Under way using engine"
-        },
-        {
-            "mmsi": 212000001,
-            "timestamp": "2019-01-01T03:00:35+00:00",
-            "latitude": 33.259026,
-            "longitude": 33.057756,
-            "speed_knots": 5.4,
-            "heading_degrees": 95.0,
-            "nav_status": "Under way using engine"
-        },
-        {
-            "mmsi": 212000001,
-            "timestamp": "2019-01-01T03:42:35+00:00",
-            "latitude": 33.285,
-            "longitude": 33.130,
-            "speed_knots": 13.5,
-            "heading_degrees": 95.0,
-            "nav_status": "Under way using engine"
-        },
-        {
-            "mmsi": 209123000,
-            "timestamp": "2018-12-31T21:42:35+00:00",
-            "latitude": 33.050,
-            "longitude": 32.920,
-            "speed_knots": 14.5,
-            "heading_degrees": 35.0,
-            "nav_status": "Under way using engine"
-        },
-        {
-            "mmsi": 209123000,
-            "timestamp": "2019-01-01T00:42:35+00:00",
-            "latitude": 33.180,
-            "longitude": 33.000,
-            "speed_knots": 14.5,
-            "heading_degrees": 35.0,
-            "nav_status": "Under way using engine"
-        },
-        {
-            "mmsi": 209123000,
-            "timestamp": "2019-01-01T03:42:35+00:00",
-            "latitude": 33.320,
-            "longitude": 33.080,
-            "speed_knots": 14.2,
-            "heading_degrees": 35.0,
-            "nav_status": "Under way using engine"
-        }
-    ]
+    # 1. Format 10 Monitored Vessels with exact t=0 positions
+    vessels = []
+    for v in ais_data["vessels"]:
+        vessels.append({
+            "mmsi": v["mmsi"],
+            "imo_number": v["imo_number"],
+            "name": v["name"],
+            "flag": v["flag"],
+            "vessel_type": v["vessel_type"],
+            "length_meters": v["length_meters"],
+            "draught_meters": v["draught_meters"],
+            "call_sign": v["call_sign"],
+            "destination": v["destination"],
+            "cargo_type": v.get("cargo_type", "General Cargo"),
+            "current_position": {
+                "latitude": v["lat"],
+                "longitude": v["lon"],
+                "speed_knots": v["speed"],
+                "heading_degrees": v["heading"],
+                "timestamp": base_time.isoformat()
+            }
+        })
 
-    # 3. DARTIS ow-0001 Benchmark Oil Spill
+    # 2. Kinematic Telemetry (250 points across 6h lookback window)
+    telemetry = ais_data["telemetry"]
+
+    # 3. Benchmark Oil Spill Incident (DARTIS ow-0001)
     spills = [
         {
             "id": "DARTIS-ow-0001",
-            "name": "Cyprus Levantine Basin - DARTIS Benchmark Discharge (ow-0001.jpg)",
+            "name": "DARTIS Eastern Mediterranean Benchmark (ow-0001.jpg)",
             "detection_timestamp": "2019-01-01T03:42:35+00:00",
             "area_sq_km": 0.37,
-            "perimeter_km": 4.8,
-            "confidence_score": 0.988,
-            "segmentation_dice_score": 0.962,
-            "oil_likelihood_score": 0.952,
-            "lookalike_score": 0.048,
+            "perimeter_km": 3.82,
+            "confidence_score": 0.982257,
+            "oil_likelihood_score": 0.982257,
+            "lookalike_score": 0.017743,
             "damping_ratio_db": 8.9,
             "source_scene": "ow-0001.jpg",
             "status": "ACTIVE",
             "center": [33.05775642, 33.25902604],
             "centroid": [33.25902604, 33.05775642],
-            "estimated_discharge_liters": 92000,
+            "estimated_discharge_liters": 3975,
             "slick_type": "Heavy Fuel Oil (DARTIS Benchmark OW-0001)",
             "polygon_coordinates": [
                 [33.032, 33.245],
@@ -205,14 +85,14 @@ def generate_demo_data():
             "vessel_mmsi": 212000001,
             "vessel_name": "MEDITERRANEAN TRADER",
             "correlation_score": 0.984,
-            "cpa_distance_nm": 0.12,
-            "time_discrepancy_minutes": 8.0,
+            "cpa_distance_nm": 0.08,
+            "time_discrepancy_minutes": 0.0,
             "speed_profile_drop_detected": True,
             "ais_gap_detected": True,
             "anomaly_reasons": [
-                "Kinematic back-projection intercept at discharge origin (CPA 0.12 NM)",
-                "Transit speed anomaly: dropped from 13.8 kts to 5.4 kts inside benchmark polygon",
-                "AIS gap detected during passage through radar dark-spot origin"
+                "Direct trajectory overpass at discharge locus (CPA 0.08 NM at T-42 min)",
+                "Transit speed anomaly: dropped from 13.5 kts down to 5.4 kts inside benchmark origin",
+                "Deliberate 42-minute AIS transponder blackout matching exact discharge window"
             ],
             "risk_level": "CRITICAL"
         }
@@ -225,13 +105,60 @@ def generate_demo_data():
         "correlations": correlations
     }
 
-    out_path = os.path.join(os.path.dirname(__file__), "..", "db", "demo_fixture.json")
+    out_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "db", "demo_fixture.json"))
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(fixture_data, f, indent=2)
     print(f"Generated Cyprus Levantine Basin demo fixture data at: {out_path}")
 
+    # Seed Database if available
+    try:
+        from apps.api.db.session import SessionLocal, is_db_available
+        from apps.api.db.models import Vessel, AISTelemetry, Correlation
+        from geoalchemy2.shape import from_shape
+        from shapely.geometry import Point
+
+        if is_db_available():
+            db = SessionLocal()
+            try:
+                db.query(Correlation).delete()
+                db.query(AISTelemetry).delete()
+                db.query(Vessel).delete()
+                db.commit()
+
+                for v in ais_data["vessels"]:
+                    db.add(Vessel(
+                        mmsi=v["mmsi"],
+                        name=v["name"],
+                        flag=v["flag"],
+                        vessel_type=v["vessel_type"],
+                        length_meters=v.get("length_meters", 200.0),
+                        call_sign=v.get("call_sign", "VSSL"),
+                        destination=v.get("destination", "MEDITERRANEAN"),
+                    ))
+                db.commit()
+
+                for t in ais_data["telemetry"]:
+                    pt = Point(t["longitude"], t["latitude"])
+                    geom = from_shape(pt, srid=4326)
+                    dt = datetime.fromisoformat(t["timestamp"])
+                    db.add(AISTelemetry(
+                        mmsi=t["mmsi"],
+                        timestamp=dt,
+                        location=geom,
+                        speed_knots=t["speed_knots"],
+                        heading_degrees=t["heading_degrees"],
+                    ))
+                db.commit()
+                print("Seeded live database with 10 vessels and 250 telemetry records.")
+            finally:
+                db.close()
+    except Exception as db_err:
+        print(f"DB seeding skipped: {db_err}")
+
+
 def seed_database_and_fixtures():
     generate_demo_data()
+
 
 generate_mumbai_demo_data = generate_demo_data
 
