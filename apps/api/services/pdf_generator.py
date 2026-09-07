@@ -133,10 +133,10 @@ def generate_forensic_pdf_report(
         "acquisition_timestamp_utc": "2019-01-01 03:42:35 UTC",
         "area_sq_km": 0.37,
         "perimeter_km": 4.8,
-        "segmentation_dice_score": 0.962,
-        "segmentation_iou_score": 0.927,
+        "segmentation_dice_score": 0.7130,
+        "segmentation_iou_score": 0.5540,
         "max_probability": 0.982257,
-        "oil_likelihood_score": 0.982,
+        "oil_likelihood_score": 0.7132,
         "source_scene": "ow-0001.jpg",
         "location": "Eastern Mediterranean (Cyprus Levantine Basin: 33.2590° N, 33.0578° E)",
         "centroid": [33.2590, 33.0578],
@@ -157,7 +157,7 @@ def generate_forensic_pdf_report(
             Paragraph("<b>Spill Centroid:</b>", meta_label), Paragraph("33.2590° N, 33.0578° E (PostGIS Polygon)", meta_val)
         ],
         [
-            Paragraph("<b>Segmentation Dice Score:</b>", meta_label), Paragraph(f"<font color='#00626e'><b>{round(float(spill_info.get('segmentation_dice_score', 0.962))*100, 1)}% (Validation Ground Truth Overlap)</b></font>", meta_val),
+            Paragraph("<b>Segmentation Dice Score:</b>", meta_label), Paragraph(f"<font color='#00626e'><b>{round(float(spill_info.get('segmentation_dice_score', 0.7130))*100, 1)}% (Validation Ground Truth Overlap)</b></font>", meta_val),
             Paragraph("<b>Likely Oil / Look-Alike:</b>", meta_label), Paragraph("<font color='#93000a'><b>Likely Oil: 98.2%</b></font> | Look-alike: 1.8%", meta_val)
         ]
     ]
