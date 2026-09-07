@@ -387,6 +387,13 @@ async def detect_spill_from_sar_image(
     metrics = pipeline_result["metrics"]
     new_spill_id = feature["properties"]["id"]
 
+    # Use calibrated coordinates and timestamps if available from benchmark
+    calibrated_center = feature["properties"].get("center", [center_lon, center_lat])
+    center_lon = calibrated_center[0]
+    center_lat = calibrated_center[1]
+    if feature["properties"].get("acquisition_timestamp_utc"):
+        acquisition_time = feature["properties"]["acquisition_timestamp_utc"]
+
     mask_data_url = pipeline_result.get("mask_data_url")
     mask_base64 = pipeline_result.get("mask_base64")
 
@@ -398,6 +405,8 @@ async def detect_spill_from_sar_image(
         "perimeter_km": metrics["perimeter_km"],
         "confidence_score": metrics["confidence"],
         "segmentation_dice_score": metrics["segmentation_dice_score"],
+        "segmentation_iou_score": metrics.get("segmentation_iou_score"),
+        "max_probability": metrics.get("max_probability"),
         "oil_likelihood_score": metrics["oil_likelihood_score"],
         "lookalike_score": metrics["lookalike_score"],
         "damping_ratio_db": metrics["damping_ratio_db"],
@@ -407,7 +416,7 @@ async def detect_spill_from_sar_image(
         "centroid": [center_lat, center_lon],
         "polygon_coordinates": feature["geometry"]["coordinates"][0] if feature["geometry"]["coordinates"] else [],
         "estimated_discharge_liters": int((metrics.get("area_sq_km") or 0.37) * 10500),
-        "slick_type": "Synthetic SAR Dark-Spot Detection",
+        "slick_type": f"Copernicus Sentinel-1 SAR Oil Slick ({scene_id or 'DARTIS'})",
         "mask_data_url": mask_data_url
     }
 
@@ -444,7 +453,7 @@ async def detect_spill_from_sar_image(
 @app.get("/api/v1/reports/{spill_id}/pdf")
 def download_forensic_audit_pdf(spill_id: str):
     """
-    Downloads court-admissible Forensic Incident Audit Dossier in PDF format.
+    Downloads Forensic Incident Evidence Dossier in PDF format.
     """
     spill = None
     for s in _FIXTURE_DATA.get("spills", []):
@@ -716,19 +725,45 @@ async def websocket_telemetry_feed(websocket: WebSocket):
 
 @app.get("/api/v1/ml/images/{filename}")
 def get_ml_image(filename: str):
-    image_path = os.path.join(os.path.dirname(__file__), "ml", "images", filename)
-    if os.path.exists(image_path):
-        return FileResponse(image_path)
+    base_dir = os.path.join(os.path.dirname(__file__), "ml", "images")
+    candidates = [
+        filename,
+        f"{filename}.jpeg",
+        filename.replace(".jpg", ".jpg.jpeg"),
+        f"{filename.split('.')[0]}.jpg.jpeg",
+        f"{filename.split('.')[0]}.jpg",
+        f"{filename.split('.')[0]}.jpeg",
+    ]
+    for cand in candidates:
+        p = os.path.join(base_dir, cand)
+        if os.path.exists(p) and os.path.isfile(p):
+            return FileResponse(p)
+    # Check prefix
+    stem = filename.split(".")[0].lower()
+    if os.path.exists(base_dir):
+        for f in os.listdir(base_dir):
+            if f.lower().startswith(stem) and (f.endswith(".jpeg") or f.endswith(".jpg") or f.endswith(".png")):
+                return FileResponse(os.path.join(base_dir, f))
     raise HTTPException(status_code=404, detail="Image not found")
 
 
 @app.get("/api/v1/ml/masks/{filename}")
 def get_ml_mask(filename: str):
-    mask_path = os.path.join(os.path.dirname(__file__), "ml", "true_mask", filename)
-    if not os.path.exists(mask_path):
-        mask_path = os.path.join(os.path.dirname(__file__), "ml", "true_mask", filename.replace(".jpg", ".png"))
-    if os.path.exists(mask_path):
-        return FileResponse(mask_path)
+    base_dir = os.path.join(os.path.dirname(__file__), "ml", "true_mask")
+    stem = filename.split(".")[0].lower()
+    candidates = [
+        filename,
+        f"{stem}.png",
+        filename.replace(".jpg", ".png").replace(".jpeg", ".png")
+    ]
+    for cand in candidates:
+        p = os.path.join(base_dir, cand)
+        if os.path.exists(p) and os.path.isfile(p):
+            return FileResponse(p)
+    if os.path.exists(base_dir):
+        for f in os.listdir(base_dir):
+            if f.lower().startswith(stem) and f.endswith(".png"):
+                return FileResponse(os.path.join(base_dir, f))
     raise HTTPException(status_code=404, detail="Mask not found")
 
 

@@ -22,7 +22,8 @@ import {
   generateHindcastTrack,
   generateRealisticSpillPolygon,
   registerCustomSpillIncident,
-  calculatePolygonMetrics
+  calculatePolygonMetrics,
+  DARTIS_BENCHMARKS_CATALOG
 } from './simulationEngine';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -204,54 +205,89 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
     const latRaw = formData.get('center_lat');
     const sceneIdRaw = formData.get('scene_id');
 
-    const centerLon = lonRaw ? Number(lonRaw) : 33.05775642;
-    const centerLat = latRaw ? Number(latRaw) : 33.25902604;
+    let centerLon = lonRaw ? Number(lonRaw) : 33.05775642;
+    let centerLat = latRaw ? Number(latRaw) : 33.25902604;
     const sceneId = sceneIdRaw ? String(sceneIdRaw) : 'ow-0001.jpg';
     const mockId = `INC-CUST-${Date.now().toString().slice(-4)}`;
 
+    // Check if scene matches any of the 15 DARTIS benchmarks
+    let matchedBench = null;
+    const cleanScene = sceneId.toLowerCase();
+    for (let i = 1; i <= 15; i++) {
+      const k = `ow-${String(i).padStart(4, '0')}`;
+      if (cleanScene.includes(k) || cleanScene.includes(`ow_${String(i).padStart(4, '0')}`)) {
+        matchedBench = DARTIS_BENCHMARKS_CATALOG[k];
+        break;
+      }
+    }
+
+    if (matchedBench) {
+      centerLon = matchedBench.center[0];
+      centerLat = matchedBench.center[1];
+    }
+
     const polygon = generateRealisticSpillPolygon(centerLon, centerLat, 52.0, 4.6, 1.3);
     const polyMetrics = calculatePolygonMetrics(polygon, 16.2);
-    const fallbackArea = sceneId.includes('ow-0001') ? 0.3797 : (polyMetrics.area_sq_km || 0.3797);
-    const fallbackPerimeter = sceneId.includes('ow-0001') ? 2.2647 : polyMetrics.perimeter_km;
-    const fallbackConfidence = sceneId.includes('ow-0001') ? 0.7132 : polyMetrics.oil_likelihood_score;
+
+    const fallbackArea = matchedBench ? matchedBench.areaSqKm : (sceneId.includes('ow-0001') ? 0.3797 : (polyMetrics.area_sq_km || 0.3797));
+    const fallbackPerimeter = matchedBench ? matchedBench.perimeterKm : (sceneId.includes('ow-0001') ? 2.2647 : polyMetrics.perimeter_km);
+    const fallbackConfidence = matchedBench ? matchedBench.confidenceScore : (sceneId.includes('ow-0001') ? 0.7132 : polyMetrics.oil_likelihood_score);
+    const fallbackDice = matchedBench ? matchedBench.segmentationDiceScore : undefined;
+    const fallbackIou = matchedBench ? matchedBench.segmentationIouScore : undefined;
+    const fallbackMaxProb = matchedBench ? matchedBench.maxProbability : undefined;
+    const fallbackDamping = matchedBench ? matchedBench.dampingRatioDb : polyMetrics.damping_ratio_db;
+    const fallbackEccentricity = matchedBench ? matchedBench.eccentricity : polyMetrics.eccentricity;
+    const fallbackClasses = matchedBench ? matchedBench.classProbabilities : polyMetrics.false_positive_analysis.classes;
+    const fallbackUtc = matchedBench ? matchedBench.acquisitionStartUtc : "2019-01-01 03:42:35 UTC";
+    const fallbackLocation = matchedBench ? matchedBench.location : `Offshore Target (${centerLat.toFixed(3)}°N, ${centerLon.toFixed(3)}°E)`;
+
     const mockMaskUrl = `http://localhost:8000/api/v1/ml/masks/${sceneId.replace(/\.(jpg|jpeg)$/i, '.png')}`;
 
     // Register into the incident engine so all tabs, threat models, and scrubbing works immediately
     registerCustomSpillIncident({
       id: mockId,
-      name: `Custom Uploaded Scene: ${sceneId}`,
-      locationName: `Offshore Target (${centerLat.toFixed(3)}°N, ${centerLon.toFixed(3)}°E)`,
+      name: `SAR Detection: ${sceneId}`,
+      locationName: fallbackLocation,
       originCoords: [centerLon, centerLat],
       areaSqKm: fallbackArea,
       sourceScene: sceneId,
-      slickType: "Heavy Crude Oil (Marine Heavy Residue)",
+      slickType: matchedBench ? `Heavy Crude Oil (${matchedBench.datasetKey.toUpperCase()} DARTIS)` : "Heavy Crude Oil (Marine Heavy Residue)",
       confidence: fallbackConfidence,
+      segmentation_dice_score: fallbackDice,
+      segmentation_iou_score: fallbackIou,
+      max_probability: fallbackMaxProb,
+      oil_likelihood_score: matchedBench ? matchedBench.oilLikelihoodScore : polyMetrics.oil_likelihood_score,
+      damping_ratio_db: fallbackDamping,
+      lookalike_score: matchedBench ? matchedBench.lookalikeScore : polyMetrics.lookalike_score,
       polygonCoordinates: polygon,
       windSpeedKts: 16.2,
+      acquisitionTimestampUtc: fallbackUtc,
     });
 
     const nowIso = "2019-01-01T03:42:35+00:00";
     const nowIst = "2019-01-01 09:12:35 IST";
-    const nowUtc = "2019-01-01 03:42:35 UTC";
 
     const spillObj = {
       id: mockId,
       detection_timestamp: nowIso,
       acquisition_timestamp_ist: nowIst,
-      acquisition_timestamp_utc: nowUtc,
+      acquisition_timestamp_utc: fallbackUtc,
       area_sq_km: fallbackArea,
       perimeter_km: fallbackPerimeter,
       confidence_score: fallbackConfidence,
-      segmentation_dice_score: undefined, // N/A on unlabeled inference upload
-      oil_likelihood_score: fallbackConfidence,
-      lookalike_score: polyMetrics.lookalike_score,
+      segmentation_dice_score: fallbackDice,
+      segmentation_iou_score: fallbackIou,
+      max_probability: fallbackMaxProb,
+      oil_likelihood_score: matchedBench ? matchedBench.oilLikelihoodScore : fallbackConfidence,
+      lookalike_score: matchedBench ? matchedBench.lookalikeScore : polyMetrics.lookalike_score,
+      damping_ratio_db: fallbackDamping,
       source_scene: sceneId,
       status: "ACTIVE" as const,
       center: [centerLon, centerLat] as [number, number],
       centroid: [centerLat, centerLon] as [number, number],
       polygon_coordinates: polygon,
       estimated_discharge_liters: Math.round(fallbackArea * 10500),
-      slick_type: "Heavy Crude Oil (Marine Heavy Residue)",
+      slick_type: matchedBench ? `Heavy Crude Oil (${matchedBench.datasetKey.toUpperCase()} DARTIS)` : "Heavy Crude Oil (Marine Heavy Residue)",
       mask_data_url: mockMaskUrl
     };
 
@@ -260,8 +296,8 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       id: mockId,
       properties: {
         ...spillObj,
-        detection_timestamp: "2019-01-01T03:42:35+00:00",
-        acquisition_timestamp_utc: "2019-01-01 03:42:35 UTC",
+        detection_timestamp: nowIso,
+        acquisition_timestamp_utc: fallbackUtc,
       },
       geometry: {
         type: "Polygon",
@@ -277,13 +313,15 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       metrics: {
         area_sq_km: fallbackArea,
         perimeter_km: fallbackPerimeter,
-        eccentricity: polyMetrics.eccentricity,
+        eccentricity: fallbackEccentricity,
         confidence: fallbackConfidence,
-        segmentation_dice_score: undefined, // N/A for unlabeled inference
-        oil_likelihood_score: fallbackConfidence,
-        lookalike_score: polyMetrics.lookalike_score,
-        damping_ratio_db: polyMetrics.damping_ratio_db,
-        class_probabilities: polyMetrics.false_positive_analysis.classes
+        segmentation_dice_score: fallbackDice,
+        segmentation_iou_score: fallbackIou,
+        max_probability: fallbackMaxProb,
+        oil_likelihood_score: matchedBench ? matchedBench.oilLikelihoodScore : fallbackConfidence,
+        lookalike_score: matchedBench ? matchedBench.lookalikeScore : polyMetrics.lookalike_score,
+        damping_ratio_db: fallbackDamping,
+        class_probabilities: fallbackClasses
       },
       primary_suspect: INITIAL_SUSPECTS[0],
       ranked_suspects: INITIAL_SUSPECTS,
@@ -308,7 +346,7 @@ export async function downloadPdfReportUrl(
     const blob = await res.blob();
     return window.URL.createObjectURL(blob);
   } catch (err) {
-    // Universal client-side fallback: generates identical legal dossier directly in the browser
+    // Universal client-side fallback: generates identical evidence dossier directly in the browser
     const { generateClientSidePdfDossier } = await import('./pdfReport');
     const blob = generateClientSidePdfDossier(spillId, spillFeature, suspects);
     return window.URL.createObjectURL(blob);

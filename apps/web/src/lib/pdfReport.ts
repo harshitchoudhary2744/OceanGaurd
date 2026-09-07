@@ -237,14 +237,14 @@ export function generateClientSidePdfDossier(
 
   y += 5.5;
 
-  // Section 5: Legal Officer Digital Certification
+  // Section 5: Technical Evidence Officer Digital Certification
   doc.setDrawColor(200, 210, 220);
   doc.roundedRect(14, y, 182, 26, 2, 2, 'S');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(20, 30, 50);
-  doc.text('5. DIGITAL FORENSIC OFFICER CERTIFICATION & LEGAL ATTESTATION', 18, y + 5.5);
+  doc.text('5. DIGITAL FORENSIC OFFICER CERTIFICATION & EVIDENCE ATTESTATION', 18, y + 5.5);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);

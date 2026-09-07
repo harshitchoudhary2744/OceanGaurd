@@ -229,7 +229,7 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-cyan-500 text-slate-950 font-mono text-xs font-bold hover:bg-cyan-400 transition-all shadow-md"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Export Legal PDF</span>
+              <span>Export Evidence PDF</span>
             </button>
           </div>
         </div>

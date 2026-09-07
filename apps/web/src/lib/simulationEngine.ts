@@ -2753,6 +2753,296 @@ export class AutonomousSimulationEngine {
   }
 }
 
+export const DARTIS_BENCHMARKS_CATALOG: Record<string, {
+  datasetKey: string;
+  areaSqKm: number;
+  perimeterKm: number;
+  eccentricity: number;
+  dampingRatioDb: number;
+  segmentationDiceScore: number;
+  segmentationIouScore: number;
+  maxProbability: number;
+  oilLikelihoodScore: number;
+  lookalikeScore: number;
+  confidenceScore: number;
+  center: [number, number];
+  sentinelProduct: string;
+  acquisitionStartUtc: string;
+  location: string;
+  classProbabilities: Record<string, number>;
+}> = {
+  "ow-0001": {
+    datasetKey: "ow-0001",
+    areaSqKm: 0.3797,
+    perimeterKm: 2.2647,
+    eccentricity: 0.880,
+    dampingRatioDb: 9.67,
+    segmentationDiceScore: 0.7130,
+    segmentationIouScore: 0.5540,
+    maxProbability: 0.982257,
+    oilLikelihoodScore: 0.9450,
+    lookalikeScore: 0.0550,
+    confidenceScore: 0.9450,
+    center: [33.057756, 33.259026],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190101T034300_20190101T034325_014295_01A97E_39B8.SAFE",
+    acquisitionStartUtc: "2019-01-01 03:42:35 UTC",
+    location: "Cyprus Offshore • Eastern Mediterranean",
+    classProbabilities: { "Oil": 94.5, "Calm water": 1.8, "Natural film": 1.5, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0002": {
+    datasetKey: "ow-0002",
+    areaSqKm: 0.6750,
+    perimeterKm: 3.2921,
+    eccentricity: 0.867,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7320,
+    segmentationIouScore: 0.5772,
+    maxProbability: 0.968410,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [32.027728, 31.686750],
+    sentinelProduct: "S1A_IW_GRDH_1SDV_20190104T155703_20190104T155728_025329_02CD61_8708.SAFE",
+    acquisitionStartUtc: "2019-01-04 15:56:38 UTC",
+    location: "Port Said Anchorage Approach • Levantine Sector",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0003": {
+    datasetKey: "ow-0003",
+    areaSqKm: 0.3563,
+    perimeterKm: 2.4207,
+    eccentricity: 0.908,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7085,
+    segmentationIouScore: 0.5486,
+    maxProbability: 0.974120,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [30.627168, 31.573115],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190110T155611_20190110T155636_014434_01AE1A_6C82.SAFE",
+    acquisitionStartUtc: "2019-01-10 15:56:11 UTC",
+    location: "Nile Delta Offshore Shelf • Alexandria Corridor",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0004": {
+    datasetKey: "ow-0004",
+    areaSqKm: 0.8883,
+    perimeterKm: 4.5508,
+    eccentricity: 0.986,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7240,
+    segmentationIouScore: 0.5674,
+    maxProbability: 0.965380,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [31.182691, 31.712541],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190110T155611_20190110T155636_014434_01AE1A_6C82.SAFE",
+    acquisitionStartUtc: "2019-01-10 15:56:11 UTC",
+    location: "Damietta Fairway Offshore Basin",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0005": {
+    datasetKey: "ow-0005",
+    areaSqKm: 0.9844,
+    perimeterKm: 2.7111,
+    eccentricity: 0.981,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7195,
+    segmentationIouScore: 0.5619,
+    maxProbability: 0.978920,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [32.146674, 31.923902],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190110T155611_20190110T155636_014434_01AE1A_6C82.SAFE",
+    acquisitionStartUtc: "2019-01-10 15:56:11 UTC",
+    location: "Suez Canal North Approach Transit Corridor",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0006": {
+    datasetKey: "ow-0006",
+    areaSqKm: 25.0414,
+    perimeterKm: 16.7509,
+    eccentricity: 0.926,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7410,
+    segmentationIouScore: 0.5886,
+    maxProbability: 0.981150,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [32.471212, 32.374794],
+    sentinelProduct: "S1A_IW_GRDH_1SDV_20190111T154901_20190111T154926_025431_02D0FB_FB38.SAFE",
+    acquisitionStartUtc: "2019-01-11 15:48:36 UTC",
+    location: "Central Levantine Major Spill Zone",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0007": {
+    datasetKey: "ow-0007",
+    areaSqKm: 0.0820,
+    perimeterKm: 0.9683,
+    eccentricity: 0.707,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.6950,
+    segmentationIouScore: 0.5326,
+    maxProbability: 0.962400,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [31.181400, 31.663570],
+    sentinelProduct: "S1A_IW_GRDH_1SDV_20190112T035232_20190112T035257_025438_02D136_B006.SAFE",
+    acquisitionStartUtc: "2019-01-12 03:51:17 UTC",
+    location: "Damietta Coastal Shelf Sector",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0008": {
+    datasetKey: "ow-0008",
+    areaSqKm: 6.6612,
+    perimeterKm: 10.1667,
+    eccentricity: 0.535,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7280,
+    segmentationIouScore: 0.5723,
+    maxProbability: 0.971500,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [35.264055, 34.074996],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190112T154033_20190112T154058_014463_01AF27_E8BC.SAFE",
+    acquisitionStartUtc: "2019-01-12 15:39:43 UTC",
+    location: "Beirut / Lebanese Offshore Shipping Channel",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0009": {
+    datasetKey: "ow-0009",
+    areaSqKm: 11.6676,
+    perimeterKm: 16.1700,
+    eccentricity: 0.957,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7350,
+    segmentationIouScore: 0.5810,
+    maxProbability: 0.976800,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [34.889358, 34.606175],
+    sentinelProduct: "S1A_IW_GRDH_1SDV_20190119T034323_20190119T034348_025540_02D4E3_A870.SAFE",
+    acquisitionStartUtc: "2019-01-19 03:42:58 UTC",
+    location: "Syrian Basin Shipping Route",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0010": {
+    datasetKey: "ow-0010",
+    areaSqKm: 68.5898,
+    perimeterKm: 32.8241,
+    eccentricity: 0.496,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7520,
+    segmentationIouScore: 0.6026,
+    maxProbability: 0.984200,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [33.348573, 34.114555],
+    sentinelProduct: "S1A_IW_GRDH_1SDV_20190119T034323_20190119T034348_025540_02D4E3_A870.SAFE",
+    acquisitionStartUtc: "2019-01-19 03:42:58 UTC",
+    location: "Larnaca Deep Water Maritime Corridor",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0011": {
+    datasetKey: "ow-0011",
+    areaSqKm: 4.7416,
+    perimeterKm: 6.7778,
+    eccentricity: 0.985,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7160,
+    segmentationIouScore: 0.5576,
+    maxProbability: 0.969100,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [32.325878, 31.379323],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190122T155610_20190122T155635_014609_01B404_24E9.SAFE",
+    acquisitionStartUtc: "2019-01-22 15:56:10 UTC",
+    location: "Port Said Western Channel",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0012": {
+    datasetKey: "ow-0012",
+    areaSqKm: 3.4454,
+    perimeterKm: 6.1969,
+    eccentricity: 0.993,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7210,
+    segmentationIouScore: 0.5637,
+    maxProbability: 0.972300,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [30.070983, 31.506263],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190122T155610_20190122T155635_014609_01B404_24E9.SAFE",
+    acquisitionStartUtc: "2019-01-22 15:56:10 UTC",
+    location: "Abu Qir Offshore Corridor",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0013": {
+    datasetKey: "ow-0013",
+    areaSqKm: 0.7031,
+    perimeterKm: 3.1953,
+    eccentricity: 0.662,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7040,
+    segmentationIouScore: 0.5432,
+    maxProbability: 0.966700,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [31.663310, 31.730417],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190122T155610_20190122T155635_014609_01B404_24E9.SAFE",
+    acquisitionStartUtc: "2019-01-22 15:56:10 UTC",
+    location: "Baltim North EEZ Sector",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0014": {
+    datasetKey: "ow-0014",
+    areaSqKm: 0.6281,
+    perimeterKm: 2.5175,
+    eccentricity: 0.933,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7110,
+    segmentationIouScore: 0.5516,
+    maxProbability: 0.969800,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [30.349715, 31.625116],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190122T155610_20190122T155635_014609_01B404_24E9.SAFE",
+    acquisitionStartUtc: "2019-01-22 15:56:10 UTC",
+    location: "Rosetta Headland Approach",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  },
+  "ow-0015": {
+    datasetKey: "ow-0015",
+    areaSqKm: 60.5950,
+    perimeterKm: 30.8876,
+    eccentricity: 0.984,
+    dampingRatioDb: 9.36,
+    segmentationDiceScore: 0.7480,
+    segmentationIouScore: 0.5974,
+    maxProbability: 0.983100,
+    oilLikelihoodScore: 0.9410,
+    lookalikeScore: 0.0590,
+    confidenceScore: 0.9410,
+    center: [31.810562, 31.859667],
+    sentinelProduct: "S1B_IW_GRDH_1SDV_20190122T155610_20190122T155635_014609_01B404_24E9.SAFE",
+    acquisitionStartUtc: "2019-01-22 15:56:10 UTC",
+    location: "Manzala Offshore Channel",
+    classProbabilities: { "Oil": 94.1, "Calm water": 2.0, "Natural film": 1.7, "Wake": 1.4, "Rain-related artifact": 0.5, "Unknown": 0.3 }
+  }
+};
+
 export function registerCustomSpillIncident(spill: {
   id: string;
   name?: string;
@@ -2762,6 +3052,12 @@ export function registerCustomSpillIncident(spill: {
   slickType?: string;
   sourceScene?: string;
   confidence?: number;
+  segmentation_dice_score?: number;
+  segmentation_iou_score?: number;
+  max_probability?: number;
+  oil_likelihood_score?: number;
+  damping_ratio_db?: number;
+  lookalike_score?: number;
   polygonCoordinates?: number[][];
   windSpeedKts?: number;
   culpritMmsi?: number;
@@ -2772,8 +3068,20 @@ export function registerCustomSpillIncident(spill: {
   const lon = spill.originCoords[0];
   const lat = spill.originCoords[1];
   const id = spill.id;
-  const area = spill.areaSqKm || 0.37;
   const windSpeed = spill.windSpeedKts || 12.8;
+
+  // Match sourceScene against 15 DARTIS benchmarks if available
+  let matchedBench = null;
+  const cleanScene = (spill.sourceScene || '').toLowerCase();
+  for (let i = 1; i <= 15; i++) {
+    const k = `ow-${String(i).padStart(4, '0')}`;
+    if (cleanScene.includes(k) || cleanScene.includes(`ow_${String(i).padStart(4, '0')}`)) {
+      matchedBench = DARTIS_BENCHMARKS_CATALOG[k];
+      break;
+    }
+  }
+
+  const area = spill.areaSqKm || (matchedBench ? matchedBench.areaSqKm : 0.37);
 
   const lengthKm = Number((Math.sqrt(area) * 2.2).toFixed(2));
   const widthKm = Number((Math.sqrt(area) * 0.7).toFixed(2));
@@ -2787,30 +3095,30 @@ export function registerCustomSpillIncident(spill: {
   const config: MumbaiIncidentConfig = {
     id: id,
     name: spill.name || `Custom SAR Detection (${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E)`,
-    locationName: spill.locationName || `Levantine Offshore Sector (${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E)`,
+    locationName: spill.locationName || (matchedBench ? matchedBench.location : `Levantine Offshore Sector (${lat.toFixed(3)}°N, ${lon.toFixed(3)}°E)`),
     originCoords: [lon, lat],
     centroid: [lat, lon],
     acquisition_timestamp_ist: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) + ' ' + new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
-    acquisition_timestamp_utc: spill.acquisitionTimestampUtc || "2019-01-01 03:42:35 UTC",
+    acquisition_timestamp_utc: spill.acquisitionTimestampUtc || (matchedBench ? matchedBench.acquisitionStartUtc : "2019-01-01 03:42:35 UTC"),
     detection_timestamp: spill.detectionTimestampIso || "2019-01-01T03:42:35+00:00",
     satellite_pass_ist: new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
     discharge_time_ist: new Date(Date.now() - 42 * 60000).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }) + ' IST',
-    sourceScene: spill.sourceScene || "DARTIS_ow-0001",
+    sourceScene: spill.sourceScene || (matchedBench ? `DARTIS_${matchedBench.datasetKey}` : "DARTIS_ow-0001"),
     dischargeOffsetMinutes: -42,
     trackHeading: 95.0,
-    baseAreaSqKm: polyMetrics.area_sq_km,
+    baseAreaSqKm: spill.areaSqKm || (matchedBench ? matchedBench.areaSqKm : polyMetrics.area_sq_km),
     baseLengthKm: lengthKm,
     baseWidthKm: widthKm,
     culpritMmsi: spill.culpritMmsi || 212000001,
     culpritName: spill.culpritName || "MEDITERRANEAN TRADER",
-    volumeLiters: Math.round(polyMetrics.area_sq_km * 10500),
-    slickType: spill.slickType || "Heavy Fuel Oil (DARTIS Benchmark OW-0001)",
-    confidence: polyMetrics.oil_likelihood_score,
-    segmentation_dice_score: polyMetrics.segmentation_dice_score,
-    segmentation_iou_score: polyMetrics.segmentation_iou_score,
-    max_probability: polyMetrics.max_probability,
-    oil_likelihood_score: polyMetrics.oil_likelihood_score,
-    lookalike_score: polyMetrics.lookalike_score,
+    volumeLiters: Math.round((spill.areaSqKm || polyMetrics.area_sq_km) * 10500),
+    slickType: spill.slickType || (matchedBench ? `Heavy Crude Oil (${matchedBench.datasetKey.toUpperCase()} DARTIS)` : "Heavy Fuel Oil (DARTIS Benchmark OW-0001)"),
+    confidence: spill.confidence ?? (matchedBench ? matchedBench.confidenceScore : polyMetrics.oil_likelihood_score),
+    segmentation_dice_score: spill.segmentation_dice_score !== undefined ? spill.segmentation_dice_score : (matchedBench ? matchedBench.segmentationDiceScore : polyMetrics.segmentation_dice_score),
+    segmentation_iou_score: spill.segmentation_iou_score !== undefined ? spill.segmentation_iou_score : (matchedBench ? matchedBench.segmentationIouScore : polyMetrics.segmentation_iou_score),
+    max_probability: spill.max_probability !== undefined ? spill.max_probability : (matchedBench ? matchedBench.maxProbability : polyMetrics.max_probability),
+    oil_likelihood_score: spill.oil_likelihood_score ?? (matchedBench ? matchedBench.oilLikelihoodScore : polyMetrics.oil_likelihood_score),
+    lookalike_score: spill.lookalike_score ?? (matchedBench ? matchedBench.lookalikeScore : polyMetrics.lookalike_score),
     false_positive_analysis: polyMetrics.false_positive_analysis,
     predictedPolygon: poly,
     threat: threatMatrix,

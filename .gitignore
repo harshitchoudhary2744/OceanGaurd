@@ -25,3 +25,4 @@ postgis_data/
 qdrant_storage/
 scratch/
 apps/api/ml/data/
+*.zip

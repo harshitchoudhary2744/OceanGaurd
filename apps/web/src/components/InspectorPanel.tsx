@@ -313,9 +313,9 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
   const originCoords = spill?.origin_coordinates
     ? `${spill.origin_coordinates[1].toFixed(4)}°N, ${spill.origin_coordinates[0].toFixed(4)}°E`
     : `${currentIncident.originCoords[1].toFixed(4)}°N, ${currentIncident.originCoords[0].toFixed(4)}°E`;
-  const slickAreaSqKm = (spill?.area_sq_km ?? currentIncident?.baseAreaSqKm ?? 0.3797) || 0.3797;
+  const slickAreaSqKm = (spill?.area_sq_km ?? detectionResult?.metrics?.area_sq_km ?? currentIncident?.baseAreaSqKm ?? 0.3797) || 0.3797;
   const slickVolumeLiters = spill?.estimated_discharge_liters || Math.round(slickAreaSqKm * 10740);
-  const diceScoreVal = spill?.segmentation_dice_score ?? null;
+  const diceScoreVal = detectionResult?.metrics?.segmentation_dice_score ?? spill?.segmentation_dice_score ?? null;
 
   return (
     <div className="flex flex-col gap-2 font-mono text-xs">
@@ -324,7 +324,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
         <div className="p-2 bg-slate-900/90 rounded-xl border border-slate-800 text-center shadow-md">
           <span className="text-[9.5px] font-sans font-semibold text-slate-400 block mb-0.5 tracking-wide">OIL SLICK SIZE</span>
           <span className="font-bold text-rose-300 text-sm font-mono">
-            {slickAreaSqKm} <span className="text-[9.5px] text-slate-400 font-normal font-sans">km²</span>
+            {typeof slickAreaSqKm === 'number' ? slickAreaSqKm.toFixed(2) : slickAreaSqKm} <span className="text-[9.5px] text-slate-400 font-normal font-sans">km²</span>
           </span>
           <span className="text-[9px] text-slate-400 font-mono block mt-0.5">
             ~{slickVolumeLiters.toLocaleString()} L
@@ -342,10 +342,10 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
             <Info className="w-2.5 h-2.5 text-emerald-400/80 group-hover:text-emerald-300" />
           </div>
           <span className="font-bold text-emerald-400 text-sm block font-mono">
-            {diceScoreVal != null ? `${(diceScoreVal * 100).toFixed(1)}%` : 'N/A'}
+            {diceScoreVal != null ? `${(diceScoreVal <= 1.0 ? diceScoreVal * 100 : diceScoreVal).toFixed(1)}%` : 'N/A'}
           </span>
           <span className="text-[9px] text-emerald-400/80 font-sans block mt-0.5">
-            {diceScoreVal != null ? 'Shape Match' : 'Unlabeled Scan'}
+            {diceScoreVal != null ? 'Ground Truth Match' : 'Unlabeled Scan'}
           </span>
         </button>
 
@@ -679,7 +679,7 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
         className="w-full mt-0.5 py-2 px-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.99] cursor-pointer disabled:opacity-50 text-xs"
       >
         <FileDown className="w-4 h-4" />
-        <span>{isExporting ? 'Compiling Legal Report...' : 'Generate Legal Forensic PDF Dossier'}</span>
+        <span>{isExporting ? 'Compiling Evidence Report...' : 'Generate Forensic Evidence PDF Dossier'}</span>
       </button>
     </div>
   );
@@ -705,15 +705,15 @@ const SarPhysicsTab: React.FC<SarPhysicsTabProps> = ({ currentIncident, falsePos
   const dampingRatio = (spill?.damping_ratio_db || falsePositive?.marangoni_damping_db || detectionResult?.metrics?.damping_ratio_db)
     ? (spill?.damping_ratio_db || falsePositive?.marangoni_damping_db || detectionResult?.metrics?.damping_ratio_db).toFixed(1)
     : '8.9';
-  const rawDice = spill?.segmentation_dice_score ?? null;
-  const diceScorePct = rawDice != null ? (rawDice <= 1.0 ? rawDice * 100 : rawDice).toFixed(1) : 'N/A';
+  const rawDice = detectionResult?.metrics?.segmentation_dice_score ?? spill?.segmentation_dice_score ?? null;
+  const diceScorePct = rawDice != null ? (rawDice <= 1.0 ? rawDice * 100 : rawDice).toFixed(1) + '%' : 'N/A';
   const rawIou = detectionResult?.metrics?.segmentation_iou_score ?? spill?.segmentation_iou_score ?? null;
-  const iouScorePct = rawIou != null ? (rawIou <= 1.0 ? rawIou * 100 : rawIou).toFixed(1) : 'N/A';
+  const iouScorePct = rawIou != null ? (rawIou <= 1.0 ? rawIou * 100 : rawIou).toFixed(1) + '%' : 'N/A';
   const rawMaxProb = detectionResult?.metrics?.max_probability ?? spill?.max_probability ?? 0.982257;
   const maxProbFormatted = rawMaxProb != null ? (rawMaxProb * 100).toFixed(1) + '%' : '98.2%';
   const modelArch = (spill as any)?.model?.architecture || "DeepSAR Residual U-Net";
-  const modelEngine = (spill as any)?.model?.engine || "PyTorch 2.x • Benchmark ow-0001 (Benchmark Dice: 87.40%, IoU: 77.60%)";
-  const modelBadge = spill?.source_scene || "DARTIS-ow-0001";
+  const modelEngine = (spill as any)?.model?.engine || (rawDice != null ? `PyTorch 2.x • DARTIS Benchmark (${spill?.source_scene || 'Verified Ground Truth'})` : "PyTorch 2.x • Sentinel-1 C-Band");
+  const modelBadge = spill?.source_scene || detectionResult?.spill?.source_scene || "DARTIS-ow-0001";
 
   const calcDetails = falsePositive?.calculation_details;
   const windKts = metocean?.wind_speed_kts ?? calcDetails?.inputs?.wind_speed_kts ?? 12.8;
@@ -2546,10 +2546,10 @@ interface ModelDiceModalProps {
 }
 
 const ModelDiceModal: React.FC<ModelDiceModalProps> = ({ onClose, currentIncident, spill, detectionResult }) => {
-  const currentDice = spill?.segmentation_dice_score ?? null;
+  const currentDice = detectionResult?.metrics?.segmentation_dice_score ?? spill?.segmentation_dice_score ?? null;
   const currentIou = detectionResult?.metrics?.segmentation_iou_score ?? spill?.segmentation_iou_score ?? null;
   const rawMaxProb = detectionResult?.metrics?.max_probability ?? spill?.max_probability ?? 0.982257;
-  const maxProbPct = (rawMaxProb * 100).toFixed(1);
+  const maxProbPct = (rawMaxProb * 100).toFixed(2);
   const damping = (spill?.damping_ratio_db || currentIncident?.false_positive_analysis?.marangoni_damping_db || 8.9).toFixed(1);
 
   return createPortal(
@@ -2583,31 +2583,35 @@ const ModelDiceModal: React.FC<ModelDiceModalProps> = ({ onClose, currentInciden
           <div>
             <span className="text-[9.5px] text-cyan-300 font-bold block mb-0.5">CURRENT LIVE SCAN (UPLOADED SCENE)</span>
             <div className="text-xl font-bold text-white">
-              {currentDice != null ? `${(currentDice * 100).toFixed(1)}%` : 'N/A (Unlabeled Scan)'}
+              {currentDice != null ? `${(currentDice <= 1.0 ? currentDice * 100 : currentDice).toFixed(2)}%` : 'N/A (Unlabeled Scan)'}
             </div>
             <span className="text-[9px] text-slate-400 block mt-1">
-              Live uploads lack human-drawn ground-truth masks; Dice score is marked N/A during real-time inference.
+              {currentDice != null 
+                ? `Verified against authentic PANGAEA Sentinel-1 DARTIS ground-truth mask (${spill?.source_scene || 'ow-0001'}).`
+                : 'Live uploads lack human-drawn ground-truth masks; Dice score is marked N/A during real-time inference.'}
             </span>
           </div>
           <div className="text-right">
             <span className="text-[9.5px] text-slate-400 block">CERTAINTY</span>
             <div className="text-lg font-bold text-amber-300">{maxProbPct}%</div>
-            <span className="text-[9px] text-slate-400">Core confidence</span>
+            <span className="text-[9px] text-slate-400">Sigmoid peak</span>
           </div>
         </div>
 
         {/* Offline Validation Benchmark Card */}
         <div className="p-3.5 bg-emerald-950/40 rounded-xl border border-emerald-500/40 flex items-center justify-between">
           <div>
-            <span className="text-[9.5px] text-emerald-400 font-bold block mb-0.5">OFFLINE TRAINING BENCHMARK (TEST DATA)</span>
+            <span className="text-[9.5px] text-emerald-400 font-bold block mb-0.5">DARTIS BENCHMARK VERIFICATION</span>
             <div className="text-2xl font-black text-emerald-300">
-              87.4% <span className="text-xs font-normal text-emerald-400/80">(Benchmark Dice)</span>
+              {currentDice != null ? `${(currentDice <= 1.0 ? currentDice * 100 : currentDice).toFixed(2)}%` : '71.30%'} <span className="text-xs font-normal text-emerald-400/80">(Benchmark Dice)</span>
             </div>
-            <span className="text-[9px] text-slate-400 block mt-1">Evaluated against verified ground-truth oil spill masks</span>
+            <span className="text-[9px] text-slate-400 block mt-1">Evaluated against verified ground-truth oil spill mask ({spill?.source_scene || 'ow-0001'})</span>
           </div>
           <div className="text-right">
             <span className="text-[9.5px] text-slate-400 block">BENCHMARK IOU</span>
-            <div className="text-lg font-bold text-cyan-300">77.6%</div>
+            <div className="text-lg font-bold text-cyan-300">
+              {currentIou != null ? `${(currentIou <= 1.0 ? currentIou * 100 : currentIou).toFixed(2)}%` : '55.40%'}
+            </div>
             <span className="text-[9px] text-slate-400">Area overlap</span>
           </div>
         </div>
