@@ -45,6 +45,7 @@ import {
   CANONICAL_MMSIS,
   getCanonicalMmsi
 } from '../lib/simulationEngine';
+import { getDartisMaskDataUrl } from '../lib/dartisMasks';
 
 // Precise Great-Circle Bearing (degrees clockwise from North)
 function calculateBearing(lon1: number, lat1: number, lon2: number, lat2: number): number {
@@ -553,7 +554,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const [showCpaVector, setShowCpaVector] = useState(true);
   const [showLegend, setShowLegend] = useState(true);
   const [baseMapMode, setBaseMapMode] = useState<'dark' | 'satellite'>('satellite');
-  const [isEezRadarCollapsed, setIsEezRadarCollapsed] = useState<boolean>(false);
+  const [tacticalTab, setTacticalTab] = useState<'layers' | 'legend'>('layers');
 
   // Active Incident Config
   const currentIncident = MUMBAI_INCIDENTS[selectedSpillId] || MUMBAI_INCIDENTS["DARTIS-ow-0001"] || Object.values(MUMBAI_INCIDENTS)[0];
@@ -604,6 +605,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           centroid: config.centroid,
           estimated_discharge_liters: backendFeature?.properties?.estimated_discharge_liters || config.volumeLiters,
           slick_type: backendFeature?.properties?.slick_type || config.slickType,
+          mask_data_url: backendFeature?.properties?.mask_data_url || (config as any).mask_data_url || getDartisMaskDataUrl(config.sourceScene || config.id),
         },
         geometry: (offsetToUse === 0 && backendFeature?.geometry?.coordinates?.length)
           ? backendFeature.geometry
@@ -630,6 +632,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
               area_sq_km: live.hasDischarged && offsetToUse !== 0 ? live.area : bf.properties.area_sq_km,
               perimeter_km: live.hasDischarged && offsetToUse !== 0 ? live.perimeter : (bf.properties.perimeter_km || 10.0),
               damping_ratio_db: bf.properties.damping_ratio_db || 8.2,
+              mask_data_url: bf.properties.mask_data_url || getDartisMaskDataUrl(bf.properties.source_scene || bf.properties.id),
             },
             geometry: (offsetToUse === 0 && bf.geometry?.coordinates?.length)
               ? bf.geometry
@@ -1401,6 +1404,57 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     const spillsSrc = map.getSource('spills-source') as maplibregl.GeoJSONSource;
     if (spillsSrc) spillsSrc.setData(currentSpills);
 
+    // 1b. Georeferenced SAR Mask Overlay on Ocean Water
+    const activeSpill = currentSpills.features.find((f) => f.properties.id === selectedSpillId) || currentSpills.features[0];
+    const maskDataUrl = (activeSpill?.properties as any)?.mask_data_url || detectionResult?.mask_data_url;
+    if (activeSpill && activeSpill.geometry?.coordinates?.[0]?.length >= 3 && maskDataUrl && maskDataUrl.startsWith('data:image')) {
+      const ring = activeSpill.geometry.coordinates[0];
+      const lons = ring.map((p) => p[0]);
+      const lats = ring.map((p) => p[1]);
+      const minLon = Math.min(...lons);
+      const maxLon = Math.max(...lons);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const padLon = (maxLon - minLon) * 0.12 || 0.002;
+      const padLat = (maxLat - minLat) * 0.12 || 0.002;
+      const imageCoords = [
+        [minLon - padLon, maxLat + padLat],
+        [maxLon + padLon, maxLat + padLat],
+        [maxLon + padLon, minLat - padLat],
+        [minLon - padLon, minLat - padLat],
+      ];
+
+      const existingMaskSrc = map.getSource('sar-mask-image-source') as maplibregl.ImageSource;
+      if (!existingMaskSrc) {
+        try {
+          map.addSource('sar-mask-image-source', {
+            type: 'image',
+            url: maskDataUrl,
+            coordinates: imageCoords as any,
+          });
+          const beforeLayerId = map.getLayer('spills-glow') ? 'spills-glow' : undefined;
+          map.addLayer({
+            id: 'sar-mask-image-layer',
+            type: 'raster',
+            source: 'sar-mask-image-source',
+            paint: {
+              'raster-opacity': 0.92,
+              'raster-fade-duration': 200,
+            },
+          }, beforeLayerId);
+        } catch (e) {
+          // ignore if already added
+        }
+      } else {
+        try {
+          existingMaskSrc.updateImage({
+            url: maskDataUrl,
+            coordinates: imageCoords as any,
+          });
+        } catch (e) {}
+      }
+    }
+
     // 2. Update Hindcast Source
     const hindcastSrc = map.getSource('hindcast-source') as maplibregl.GeoJSONSource;
     if (hindcastSrc) hindcastSrc.setData(hindcastFeatures);
@@ -1434,6 +1488,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     setVisibility('spills-glow', showOilSpills);
     setVisibility('spills-fill', showOilSpills);
     setVisibility('spills-line', showOilSpills);
+    setVisibility('sar-mask-image-layer', showOilSpills);
 
     // 6. Update SAR Satellite Swath Footprint
     const swathSrc = map.getSource('sar-swath-source') as maplibregl.GeoJSONSource;
@@ -1814,239 +1869,234 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {baseMapMode === 'satellite' && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
           {/* Top Center Floating Sentinel-1 Reconnaissance Beacon */}
-          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 hidden xl:flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#070b14]/85 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] shadow-2xl backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/80" />
-            <span className="font-bold tracking-wider text-white">SENTINEL-1B C-SAR • HIGH-RES SATELLITE IMAGERY</span>
-            <span className="text-slate-600">•</span>
-            <span className="text-cyan-300">LIVE ORBITAL PASS • CYPRUS LEVANTINE BASIN</span>
+          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 hidden 2xl:flex items-center gap-2 px-3 py-1 rounded-full bg-[#070b14]/85 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] shadow-2xl backdrop-blur-md max-w-[36vw] truncate">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/80 shrink-0" />
+            <span className="font-bold tracking-wider text-white truncate">SENTINEL-1B C-SAR • LIVE ORBITAL PASS</span>
           </div>
         </div>
       )}
 
       {/* ============================================================== */}
-      {/* 5-CATEGORY TACTICAL LAYER SELECTOR & LEGEND (TOP LEFT) */}
+      {/* COMPACT TACTICAL LAYER SELECTOR & LEGEND (TOP LEFT) */}
       {/* ============================================================== */}
-      <div className="absolute top-3.5 left-3 sm:left-4 z-30 flex flex-col font-mono text-xs select-none max-w-xs">
+      <div className="absolute top-3.5 left-3 sm:left-4 z-30 flex flex-col font-mono text-xs select-none">
         <button
           onClick={() => setShowLayerDrawer(!showLayerDrawer)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b0f19]/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-800/90 shadow-xl backdrop-blur-md transition-all active:scale-95"
-          title="Toggle 5-category maritime layers and tactical feeds"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0b0f19]/90 border border-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-800/90 shadow-xl backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+          title="Toggle maritime layers and tactical feeds"
         >
           <Layers className="w-3.5 h-3.5 text-cyan-400" />
           <span className="text-[11px] font-bold">Tactical Layers & Legend</span>
+          <span className="px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 text-[9px] font-bold border border-cyan-500/30">
+            {[showFishingZones, showFishingHarbours, showAquaculture, showCoastalCommunities, showOilSpills, showHindcast, showForecast, showTrails, showSarSwath, showCpaVector].filter(Boolean).length}/10
+          </span>
           {showLayerDrawer ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
         </button>
 
         {showLayerDrawer && (
-          <div className="mt-2 bg-[#070b14]/95 border border-slate-800 rounded-xl p-3 flex flex-col gap-2 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2 w-64 ring-1 ring-slate-800 z-40">
-            {/* Basemap Mode Segmented Switcher in Drawer */}
-            <div className="p-2 bg-slate-950/90 rounded-xl border border-slate-800 flex flex-col gap-1.5 shadow-inner">
-              <div className="flex items-center justify-between">
-                <span className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wider">
-                  Basemap Display Style
+          <div className="mt-2 bg-[#070b14]/95 border border-slate-800/90 rounded-xl p-2.5 flex flex-col gap-2 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2 w-64 ring-1 ring-slate-800 z-40 max-h-[calc(100vh-220px)] sm:max-h-[350px] overflow-y-auto custom-scrollbar">
+            {/* Compact Switcher between Overlays & Legend */}
+            <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-950/90 rounded-lg border border-slate-800 shrink-0 text-[10px]">
+              <button
+                onClick={() => setTacticalTab('layers')}
+                className={`py-1 px-2 rounded font-bold transition-all cursor-pointer ${
+                  tacticalTab === 'layers'
+                    ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                Overlays (10)
+              </button>
+              <button
+                onClick={() => setTacticalTab('legend')}
+                className={`py-1 px-2 rounded font-bold transition-all cursor-pointer ${
+                  tacticalTab === 'legend'
+                    ? 'bg-cyan-500 text-slate-950 shadow-sm'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                }`}
+              >
+                Legend
+              </button>
+            </div>
+
+            {tacticalTab === 'layers' ? (
+              <div className="flex flex-col gap-2">
+                {/* Coastal & Threat Layers (5 items) */}
+                <div className="space-y-1">
+                  <span className="text-[9px] text-cyan-400 font-extrabold uppercase tracking-wider px-1">
+                    Coastal Threat Classes
+                  </span>
+                  <button
+                    onClick={() => setShowFishingZones(!showFishingZones)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] font-semibold cursor-pointer ${
+                      showFishingZones
+                        ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/40'
+                        : 'bg-slate-900/40 text-slate-500 border border-slate-800/60'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-sm bg-emerald-500" />
+                      <span>Fishing zones</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showFishingZones ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowFishingHarbours(!showFishingHarbours)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] font-semibold cursor-pointer ${
+                      showFishingHarbours
+                        ? 'bg-blue-950/40 text-blue-300 border border-blue-500/40'
+                        : 'bg-slate-900/40 text-slate-500 border border-slate-800/60'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span>Fishing harbours</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showFishingHarbours ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowAquaculture(!showAquaculture)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] font-semibold cursor-pointer ${
+                      showAquaculture
+                        ? 'bg-purple-950/40 text-purple-300 border border-purple-500/40'
+                        : 'bg-slate-900/40 text-slate-500 border border-slate-800/60'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-sm bg-purple-500" />
+                      <span>Aquaculture</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showAquaculture ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowCoastalCommunities(!showCoastalCommunities)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] font-semibold cursor-pointer ${
+                      showCoastalCommunities
+                        ? 'bg-orange-950/40 text-orange-300 border border-orange-500/40'
+                        : 'bg-slate-900/40 text-slate-500 border border-slate-800/60'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-orange-500" />
+                      <span>Communities</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showCoastalCommunities ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowOilSpills(!showOilSpills)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] font-semibold cursor-pointer ${
+                      showOilSpills
+                        ? 'bg-red-950/40 text-red-300 border border-red-500/40'
+                        : 'bg-slate-900/40 text-slate-500 border border-slate-800/60'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-sm bg-red-500 animate-pulse" />
+                      <span>Oil spill slick</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showOilSpills ? 'ON' : 'OFF'}</span>
+                  </button>
+                </div>
+
+                {/* Kinematic Vectors (5 items) */}
+                <div className="pt-1.5 border-t border-slate-800/80 space-y-1">
+                  <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider px-1">
+                    Kinematic Vectors
+                  </span>
+                  <button
+                    onClick={() => setShowHindcast(!showHindcast)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] cursor-pointer ${
+                      showHindcast ? 'text-amber-300 font-semibold bg-amber-950/20' : 'text-slate-500'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <History className="w-3 h-3 text-amber-400" />
+                      <span>-6h Hindcast Cone</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showHindcast ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowForecast(!showForecast)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] cursor-pointer ${
+                      showForecast ? 'text-cyan-300 font-semibold bg-cyan-950/20' : 'text-slate-500'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Navigation className="w-3 h-3 text-cyan-400" />
+                      <span>+6h Drift Fan</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showForecast ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowTrails(!showTrails)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] cursor-pointer ${
+                      showTrails ? 'text-rose-300 font-semibold bg-rose-950/20' : 'text-slate-500'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <ShieldAlert className="w-3 h-3 text-rose-400" />
+                      <span>AIS Vessel Tracks</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showTrails ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowSarSwath(!showSarSwath)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] cursor-pointer ${
+                      showSarSwath ? 'text-cyan-300 font-semibold bg-cyan-950/20' : 'text-slate-500'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Satellite className="w-3 h-3 text-cyan-400" />
+                      <span>SAR Satellite Frame</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showSarSwath ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowCpaVector(!showCpaVector)}
+                    className={`w-full flex items-center justify-between px-2 py-1 rounded text-left transition-all text-[11px] cursor-pointer ${
+                      showCpaVector ? 'text-amber-300 font-semibold bg-amber-950/20' : 'text-slate-500'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Compass className="w-3 h-3 text-amber-400" />
+                      <span>CPA Intercept Line</span>
+                    </span>
+                    <span className="text-[9px] font-mono">{showCpaVector ? 'ON' : 'OFF'}</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Fleet & Target Legend */
+              <div className="space-y-1.5">
+                <span className="text-[9px] text-cyan-400 font-extrabold uppercase tracking-wider px-1">
+                  Fleet & Target Vessels
                 </span>
-                <span className="text-[8.5px] text-cyan-400 font-mono font-semibold">
-                  {baseMapMode === 'satellite' ? 'HIGH-RES' : 'BATHYMETRY'}
-                </span>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-rose-950/40 border border-rose-500/50 text-[10.5px] text-rose-200">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+                  <span className="font-semibold">🎯 Culprit: Mediterranean Trader (VLCC)</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-cyan-950/30 border border-cyan-500/40 text-[10.5px] text-cyan-300">
+                  <span className="w-2 h-2 rounded bg-cyan-400 shrink-0" />
+                  <span>🛡️ Cyprus Coast Guard Patrol</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/50 border border-slate-800 text-[10.5px] text-slate-400">
+                  <span className="w-2 h-2 rounded bg-slate-500 shrink-0" />
+                  <span>🚢 Commercial Cargo (28 Ships)</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-red-950/30 border border-red-500/40 text-[10.5px] text-red-300">
+                  <span className="w-2 h-2 rounded bg-red-500 shrink-0" />
+                  <span>🔴 DARTIS Sentinel-1 Oil Slick</span>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
-                <button
-                  onClick={() => setBaseMapMode('satellite')}
-                  className={`py-1.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    baseMapMode === 'satellite'
-                      ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
-                      : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                  title="Default: High-Resolution Satellite Imagery"
-                >
-                  <Satellite className="w-3 h-3" />
-                  <span>Satellite</span>
-                </button>
-                <button
-                  onClick={() => setBaseMapMode('dark')}
-                  className={`py-1.5 px-2 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                    baseMapMode === 'dark'
-                      ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30'
-                      : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                  title="Dark Tactical Bathymetry & GEBCO Depth View"
-                >
-                  <Waves className="w-3 h-3" />
-                  <span>Dark Sea</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
-              <span className="text-[10px] text-cyan-400 font-extrabold uppercase tracking-wider">
-                Coastal & Threat Layers
-              </span>
-              <span className="text-[9px] text-slate-500 font-mono">5 ACTIVE CLASSES</span>
-            </div>
-
-            {/* 5 Core Categories */}
-            <div className="space-y-1">
-              <button
-                onClick={() => setShowFishingZones(!showFishingZones)}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
-                  showFishingZones
-                    ? 'bg-emerald-950/40 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-                  <span>🟢 Fishing zones</span>
-                </div>
-                <span className="text-[10px] font-mono">{showFishingZones ? 'ON' : 'OFF'}</span>
-              </button>
-
-              <button
-                onClick={() => setShowFishingHarbours(!showFishingHarbours)}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
-                  showFishingHarbours
-                    ? 'bg-blue-950/40 text-blue-300 border border-blue-500/40 shadow-sm'
-                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
-                  <span>🔵 Fishing harbours</span>
-                </div>
-                <span className="text-[10px] font-mono">{showFishingHarbours ? 'ON' : 'OFF'}</span>
-              </button>
-
-              <button
-                onClick={() => setShowAquaculture(!showAquaculture)}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
-                  showAquaculture
-                    ? 'bg-purple-950/40 text-purple-300 border border-purple-500/40 shadow-sm'
-                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-sm bg-purple-500 shadow-sm shadow-purple-500/50" />
-                  <span>🟣 Aquaculture</span>
-                </div>
-                <span className="text-[10px] font-mono">{showAquaculture ? 'ON' : 'OFF'}</span>
-              </button>
-
-              <button
-                onClick={() => setShowCoastalCommunities(!showCoastalCommunities)}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
-                  showCoastalCommunities
-                    ? 'bg-orange-950/40 text-orange-300 border border-orange-500/40 shadow-sm'
-                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm shadow-orange-500/50" />
-                  <span>🟠 Coastal communities</span>
-                </div>
-                <span className="text-[10px] font-mono">{showCoastalCommunities ? 'ON' : 'OFF'}</span>
-              </button>
-
-              <button
-                onClick={() => setShowOilSpills(!showOilSpills)}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-all text-xs font-semibold ${
-                  showOilSpills
-                    ? 'bg-red-950/40 text-red-300 border border-red-500/40 shadow-sm'
-                    : 'bg-slate-900/50 text-slate-500 border border-slate-800/60 opacity-60 hover:opacity-100'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-sm bg-red-500 shadow-sm shadow-red-500/50 animate-pulse" />
-                  <span>🔴 Oil spill</span>
-                </div>
-                <span className="text-[10px] font-mono">{showOilSpills ? 'ON' : 'OFF'}</span>
-              </button>
-            </div>
-
-            {/* Tactical Overlays */}
-            <div className="pt-2 border-t border-slate-800/80 space-y-1">
-              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider px-1">
-                Kinematic Vectors
-              </span>
-              <button
-                onClick={() => setShowHindcast(!showHindcast)}
-                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
-                  showHindcast ? 'text-amber-300 font-semibold' : 'text-slate-500'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <History className="w-3 h-3 text-amber-400" />
-                  <span>-6h Hindcast Cone</span>
-                </div>
-                <span className="text-[9px] font-mono">{showHindcast ? 'ON' : 'OFF'}</span>
-              </button>
-              <button
-                onClick={() => setShowForecast(!showForecast)}
-                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
-                  showForecast ? 'text-cyan-300 font-semibold' : 'text-slate-500'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <Navigation className="w-3 h-3 text-cyan-400" />
-                  <span>+6h Drift Fan</span>
-                </div>
-                <span className="text-[9px] font-mono">{showForecast ? 'ON' : 'OFF'}</span>
-              </button>
-              <button
-                onClick={() => setShowTrails(!showTrails)}
-                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
-                  showTrails ? 'text-rose-300 font-semibold' : 'text-slate-500'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <ShieldAlert className="w-3 h-3 text-rose-400" />
-                  <span>AIS Vessel Tracks</span>
-                </div>
-                <span className="text-[9px] font-mono">{showTrails ? 'ON' : 'OFF'}</span>
-              </button>
-              <button
-                onClick={() => setShowSarSwath(!showSarSwath)}
-                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
-                  showSarSwath ? 'text-cyan-300 font-semibold' : 'text-slate-500'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <Satellite className="w-3 h-3 text-cyan-400" />
-                  <span>SAR Satellite Frame</span>
-                </div>
-                <span className="text-[9px] font-mono">{showSarSwath ? 'ON' : 'OFF'}</span>
-              </button>
-              <button
-                onClick={() => setShowCpaVector(!showCpaVector)}
-                className={`w-full flex items-center justify-between px-2 py-1 rounded-md text-left transition-all text-[11px] ${
-                  showCpaVector ? 'text-amber-300 font-semibold' : 'text-slate-500'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <Compass className="w-3 h-3 text-amber-400" />
-                  <span>CPA Intercept Line</span>
-                </div>
-                <span className="text-[9px] font-mono">{showCpaVector ? 'ON' : 'OFF'}</span>
-              </button>
-            </div>
-
-            {/* Fleet & Target Vessels Legend */}
-            <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
-              <span className="text-[9px] text-cyan-400 font-extrabold uppercase tracking-wider px-1">
-                Fleet & Target Vessels
-              </span>
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-rose-950/40 border border-rose-500/50 text-[10px] text-rose-200 shadow-sm shadow-rose-950/50">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
-                <span className="font-semibold">🎯 Culprit: Mediterranean Trader (VLCC)</span>
-              </div>
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-cyan-950/30 border border-cyan-500/40 text-[10px] text-cyan-300">
-                <span className="w-2 h-2 rounded bg-cyan-400 shrink-0" />
-                <span>🛡️ Cyprus Coast Guard Patrol</span>
-              </div>
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-900/50 border border-slate-800 text-[10px] text-slate-400">
-                <span className="w-2 h-2 rounded bg-slate-500 shrink-0" />
-                <span>🚢 Commercial Cargo & Bulkers (28 Ships)</span>
-              </div>
-            </div>
+            )}
           </div>
         )}
       </div>
@@ -2086,7 +2136,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       <div className="absolute top-3.5 right-3 sm:right-4 flex flex-col gap-1.5 z-30 select-none">
         <button
           onClick={() => setBaseMapMode((prev) => (prev === 'dark' ? 'satellite' : 'dark'))}
-          className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-all ${
+          className={`w-8 h-8 rounded-lg border flex items-center justify-center shadow-lg transition-all cursor-pointer ${
             baseMapMode === 'satellite'
               ? 'bg-cyan-950/90 border-cyan-500 text-cyan-300 shadow-cyan-500/30'
               : 'bg-[#111622]/90 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'
@@ -2097,14 +2147,14 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
         </button>
         <button
           onClick={() => mapRef.current?.zoomIn()}
-          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
+          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors cursor-pointer"
           title="Zoom In"
         >
           <Plus className="w-4 h-4" />
         </button>
         <button
           onClick={() => mapRef.current?.zoomOut()}
-          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
+          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors cursor-pointer"
           title="Zoom Out"
         >
           <Minus className="w-4 h-4" />
@@ -2113,56 +2163,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           onClick={() => {
             mapRef.current?.flyTo({ center: [slickCentroid[0], slickCentroid[1]], zoom: 11.2, duration: 1200, padding: { top: 60, bottom: 150, left: 20, right: 60 } });
           }}
-          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-cyan-400 hover:text-cyan-300 hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors"
+          className="w-8 h-8 rounded-lg bg-[#111622]/90 border border-slate-800 text-cyan-400 hover:text-cyan-300 hover:bg-slate-800 flex items-center justify-center shadow-lg transition-colors cursor-pointer"
           title="Recenter on Active Oil Spill"
         >
           <Crosshair className="w-4 h-4" />
         </button>
-      </div>
-
-      {/* ============================================================== */}
-      {/* TOP-LEFT DOCKED TELEMETRY CAPSULE (NON-OVERLAPPING) */}
-      {/* ============================================================== */}
-      <div className="absolute top-14 left-3 sm:left-4 z-30 hidden md:flex flex-col gap-1 p-2.5 bg-[#0b0f19]/95 border border-slate-800 rounded-xl backdrop-blur-md font-mono text-[10px] text-slate-300 shadow-2xl max-w-[240px] ring-1 ring-slate-800/80 transition-all">
-        <div className="flex items-center justify-between font-bold text-white border-b border-slate-800 pb-1">
-          <span className="flex items-center gap-1.5 text-cyan-400">
-            <Compass className="w-3.5 h-3.5" />
-            CYPRUS EEZ RADAR
-          </span>
-          <div className="flex items-center gap-1.5">
-            <span className="text-rose-400 font-bold">{timeOffsetMinutes === 0 ? 'LIVE' : `T${timeOffsetMinutes}m`}</span>
-            <button
-              onClick={() => setIsEezRadarCollapsed(!isEezRadarCollapsed)}
-              className="text-slate-400 hover:text-white transition-colors p-0.5 rounded hover:bg-slate-800 cursor-pointer"
-              title={isEezRadarCollapsed ? 'Expand Telemetry Capsule' : 'Minimize Telemetry Capsule'}
-            >
-              {isEezRadarCollapsed ? <ChevronUp className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
-            </button>
-          </div>
-        </div>
-        {!isEezRadarCollapsed && (
-          <>
-            <div className="flex justify-between items-center text-[10px] pt-0.5">
-              <span className="text-slate-400">Incident:</span>
-              <strong className="text-white truncate max-w-[130px]">{currentIncident.name}</strong>
-            </div>
-            <div className="flex justify-between items-center text-[10px]">
-              <span className="text-slate-400">Centroid:</span>
-              <strong className="text-cyan-300">{currentIncident.centroid[0].toFixed(3)}°N, {currentIncident.centroid[1].toFixed(3)}°E</strong>
-            </div>
-            <div className="flex justify-between items-center text-[10px]">
-              <span className="text-slate-400">Culprit:</span>
-              <strong className="text-rose-400">{activeSuspect?.name || 'Inspecting...'}</strong>
-            </div>
-            <div className="flex justify-between items-center text-[10px] pt-1 border-t border-slate-800/80">
-              <span className="text-slate-400">Threat Level:</span>
-              <span className="flex items-center gap-1 text-rose-400 font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                {currentIncident.threat.overall_severity_score}/100 ({currentIncident.threat.overall_severity_level})
-              </span>
-            </div>
-          </>
-        )}
       </div>
     </div>
   );

@@ -180,7 +180,7 @@ def generate_forensic_pdf_report(
             Paragraph("<b>SAR Physics / Damping Rationale</b>", meta_label)
         ],
         [Paragraph("<b>Oil (Hydrocarbon)</b>", meta_label), Paragraph("<font color='#93000a'><b>94.0%</b></font>", alert_badge), Paragraph("Strong Marangoni capillary wave damping (8.4 dB contrast)", meta_val)],
-        [Paragraph("Calm Water", meta_val), Paragraph("2.1%", meta_val), Paragraph("Surface wind speed (16.2 kts) exceeds 3.0 m/s threshold suppressing calm slicks", meta_val)],
+        [Paragraph("Calm Water", meta_val), Paragraph("0.8%", meta_val), Paragraph("Surface wind speed (12.8 kts / 6.58 m/s) exceeds 3.0 m/s threshold suppressing calm slicks", meta_val)],
         [Paragraph("Natural Biogenic Film", meta_val), Paragraph("1.8%", meta_val), Paragraph("Low Chlorophyll-a signature; thick edges indicate mineral oil", meta_val)],
         [Paragraph("Vessel Wake / Turbulence", meta_val), Paragraph("1.2%", meta_val), Paragraph("Non-linear curvilinear geometry differs from standard ship wake Kelvin tracks", meta_val)],
         [Paragraph("Rain-related Artifact", meta_val), Paragraph("0.6%", meta_val), Paragraph("Doppler weather radar shows clear sky and no atmospheric attenuation", meta_val)],
@@ -201,15 +201,15 @@ def generate_forensic_pdf_report(
 
     hindcast_table_data = [
         [
-            Paragraph("<b>Surface Wind Factor:</b>", meta_label), Paragraph("14.2 kts @ 275° (3.5% Windage + 15° Coriolis)", meta_val),
-            Paragraph("<b>Ocean Current Vector:</b>", meta_label), Paragraph("0.9 kts @ 85° (Cilician / Levantine Surface Stream)", meta_val)
+            Paragraph("<b>Surface Wind Factor:</b>", meta_label), Paragraph("12.8 kts @ 285.0° WNW (3.5% Windage + 15° Coriolis)", meta_val),
+            Paragraph("<b>Ocean Current Vector:</b>", meta_label), Paragraph("1.1 kts @ 95.0° E (Copernicus Levantine Surface Stream)", meta_val)
         ],
         [
-            Paragraph("<b>Net Drift Velocity:</b>", meta_label), Paragraph("1.35 kts @ 84.5° (Downstream Advection)", meta_val),
-            Paragraph("<b>Hindcast Reverse Vector:</b>", meta_label), Paragraph("<b>1.35 kts @ 264.5° (Upstream Back-Trace)</b>", meta_val)
+            Paragraph("<b>Net Drift Velocity:</b>", meta_label), Paragraph("1.52 kts @ 95.0° E (Downstream Advection)", meta_val),
+            Paragraph("<b>Hindcast Reverse Vector:</b>", meta_label), Paragraph("<b>1.52 kts @ 275.0° W (Upstream Back-Trace)</b>", meta_val)
         ],
         [
-            Paragraph("<b>Reconstructed Origin:</b>", meta_label), Paragraph("<b>33.2590° N, 33.0578° E (Scene ow-0001.jpg Origin)</b>", meta_val),
+            Paragraph("<b>Reconstructed Origin:</b>", meta_label), Paragraph("<b>33.2684° N, 33.0421° E (T-42 min Discharge Locus)</b>", meta_val),
             Paragraph("<b>Fay Contraction Ratio:</b>", meta_label), Paragraph("0.62 (Fresh Nascent Discharge Core)", meta_val)
         ]
     ]

@@ -200,7 +200,7 @@ def build_verified_pipeline_document(output_path: str):
     meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     meta_data = [
         [("CLASSIFICATION", "TACTICAL"), ("VERSION", "2.4.0-PROD"), ("FRONTEND", "React 18 + Vite (SPA)"), ("BACKEND", "FastAPI + PyTorch 2.x")],
-        [("DATE", "September 2024"), ("CORRIDOR", "Mumbai EEZ (38 km Off)"), ("COORDINATES", "19.05° N, 72.20° E"), ("ACCURACY", "98.8% Soft-Dice Overlap")]
+        [("DATE", "January 2019 / Benchmark"), ("CORRIDOR", "Eastern Mediterranean (Cyprus EEZ)"), ("COORDINATES", "33.2590° N, 33.0578° E"), ("BENCHMARK", "DARTIS ow-0001 (71.30% Dice)")]
     ]
     for r_idx, row in enumerate(meta_table.rows):
         for c_idx, cell in enumerate(row.cells):
@@ -272,7 +272,7 @@ def build_verified_pipeline_document(output_path: str):
     add_code_box(doc,
         "POST http://localhost:8000/api/v1/spills/detect\n"
         "curl -X POST \"http://localhost:8000/api/v1/spills/detect\" \\\n"
-        "     -F \"file=@mumbai_high_pass.png\" -F \"center_lon=72.20\" -F \"center_lat=19.05\"\n\n"
+        "     -F \"file=@ow-0001.jpg\" -F \"center_lon=33.057756\" -F \"center_lat=33.259026\"\n\n"
         "// Response (200 OK):\n"
         "{\n"
         "  \"status\": \"SUCCESS\",\n"
@@ -289,9 +289,9 @@ def build_verified_pipeline_document(output_path: str):
         "   - If K is close to 0 (flat open water): The pixel is smoothed toward the average.\n"
         "   - If K is close to 1 (sharp edge of oil): The pixel is preserved exactly as is.\n"
         "4. Clean Pixel = Local Average + Weight Factor K * (Raw Pixel - Local Average)\n\n"
-        "Mumbai Project Example:\n"
-        "At the oil edge, raw brightness was 0.1200 and local average was 0.1450. Weight K was 0.8520.\n"
-        "Clean Pixel = 0.1450 + 0.8520 * (0.1200 - 0.1450) = 0.1237 (Boundary preserved; noise reduced to 0.034)."
+        "DARTIS Benchmark Example (ow-0001.jpg):\n"
+        "At the oil slick edge in Cyprus Levantine waters, raw backscatter was 0.1200 and local average was 0.1450. Weight K was 0.8520.\n"
+        "Clean Pixel = 0.1450 + 0.8520 * (0.1200 - 0.1450) = 0.1237 (Boundary preserved; speckle variance reduced to 0.034)."
     )
     add_compact_bullet(doc, "Output Hand-off", "Cleaned, high-contrast radar image passed to Step 2.")
 
@@ -334,8 +334,8 @@ def build_verified_pipeline_document(output_path: str):
         "// Response Metrics Schema (200 OK):\n"
         "{\n"
         "  \"metrics\": {\n"
-        "    \"segmentation_dice_score\": 0.988, \"oil_likelihood_score\": 0.940,\n"
-        "    \"oil_pixels_detected\": 9665, \"total_pixels\": 65536, \"oil_coverage_pct\": 14.75, \"inference_time_ms\": 41.05\n"
+        "    \"segmentation_dice_score\": 0.7130, \"segmentation_iou_score\": 0.5540, \"max_probability\": 0.982257,\n"
+        "    \"oil_likelihood_score\": 0.9450, \"area_sq_km\": 0.3797, \"oil_pixels_detected\": 1420, \"inference_time_ms\": 41.05\n"
         "  }\n"
         "}"
     )
@@ -345,11 +345,12 @@ def build_verified_pipeline_document(output_path: str):
         "How the AI Measures Its Accuracy:\n"
         "1. Probability = 1.0 / (1.0 + Exponential of (-Logit))\n"
         "2. Binary Decision: If Probability >= 0.50 (50%) then Pixel = Oil (1), else Pixel = Clean Water (0)\n"
-        "3. Accuracy Score (Soft-Dice Overlap):\n"
-        "   Score = (2.0 * Shared Oil Pixels) / (AI Oil Pixels + Real Oil Pixels)\n"
+        "3. Accuracy Score (Validation Dice Overlap):\n"
+        "   Score = (2.0 * Shared Oil Pixels) / (AI Oil Pixels + Ground Truth Pixels)\n"
         "   - 1.00 means a 100% perfect shape match.\n\n"
-        "Mumbai Project Example:\n"
-        "The AI detected 9,665 oil pixels out of 65,536 (14.75% of the satellite frame) with an accuracy score of 0.9880 (98.8% match). Latency: 41.05 ms."
+        "DARTIS Benchmark Example (ow-0001.jpg):\n"
+        "Ground-truth calibrated U-Net segmentation achieves Dice = 0.7130 (71.30%), IoU = 0.5540 (55.40%), Max Probability = 0.982257 (98.23%).\n"
+        "1,420 oil pixels detected (0.38 sq km slick in Eastern Mediterranean). Latency: 41.05 ms."
     )
     add_compact_bullet(doc, "Output Hand-off", "A 2D black-and-white oil map (1 = oil, 0 = sea) passed to Step 3.")
 
@@ -409,9 +410,9 @@ def build_verified_pipeline_document(output_path: str):
         "4. Estimated Spill Volume:\n"
         "   Volume in Liters = Surface Area in sq km * 10,740 Liters per sq km\n"
         "   (Based on the standard international thickness of 10.74 microns for heavy oil).\n\n"
-        "Mumbai Project Example:\n"
-        "Centroid: 19.05° N, 72.20° E (38 km offshore Mumbai); Area: 5.40 sq km; Perimeter: 14.80 km;\n"
-        "Estimated Volume = 5.40 * 10,740 = 57,996 Liters of heavy fuel oil; Compactness: 0.2520; Eccentricity: 0.8050."
+        "DARTIS Benchmark Example (ow-0001.jpg):\n"
+        "Centroid: 33.2590° N, 33.0578° E (Cyprus Levantine Basin); Area: 0.38 sq km; Perimeter: 2.26 km;\n"
+        "Estimated Volume = 0.38 * 10,500 = 3,990 Liters of heavy bunker fuel; Compactness: 0.4200; Eccentricity: 0.8800."
     )
     add_compact_bullet(doc, "Output Hand-off", "Real GPS polygon rendered on the live interactive map and passed to Step 4.")
 
@@ -450,11 +451,11 @@ def build_verified_pipeline_document(output_path: str):
 
     add_compact_subhead(doc, "API Call & Response")
     add_code_box(doc,
-        "GET http://localhost:8000/api/v1/spills/INC-MUM-2024-01\n"
+        "GET http://localhost:8000/api/v1/spills/DARTIS-ow-0001\n"
         "// Response (200 OK false_positive_analysis snippet):\n"
         "{\n"
-        "  \"likely_oil_pct\": 94.0, \"calm_water_pct\": 2.1, \"biogenic_film_pct\": 1.8, \"ship_wake_pct\": 1.2,\n"
-        "  \"rain_squall_pct\": 0.6, \"unknown_pct\": 0.3, \"marangoni_damping_db\": 8.4, \"verified_oil\": true\n"
+        "  \"likely_oil_pct\": 98.2, \"calm_water_pct\": 0.8, \"biogenic_film_pct\": 0.5, \"ship_wake_pct\": 0.3,\n"
+        "  \"rain_squall_pct\": 0.1, \"unknown_pct\": 0.1, \"marangoni_damping_db\": 8.9, \"verified_oil\": true\n"
         "}"
     )
 
@@ -468,11 +469,11 @@ def build_verified_pipeline_document(output_path: str):
         "   - If wind is between 6 and 24 knots: Waves are active. Calm-water false alarms are impossible.\n"
         "3. 6-Class Probability Breakdown (Must sum to exactly 100.00%):\n"
         "   Oil % + Calm Sea % + Algae % + Ship Wake % + Rain % + Unknown % = 100.00%\n\n"
-        "Mumbai Project Example:\n"
-        "Wind was 16.2 knots (plenty of waves); Damping was 8.4 dB (well above the 4.5 dB algae limit).\n"
-        "Result: 94.0% Confirmed Oil, 2.1% Calm Water, 1.8% Algae, 1.2% Wake, 0.6% Rain, 0.3% Unknown."
+        "DARTIS Benchmark Example (ow-0001.jpg):\n"
+        "Wind is 12.8 knots from WNW (6.58 m/s, active waves); Damping is 8.9 dB (well above the 4.5 dB algae limit).\n"
+        "Result: 98.2% Confirmed Oil, 0.8% Calm Water, 0.5% Algae, 0.3% Wake, 0.1% Rain, 0.1% Unknown."
     )
-    add_compact_bullet(doc, "Output Hand-off", "Certified real petroleum spill (94.0% certainty), cleared for Step 5 origin tracking.")
+    add_compact_bullet(doc, "Output Hand-off", "Certified real petroleum spill (98.2% certainty), cleared for Step 5 origin tracking.")
 
     # =========================================================================
     # STEP 5
@@ -485,7 +486,7 @@ def build_verified_pipeline_document(output_path: str):
     p.paragraph_format.line_spacing = 1.15
     p.add_run(
         "Ocean currents and winds are constantly pushing spilled oil across the sea. "
-        "By the time the satellite takes a picture at 16:14, the oil has already moved kilometers away from where the ship dumped it at 15:48. "
+        "By the time the satellite takes a picture at 09:12 IST (03:42 UTC), the oil has already moved kilometers away from where the ship dumped it at 08:30 IST (03:00 UTC). "
         "In this step, we take the live wind and ocean currents and reverse them like a tape recorder to find out the exact GPS location and time the ship dumped the oil."
     )
 
@@ -510,12 +511,12 @@ def build_verified_pipeline_document(output_path: str):
 
     add_compact_subhead(doc, "API Call & Response")
     add_code_box(doc,
-        "GET http://localhost:8000/api/v1/spills/INC-MUM-2024-01/hindcast\n"
-        "curl -X GET \"http://localhost:8000/api/v1/spills/INC-MUM-2024-01/hindcast\"\n\n"
+        "GET http://localhost:8000/api/v1/spills/DARTIS-ow-0001/hindcast\n"
+        "curl -X GET \"http://localhost:8000/api/v1/spills/DARTIS-ow-0001/hindcast\"\n\n"
         "// Response (200 OK):\n"
         "{\n"
-        "  \"spill_id\": \"INC-MUM-2024-01\", \"net_drift_speed_kts\": 1.95, \"reverse_drift_heading_deg\": 249.3,\n"
-        "  \"reconstructed_origin\": { \"longitude\": 72.1450, \"latitude\": 19.0480, \"timestamp\": \"2024-09-02T15:48:00Z\", \"distance_from_detected_km\": 2.50 }\n"
+        "  \"spill_id\": \"DARTIS-ow-0001\", \"net_drift_speed_kts\": 1.52, \"reverse_drift_heading_deg\": 275.0,\n"
+        "  \"reconstructed_origin\": { \"longitude\": 33.0421, \"latitude\": 33.2684, \"timestamp\": \"2019-01-01T03:00:00Z\", \"distance_from_detected_km\": 2.50 }\n"
         "}"
     )
 
@@ -527,10 +528,10 @@ def build_verified_pipeline_document(output_path: str):
         "3. Net Drift Vector = Wind Push + Current Push (Tells us where the oil is floating toward).\n"
         "4. Reverse Hindcast Vector = -1.0 * Net Drift (Points backward toward where the oil came from).\n"
         "5. Reconstructed Position = Satellite GPS Coordinates + Reverse Drift over elapsed time.\n\n"
-        "Mumbai Project Example:\n"
-        "Wind was 16.2 knots from WSW; Current was 1.4 knots toward ENE. Net forward drift was 1.95 knots toward ENE.\n"
-        "Reversing this vector showed the spill started 42 minutes earlier at 15:48 IST,\n"
-        "at GPS coordinates 19.0480° N, 72.1450° E (2.5 km west of the satellite detection spot)."
+        "DARTIS Benchmark Example (ow-0001.jpg):\n"
+        "Wind is 12.8 knots from WNW (285.0°); Current is 1.1 knots toward E (95.0°). Net forward drift is 1.52 knots toward E (95.0°).\n"
+        "Reversing this vector at 275.0° showed the spill started 42 minutes earlier at 08:30 IST (03:00 UTC),\n"
+        "at GPS coordinates 33.2684° N, 33.0421° E (2.5 km west of the satellite detection spot)."
     )
     add_compact_bullet(doc, "Output Hand-off", "Reconstructed dump location and timestamp passed to Step 6 to catch the ship.")
 
@@ -570,12 +571,12 @@ def build_verified_pipeline_document(output_path: str):
 
     add_compact_subhead(doc, "API Call & Response")
     add_code_box(doc,
-        "GET http://localhost:8000/api/v1/spills/INC-MUM-2024-01/correlate\n"
+        "GET http://localhost:8000/api/v1/spills/DARTIS-ow-0001/correlate\n"
         "// Response Ranked Suspects Schema (200 OK):\n"
         "{\n"
         "  \"suspects\": [{\n"
-        "    \"mmsi\": 419000123, \"name\": \"MT DESH SHANTI\", \"vessel_type\": \"Crude Oil Tanker\",\n"
-        "    \"probability_score\": 98.4, \"speed_drop_delta_kts\": 9.6, \"max_ais_gap_minutes\": 42.0, \"risk_level\": \"CRITICAL\"\n"
+        "    \"mmsi\": 212000001, \"name\": \"MEDITERRANEAN TRADER\", \"vessel_type\": \"VLCC Crude Carrier\",\n"
+        "    \"probability_score\": 98.4, \"speed_drop_delta_kts\": 8.4, \"max_ais_gap_minutes\": 42.0, \"risk_level\": \"CRITICAL\"\n"
         "  }]\n"
         "}"
     )
@@ -587,13 +588,13 @@ def build_verified_pipeline_document(output_path: str):
         "2. Speed Drop Score (25%): Points given if the ship abruptly slowed down from cruising speed to pumping speed.\n"
         "3. Blackout Score (20%): Points given if the ship shut off its GPS tracker for 15 to 60 minutes.\n"
         "4. Cargo Risk Multiplier: Oil tankers receive a 1.18x multiplier; Coast Guard rescue ships receive a 0.12x reduction.\n\n"
-        "Mumbai Project Example:\n"
-        "- MT DESH SHANTI (Oil Tanker): Passed directly over dump spot (0.00 km distance), dropped speed by 9.6 knots\n"
-        "  (from 14.8 down to 5.2 kts), and turned off its GPS for 42 minutes. Final Score: 98.4 / 100 (PRIMARY CULPRIT).\n"
-        "- MSC KANOKO (Container Ship): Stayed 12.4 km away, never slowed down. Final Score: 14.2 / 100 (EXONERATED).\n"
-        "- ICGS SAMUDRA PRAHARI (Coast Guard): Official responder vessel. Final Score: 8.4 / 100 (EXONERATED)."
+        "DARTIS Benchmark Correlation Example:\n"
+        "- MEDITERRANEAN TRADER (VLCC Tanker): Passed directly over dump spot (0.00 km CPA), dropped speed by 8.4 knots\n"
+        "  (from 13.8 down to 5.4 kts), and turned off its AIS transponder for 42 minutes. Final Score: 98.4 / 100 (PRIMARY CULPRIT).\n"
+        "- AEGEAN STAR (Container Ship): Stayed 14.2 km away, maintained steady 18.2 kts speed. Final Score: 12.5 / 100 (EXONERATED).\n"
+        "- CYPRUS RESCUE ONE (Coast Guard): Official EMSA responder vessel. Final Score: 6.2 / 100 (EXONERATED)."
     )
-    add_compact_bullet(doc, "Output Hand-off", "Culprit identity (MT DESH SHANTI) and criminal evidence passed to Step 7 and Step 8.")
+    add_compact_bullet(doc, "Output Hand-off", "Culprit identity (MEDITERRANEAN TRADER) and kinematic evidence passed to Step 7 and Step 8.")
 
     # =========================================================================
     # STEP 7
@@ -631,14 +632,14 @@ def build_verified_pipeline_document(output_path: str):
 
     add_compact_subhead(doc, "API Call & Response")
     add_code_box(doc,
-        "GET http://localhost:8000/api/v1/spills/INC-MUM-2024-01/drift (Live WebSocket: ws://localhost:8000/ws/telemetry)\n"
+        "GET http://localhost:8000/api/v1/spills/DARTIS-ow-0001/drift (Live WebSocket: ws://localhost:8000/ws/telemetry)\n"
         "// Dynamic State Schema (In-Memory & UI):\n"
         "{\n"
-        "  \"coast_distance_km\": 39.5, \"predicted_arrival_hours\": 11.5, \"overall_severity_score\": 92, \"overall_severity_level\": \"CRITICAL\",\n"
-        "  \"fishing_zone_distance_km\": 8.5, \"fishing_fleet_count\": 420,\n"
-        "  \"fishing_harbour_distance_km\": 41.5, \"harbour_vessel_count\": 1250,\n"
+        "  \"coast_distance_km\": 39.5, \"predicted_arrival_hours\": 11.5, \"overall_severity_score\": 88, \"overall_severity_level\": \"HIGH\",\n"
+        "  \"fishing_zone_distance_km\": 8.5, \"fishing_fleet_count\": 180,\n"
+        "  \"fishing_harbour_distance_km\": 41.5, \"harbour_vessel_count\": 350,\n"
         "  \"aquaculture_distance_km\": 35.0, \"aquaculture_economic_cr\": 78.0,\n"
-        "  \"community_distance_km\": 39.5, \"community_population\": 30700\n"
+        "  \"community_distance_km\": 39.5, \"community_population\": 195000\n"
         "}"
     )
 
@@ -647,13 +648,13 @@ def build_verified_pipeline_document(output_path: str):
         "How We Calculate Arrival Times:\n"
         "1. Distance = Geodesic GPS distance between the closest edge of the oil spill and the asset.\n"
         "2. Arrival Hours (ETA) = Distance in km / Drift Speed in km/h\n"
-        "3. Threat Score = Calculated based on spill size and proximity to shore (Over 85 = CRITICAL).\n\n"
-        "Mumbai Project Example:\n"
-        "1. Mumbai Fishing Fairway: 8.5 km away | 2.3 Hours to Impact | 420 Trawlers at Risk -> Broadcast VHF radio warning!\n"
-        "2. Sassoon Docks Harbour: 41.5 km away | 11.5 Hours to Impact | 1,250 Boats -> Deploy floating booms at entrance!\n"
-        "3. Raigad Aquaculture Farms: 35.0 km away | 9.7 Hours to Impact | 78.0 Crore INR Value -> Shut water gates!\n"
-        "4. Coastal Villages (Worli & Mahim): 39.5 km away | 10.9 Hours to Impact | 30,700 Residents -> Alert cleanup teams!\n"
-        "Overall Threat Score: 92 / 100 (CRITICAL EMERGENCY)"
+        "3. Threat Score = Calculated based on spill size and proximity to shore (Over 85 = HIGH RISK).\n\n"
+        "DARTIS Eastern Mediterranean Example:\n"
+        "1. Levantine Pelagic Fishery: 8.5 km away | 2.3 Hours to Impact | 180 Active Trawlers -> Broadcast VHF radio warning!\n"
+        "2. Limassol Commercial Terminal: 41.5 km away | 11.5 Hours to Impact | Deploy protective containment booms!\n"
+        "3. Vasiliko Bay Marine Cages: 35.0 km away | 9.7 Hours to Impact | €85M Asset Valuation -> Seal mariculture valves!\n"
+        "4. Limassol Waterfront & Akrotiri: 39.5 km away | 10.9 Hours to Impact | 195,000 Residents -> Alert emergency response teams!\n"
+        "Overall Threat Severity Score: 88 / 100 (HIGH RISK)"
     )
     add_compact_bullet(doc, "Output Hand-off", "Live threat countdowns and emergency advisories sent to Step 8 for alarms and PDF generation.")
 
@@ -668,7 +669,7 @@ def build_verified_pipeline_document(output_path: str):
     p.paragraph_format.line_spacing = 1.15
     p.add_run(
         "When an illegal spill is confirmed, the system immediately plays a distinctive two-tone sonar chime to alert the watchstander. "
-        "At the click of a button, it automatically compiles an official, signed 2-page legal PDF report containing satellite images, AI maps, and culprit tracking data. "
+        "At the click of a button, it automatically compiles an official, signed 2-page Evidence PDF Dossier report containing satellite images, AI maps, and culprit tracking data. "
         "The document is sealed with an unchangeable cryptographic SHA-256 digital fingerprint so it can be presented directly in a court of law."
     )
 
@@ -694,9 +695,9 @@ def build_verified_pipeline_document(output_path: str):
 
     add_compact_subhead(doc, "API Call & Response")
     add_code_box(doc,
-        "GET http://localhost:8000/api/v1/reports/INC-MUM-2024-01/pdf\n"
-        "curl -X GET \"http://localhost:8000/api/v1/reports/INC-MUM-2024-01/pdf\" -o OceanGuard_Dossier_INC-MUM-2024-01.pdf\n\n"
-        "// Similar Spills Schema (GET /api/v1/spills/INC-MUM-2024-01/similar):\n"
+        "GET http://localhost:8000/api/v1/reports/DARTIS-ow-0001/pdf\n"
+        "curl -X GET \"http://localhost:8000/api/v1/reports/DARTIS-ow-0001/pdf\" -o OceanGuard_Evidence_Dossier_DARTIS-ow-0001.pdf\n\n"
+        "// Similar Spills Schema (GET /api/v1/spills/DARTIS-ow-0001/similar):\n"
         "{\n"
         "  \"similar_spills\": [ { \"id\": \"INC-HIST-2023-04\", \"similarity_score\": 0.942, \"outcome\": \"Convicted - 4.2M Fine Imposed\" } ]\n"
         "}"
@@ -709,12 +710,12 @@ def build_verified_pipeline_document(output_path: str):
         "   Incident ID + Satellite Time + GPS Coordinates + Culprit Ship Name + Anomaly Score.\n"
         "   - Even changing a single comma in the report completely changes the hash.\n"
         "2. Vector Similarity = Compares the shape and size of this spill against past court convictions in Qdrant.\n\n"
-        "Mumbai Project Example:\n"
-        "Report compiled in 24.02 ms. Digital Integrity Fingerprint:\n"
+        "DARTIS Benchmark Example (ow-0001.jpg):\n"
+        "Evidence dossier compiled in 24.02 ms. Digital Integrity Fingerprint (SHA-256):\n"
         "8f9b42c67d18e901a7c4f3b2d1e05a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f\n"
-        "Historical Precedent: 94.2% match with incident INC-HIST-2023-04 (which resulted in a 4.2M fine conviction)."
+        "Historical Precedent: 94.2% match with benchmark incident INC-HIST-2023-04 (which resulted in a 4.2M fine conviction)."
     )
-    add_compact_bullet(doc, "Output Hand-off", "Court-admissible PDF sent to Coast Guard Headquarters and Ministry of Shipping to seize the vessel.")
+    add_compact_bullet(doc, "Output Hand-off", "Court-admissible Evidence PDF Dossier sent to Coast Guard Headquarters and Maritime Administration to intercept the vessel.")
 
     # =========================================================================
     # STEP 9
@@ -734,7 +735,7 @@ def build_verified_pipeline_document(output_path: str):
     add_compact_bullet(doc, "1. Interactive Tactical Map",
                        "Built on high-performance MapLibre GL with dark nautical tiles. Displays live oil slicks, +6h forecast dispersal cones (yellow), -6h hindcast drift back-traces (cyan), real-time vessel positions with heading indicators and wake trails, and protected coastal asset polygons (fishing trawling grounds in green, harbours in blue, aquaculture farms in purple, coastal fishing villages in orange).")
     add_compact_bullet(doc, "2. Multi-Incident Switcher",
-                       "The header dropdown lets operators switch instantly between active surveillance corridors: (a) INC-MUM-2024-01: Mumbai High Offshore TSS (VLCC MT DESH SHANTI); (b) INC-MUM-2024-02: JNPT Access Channel Approach (Container MSC KANOKO); (c) INC-MUM-2024-03: Prongs Reef Outer Anchorage (Tanker MT SWARNA SINDHU); (d) INC-MUM-2024-04: Neelam South Offshore (Chemical Tanker CHEMBULK GIBRALTAR); plus international benchmark scenes (DARTIS Eastern Mediterranean ow-0001).")
+                       "The header dropdown lets operators switch instantly between calibrated benchmark scenes (DARTIS Eastern Mediterranean ow-0001 through ow-0015) and custom uploaded SAR satellite imagery with instant recalculation of all metrics and threat matrices.")
     add_compact_bullet(doc, "3. Interactive Timeline Scrubber",
                        "Located at the bottom of the screen (-360 min to 0 min). Allows watchstanders to scrub back in time to witness the exact moment of illegal discharge (T-42 min). Features Play/Pause and variable playback speeds (1x, 2x, 5x, 10x) with auto-locking event markers for transit entry, sudden deceleration, transponder blackout, and satellite radar overpass.")
     add_compact_bullet(doc, "4. Drag-and-Drop SAR Image Upload",
@@ -742,13 +743,13 @@ def build_verified_pipeline_document(output_path: str):
     add_compact_bullet(doc, "5. Tactical Inspector Panel (5 Specialized Tabs)",
                        "(a) Overview: Location coordinates, slick area (km²), discharge volume (liters), and quick navigation; "
                        "(b) SAR AI: Marangoni damping contrast (dB), speckle variance, active neural architecture badge, and 6-class Bayesian probability bars (Oil vs Calm water, Natural film, Ship wake, Rain artifact, Unknown); "
-                       "(c) Culprit: Ranked suspect fleet, kinematic speed drop delta (-9.6 kts), AIS dark window duration (42 min blackout), CPA closest approach to origin (0.00 m exact overpass), IMO number, and draught; "
-                       "(d) Metocean: Wind speed/direction, surface ocean current vectors, sea surface temperature, wave height, and 12-hour evaporative weathering mass loss; "
-                       "(e) Threats: Real-time geodesic distances and landfall ETA countdowns to commercial fishing trawlers (Mumbai Pelagic Fairway), fishery terminals (Sassoon Docks), mariculture cages (Raigad), and indigenous fishing hamlets (Worli/Mahim Koliwada).")
+                       "(c) Culprit: Ranked suspect fleet, kinematic speed drop delta (-8.4 kts), AIS dark window duration (42 min blackout), CPA closest approach to origin (0.00 m exact overpass), IMO number, and draught; "
+                       "(d) Metocean: Wind speed/direction (12.8 kts WNW), surface ocean current vectors (1.1 kts E), net drift (1.52 kts E), sea surface temperature (21.4°C), wave height (1.2m), and evaporative weathering loss; "
+                       "(e) Threats: Real-time geodesic distances and landfall ETA countdowns to commercial fishing trawlers (Levantine Pelagic Fairway), fishery terminals (Limassol Commercial Terminal), mariculture cages (Vasiliko Bay), and coastal communities (Limassol Waterfront & Akrotiri Peninsula).")
     add_compact_bullet(doc, "6. Alert Notification Center & Acoustic Sonar",
                        "Watchstanders receive instant visual banners and two-tone Web Audio acoustic sonar chimes upon new critical detections. Includes actionable response buttons: 'Locate on Map', 'Jump Scrubber to Breach', 'View Threat', and 'Examine Culprit'.")
-    add_compact_bullet(doc, "7. One-Click Court-Admissible Legal PDF Dossier",
-                       "Clicking 'Generate Legal Forensic PDF Dossier' exports a signed, tamper-evident 2-page intelligence brief complete with satellite radar imagery, GeoJSON vector contours, vessel AIS tracks, CPA calculations, and an unalterable SHA-256 digital fingerprint.")
+    add_compact_bullet(doc, "7. One-Click Court-Admissible Forensic Evidence PDF Dossier",
+                       "Clicking 'Generate Evidence PDF Dossier' exports a signed, tamper-evident 2-page intelligence brief complete with satellite radar imagery, GeoJSON vector contours, vessel AIS tracks, CPA calculations, and an unalterable SHA-256 digital fingerprint.")
 
     # Save document
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

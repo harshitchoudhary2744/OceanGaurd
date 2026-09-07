@@ -46,6 +46,7 @@ import {
   CANONICAL_MMSIS,
   getCanonicalMmsi
 } from './lib/simulationEngine';
+import { getDartisMaskDataUrl } from './lib/dartisMasks';
 
 export function App() {
   const [spills, setSpills] = useState<SpillFeatureCollection>(INITIAL_SPILLS);
@@ -405,6 +406,11 @@ export function App() {
       const centerLon = res.spill.center[0];
       const centerLat = res.spill.center[1];
 
+      const maskDataUrl = res.mask_data_url ||
+        res.geojson_feature?.properties?.mask_data_url ||
+        res.spill.mask_data_url ||
+        getDartisMaskDataUrl(res.spill.source_scene || res.spill.id);
+
       // 3. Register custom spill incident into simulationEngine for full HUD/threat/culprit synchronization
       registerCustomSpillIncident({
         id: res.spill.id,
@@ -412,6 +418,7 @@ export function App() {
         originCoords: [centerLon, centerLat],
         areaSqKm: res.spill.area_sq_km,
         sourceScene: res.spill.source_scene,
+        mask_data_url: maskDataUrl,
         slickType: res.spill.slick_type,
         confidence: res.spill.confidence_score,
         segmentation_dice_score: res.metrics?.segmentation_dice_score ?? res.spill.segmentation_dice_score,
@@ -449,6 +456,7 @@ export function App() {
           centroid: res.spill.centroid || [centerLat, centerLon],
           estimated_discharge_liters: res.spill.estimated_discharge_liters,
           slick_type: res.spill.slick_type,
+          mask_data_url: maskDataUrl,
         },
         geometry: geometry,
       };

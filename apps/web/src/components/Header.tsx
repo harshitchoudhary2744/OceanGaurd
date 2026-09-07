@@ -84,9 +84,9 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Live Environmental Ticker */}
           <div className="hidden xl:flex items-center gap-2.5 ml-2 pl-3 border-l border-slate-800 text-xs font-mono text-slate-300">
-            <span className="text-cyan-400">💨 {metocean?.wind_speed_kts || 16.2} kts {metocean?.wind_cardinal || 'WSW'}</span>
+            <span className="text-cyan-400">💨 {metocean?.wind_speed_kts ?? 12.8} kts {metocean?.wind_cardinal || 'WNW'}</span>
             <span className="text-slate-700">|</span>
-            <span className="text-cyan-300">🌊 {metocean?.current_speed_kts || 1.4} kts {metocean?.current_cardinal || 'ENE'}</span>
+            <span className="text-cyan-300">🌊 {metocean?.current_speed_kts ?? 1.1} kts {metocean?.current_cardinal || 'E'}</span>
           </div>
         </div>
 

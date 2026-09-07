@@ -25,6 +25,7 @@ import {
   calculatePolygonMetrics,
   DARTIS_BENCHMARKS_CATALOG
 } from './simulationEngine';
+import { getDartisMaskDataUrl } from './dartisMasks';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -226,8 +227,17 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       centerLat = matchedBench.center[1];
     }
 
-    const polygon = generateRealisticSpillPolygon(centerLon, centerLat, 52.0, 4.6, 1.3);
-    const polyMetrics = calculatePolygonMetrics(polygon, 16.2);
+    const polygon = (matchedBench as any)?.polygonCoordinates || [
+      [33.055625, 33.261205], [33.055705, 33.260903], [33.055786, 33.260601], [33.055867, 33.260299],
+      [33.055948, 33.259997], [33.056029, 33.259695], [33.05611, 33.259393], [33.056191, 33.259091],
+      [33.056976, 33.259302], [33.057761, 33.259513], [33.058546, 33.259724], [33.059331, 33.259935],
+      [33.060116, 33.260146], [33.060901, 33.260357], [33.061686, 33.260568], [33.061605, 33.26087],
+      [33.061524, 33.261172], [33.061443, 33.261474], [33.061362, 33.261776], [33.061281, 33.262078],
+      [33.0612, 33.26238], [33.061119, 33.262682], [33.061038, 33.262984], [33.060253, 33.262773],
+      [33.059468, 33.262562], [33.058683, 33.262351], [33.057898, 33.26214], [33.057113, 33.261929],
+      [33.056328, 33.261718], [33.055543, 33.261507], [33.055625, 33.261205]
+    ];
+    const polyMetrics = calculatePolygonMetrics(polygon, 12.8);
 
     const fallbackArea = matchedBench ? matchedBench.areaSqKm : (sceneId.includes('ow-0001') ? 0.3797 : (polyMetrics.area_sq_km || 0.3797));
     const fallbackPerimeter = matchedBench ? matchedBench.perimeterKm : (sceneId.includes('ow-0001') ? 2.2647 : polyMetrics.perimeter_km);
@@ -241,7 +251,7 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
     const fallbackUtc = matchedBench ? matchedBench.acquisitionStartUtc : "2019-01-01 03:42:35 UTC";
     const fallbackLocation = matchedBench ? matchedBench.location : `Offshore Target (${centerLat.toFixed(3)}°N, ${centerLon.toFixed(3)}°E)`;
 
-    const mockMaskUrl = `http://localhost:8000/api/v1/ml/masks/${sceneId.replace(/\.(jpg|jpeg)$/i, '.png')}`;
+    const mockMaskUrl = getDartisMaskDataUrl(sceneId);
 
     // Register into the incident engine so all tabs, threat models, and scrubbing works immediately
     registerCustomSpillIncident({
@@ -251,6 +261,7 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       originCoords: [centerLon, centerLat],
       areaSqKm: fallbackArea,
       sourceScene: sceneId,
+      mask_data_url: mockMaskUrl,
       slickType: matchedBench ? `Heavy Crude Oil (${matchedBench.datasetKey.toUpperCase()} DARTIS)` : "Heavy Crude Oil (Marine Heavy Residue)",
       confidence: fallbackConfidence,
       segmentation_dice_score: fallbackDice,
@@ -260,7 +271,7 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       damping_ratio_db: fallbackDamping,
       lookalike_score: matchedBench ? matchedBench.lookalikeScore : polyMetrics.lookalike_score,
       polygonCoordinates: polygon,
-      windSpeedKts: 16.2,
+      windSpeedKts: 12.8,
       acquisitionTimestampUtc: fallbackUtc,
     });
 
@@ -278,7 +289,7 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       segmentation_dice_score: fallbackDice,
       segmentation_iou_score: fallbackIou,
       max_probability: fallbackMaxProb,
-      oil_likelihood_score: matchedBench ? matchedBench.oilLikelihoodScore : fallbackConfidence,
+      oil_likelihood_score: matchedBench ? matchedBench.oilLikelihoodScore : polyMetrics.oil_likelihood_score,
       lookalike_score: matchedBench ? matchedBench.lookalikeScore : polyMetrics.lookalike_score,
       damping_ratio_db: fallbackDamping,
       source_scene: sceneId,
@@ -287,29 +298,25 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       centroid: [centerLat, centerLon] as [number, number],
       polygon_coordinates: polygon,
       estimated_discharge_liters: Math.round(fallbackArea * 10500),
-      slick_type: matchedBench ? `Heavy Crude Oil (${matchedBench.datasetKey.toUpperCase()} DARTIS)` : "Heavy Crude Oil (Marine Heavy Residue)",
+      slick_type: matchedBench ? `Copernicus Sentinel-1 SAR Oil Slick (${matchedBench.datasetKey.toUpperCase()})` : "Heavy Marine Crude Residue",
       mask_data_url: mockMaskUrl
-    };
-
-    const geojsonFeature: SpillGeoFeature = {
-      type: "Feature",
-      id: mockId,
-      properties: {
-        ...spillObj,
-        detection_timestamp: nowIso,
-        acquisition_timestamp_utc: fallbackUtc,
-      },
-      geometry: {
-        type: "Polygon",
-        coordinates: [polygon]
-      }
     };
 
     return {
       status: "SUCCESS",
-      message: "SAR Scene segmented & attributed successfully.",
+      message: "SAR scene analyzed and segmented successfully (client-side benchmark fallback).",
       spill: spillObj,
-      geojson_feature: geojsonFeature,
+      geojson_feature: {
+        type: "Feature",
+        properties: {
+          ...spillObj,
+          slick_type: spillObj.slick_type
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [polygon]
+        }
+      },
       metrics: {
         area_sq_km: fallbackArea,
         perimeter_km: fallbackPerimeter,
@@ -318,14 +325,14 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
         segmentation_dice_score: fallbackDice,
         segmentation_iou_score: fallbackIou,
         max_probability: fallbackMaxProb,
-        oil_likelihood_score: matchedBench ? matchedBench.oilLikelihoodScore : fallbackConfidence,
+        oil_likelihood_score: matchedBench ? matchedBench.oilLikelihoodScore : polyMetrics.oil_likelihood_score,
         lookalike_score: matchedBench ? matchedBench.lookalikeScore : polyMetrics.lookalike_score,
         damping_ratio_db: fallbackDamping,
         class_probabilities: fallbackClasses
       },
       primary_suspect: INITIAL_SUSPECTS[0],
       ranked_suspects: INITIAL_SUSPECTS,
-      mask_data_url: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' width='256' height='256'><rect width='256' height='256' fill='%23070b14'/><ellipse cx='128' cy='128' rx='42' ry='24' fill='%23f43f5e' filter='drop-shadow(0 0 8px %23f43f5e)'/></svg>`
+      mask_data_url: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256' width='256' height='256'><rect width='256' height='256' fill='none'/><polygon points='138,119 146,119 146,136 138,136' fill='%23f43f5e' fill-opacity='0.9' stroke='%23fb7185' stroke-width='1.5' filter='drop-shadow(0 0 6px %23f43f5e)'/></svg>`
     };
   }
 }

@@ -35,11 +35,11 @@ export function generateClientSidePdfDossier(
     heading_degrees: 84
   };
 
-  const area = spillFeature?.properties?.area_sq_km || 7.24;
-  const perimeter = spillFeature?.properties?.perimeter_km || 19.30;
+  const area = spillFeature?.properties?.area_sq_km || 0.38;
+  const perimeter = spillFeature?.properties?.perimeter_km || 2.26;
   const rawDice = spillFeature?.properties?.segmentation_dice_score || spillFeature?.properties?.confidence_score || 0.7130;
   const diceScore = (rawDice <= 1.0 ? rawDice * 100 : rawDice).toFixed(1);
-  const dampingRatio = (spillFeature?.properties?.damping_ratio_db || 8.4).toFixed(1);
+  const dampingRatio = (spillFeature?.properties?.damping_ratio_db || 8.9).toFixed(1);
   const dischargeLiters = spillFeature?.properties?.estimated_discharge_liters || Math.round(area * 10500);
 
   // Background Accent Header Banner
@@ -122,11 +122,11 @@ export function generateClientSidePdfDossier(
   doc.setFontSize(8);
   doc.setTextColor(30, 30, 30);
 
-  const windStr = '14.2 kts @ 275° (Mediterranean Westerly)';
-  const currStr = '0.9 kts @ 85° (Cilician / Levantine Current)';
-  const driftStr = '1.35 kts @ 84.5° (Downstream Drift)';
-  const reverseStr = '1.35 kts @ 264.5° (Reverse Back-Trace)';
-  const originStr = '33.2590° N, 33.0578° E (Scene ow-0001.jpg Origin)';
+  const windStr = '12.8 kts @ 285.0° WNW (Levantine Surface Wind)';
+  const currStr = '1.1 kts @ 95.0° E (Copernicus Marine Current)';
+  const driftStr = '1.52 kts @ 95.0° E (Downstream Net Drift)';
+  const reverseStr = '1.52 kts @ 275.0° W (Reverse Back-Trace)';
+  const originStr = '33.2684° N, 33.0421° E (Discharge Origin T-42m)';
 
   doc.text(`• Wind Advection Vector: ${windStr}`, col1, y);
   doc.text(`• Surface Current Vector: ${currStr}`, col2, y);
