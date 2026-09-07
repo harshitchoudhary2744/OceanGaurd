@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Satellite, Upload, FileText, RefreshCw, Eye, Menu, X, ShieldAlert, Radio, ChevronDown, Bell } from 'lucide-react';
+import { Satellite, Upload, FileText, RefreshCw, Eye, Menu, X, ShieldAlert, Radio, ChevronDown, Bell, Wind, Waves } from 'lucide-react';
 import { downloadPdfReportUrl } from '../lib/api';
 import { SuspectVessel, SpillGeoFeature, MetoceanData } from '../types';
 import { MUMBAI_INCIDENTS } from '../lib/simulationEngine';
@@ -66,9 +66,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className="h-16 tactical-glass border-b border-slate-800 px-3 sm:px-6 flex items-center justify-between z-40 shrink-0 select-none">
-        {/* Brand & Live Environmental Ticker */}
-        <div className="flex items-center gap-2 sm:gap-4">
+      <header className="h-16 tactical-glass border-b border-slate-800 px-3 sm:px-5 flex items-center justify-between gap-3 z-40 shrink-0 select-none whitespace-nowrap overflow-x-hidden">
+        {/* Left: Brand & Environmental Telemetry */}
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-sm shrink-0">
               <Satellite className="w-4 h-4" />
@@ -78,55 +78,61 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
 
-          <span className="hidden xs:inline-block px-2 py-0.5 rounded bg-slate-800/80 text-cyan-300 border border-cyan-500/30 font-mono text-[11px] sm:text-xs font-semibold">
-            EASTERN MEDITERRANEAN • CYPRUS LEVANTINE
+          <span className="hidden 2xl:inline-block px-2 py-0.5 rounded bg-slate-800/80 text-cyan-300 border border-cyan-500/30 font-mono text-[10.5px] font-semibold tracking-wide shrink-0">
+            LEVANTINE SECTOR
           </span>
 
-          {/* Live Environmental Ticker */}
-          <div className="hidden xl:flex items-center gap-2.5 ml-2 pl-3 border-l border-slate-800 text-xs font-mono text-slate-300">
-            <span className="text-cyan-400">💨 {metocean?.wind_speed_kts ?? 12.8} kts {metocean?.wind_cardinal || 'WNW'}</span>
+          {/* Live Environmental Metocean Conditions Pill */}
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] font-mono text-slate-300 shadow-inner shrink-0">
+            <span className="flex items-center gap-1 text-cyan-400 font-semibold" title={`Surface Wind: ${metocean?.wind_speed_kts ?? 12.8} kts from ${metocean?.wind_cardinal || 'WNW'}`}>
+              <Wind className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span>{metocean?.wind_speed_kts ?? 12.8} kts {metocean?.wind_cardinal || 'WNW'}</span>
+            </span>
             <span className="text-slate-700">|</span>
-            <span className="text-cyan-300">🌊 {metocean?.current_speed_kts ?? 1.1} kts {metocean?.current_cardinal || 'E'}</span>
+            <span className="flex items-center gap-1 text-sky-300 font-semibold" title={`Surface Current: ${metocean?.current_speed_kts ?? 1.1} kts towards ${metocean?.current_cardinal || 'E'}`}>
+              <Waves className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+              <span>{metocean?.current_speed_kts ?? 1.1} kts {metocean?.current_cardinal || 'E'}</span>
+            </span>
           </div>
         </div>
 
-        {/* Action Controls - Desktop */}
-        <div className="hidden md:flex items-center gap-2.5 sm:gap-3">
-          {/* Real-time Multi-Incident Selector */}
-          <div className="relative flex items-center">
-            <label htmlFor="incident-select" className="sr-only">Select Incident</label>
-            <div className="flex items-center gap-2 bg-slate-900/90 rounded-lg px-2.5 py-1.5 border border-cyan-500/30 text-xs font-mono">
-              <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-              <span className="text-slate-400 text-[11px] font-bold">INCIDENT:</span>
-              <select
-                id="incident-select"
-                value={selectedSpillId}
-                onChange={(e) => onSelectSpillId(e.target.value)}
-                className="bg-transparent text-cyan-300 font-bold outline-none cursor-pointer pr-1 focus:text-white"
-              >
-                {Object.values(MUMBAI_INCIDENTS).map((inc) => (
-                  <option key={inc.id} value={inc.id} className="bg-slate-900 text-slate-200">
-                    {inc.name} ({inc.baseAreaSqKm} km²)
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Center: Mission Incident Selector & S-1 Status */}
+        <div className="hidden md:flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 bg-slate-900/95 rounded-lg px-2.5 py-1.5 border border-cyan-500/30 text-xs font-mono shadow-sm">
+            <ShieldAlert className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <span className="text-slate-400 text-[11px] font-bold shrink-0">INCIDENT:</span>
+            <select
+              id="incident-select"
+              value={selectedSpillId}
+              onChange={(e) => onSelectSpillId(e.target.value)}
+              className="bg-transparent text-cyan-300 font-bold outline-none cursor-pointer pr-1 focus:text-white max-w-[170px] lg:max-w-[240px] xl:max-w-[320px] truncate"
+              title={currentIncident.name}
+            >
+              {Object.values(MUMBAI_INCIDENTS).map((inc) => (
+                <option key={inc.id} value={inc.id} className="bg-slate-900 text-slate-200">
+                  {inc.name} ({inc.baseAreaSqKm} km²)
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Live Sentinel-1 Stream Status */}
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-[11px] font-mono shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-[11px] font-mono shadow-sm shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
             <span className="text-emerald-300 font-bold">S-1 STREAM:</span>
             <span className="text-white font-semibold">
               REAL-TIME (T{currentIncident.dischargeOffsetMinutes}m)
             </span>
           </div>
+        </div>
 
+        {/* Right: Action Controls & Telemetry Clock */}
+        <div className="hidden md:flex items-center gap-2 shrink-0">
           {/* Emergency Alert Broadcast Bell */}
           <button
             onClick={onOpenAlerts}
             title="Emergency Broadcast Alerts"
-            className={`relative p-2 rounded-lg border transition-all ${
+            className={`relative p-2 rounded-lg border transition-all shrink-0 ${
               unreadAlertCount > 0
                 ? 'bg-red-950/60 border-red-500/50 text-red-400 hover:bg-red-900/60 shadow-lg shadow-red-950/40'
                 : 'bg-slate-900/80 hover:bg-slate-800 border-slate-800 text-slate-400 hover:text-white'
@@ -144,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onRefresh}
             title="Refresh Data"
-            className="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-colors shrink-0"
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-cyan-400' : ''}`} />
           </button>
@@ -152,18 +158,18 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Forensic SAR View */}
           <button
             onClick={onOpenForensicModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs font-mono font-semibold text-slate-200 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-[11px] font-mono font-semibold text-slate-200 hover:text-white transition-colors shrink-0"
           >
-            <Eye className="w-3.5 h-3.5 text-cyan-400" />
+            <Eye className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             <span>SAR Analysis</span>
           </button>
 
           {/* Upload SAR Button */}
           <button
             onClick={onOpenUploadModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-cyan-500/40 text-xs font-mono font-semibold text-cyan-400 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-cyan-500/40 text-[11px] font-mono font-semibold text-cyan-400 transition-colors shrink-0"
           >
-            <Upload className="w-3.5 h-3.5" />
+            <Upload className="w-3.5 h-3.5 shrink-0" />
             <span>Upload SAR</span>
           </button>
 
@@ -171,16 +177,16 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={handleExportPdf}
             disabled={isExporting}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 font-mono text-xs font-bold transition-all shadow-md disabled:opacity-70"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 text-slate-950 hover:bg-cyan-400 font-mono text-[11px] font-bold transition-all shadow-md disabled:opacity-70 shrink-0"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 shrink-0" />
             <span>{isExporting ? 'Generating...' : 'PDF Audit'}</span>
           </button>
 
           {/* IST Clock */}
-          <div className="pl-3 border-l border-slate-800 text-right font-mono">
+          <div className="pl-2.5 border-l border-slate-800 text-right font-mono shrink-0">
             <div className="text-xs font-bold text-cyan-400">{istTime}</div>
-            <div className="text-[9.5px] text-slate-500">LIVE IST RADAR</div>
+            <div className="text-[8.5px] text-slate-500 tracking-wider">LIVE RADAR</div>
           </div>
         </div>
 
