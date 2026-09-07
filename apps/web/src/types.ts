@@ -62,6 +62,7 @@ export interface SpillProperties {
   status: 'ACTIVE' | 'CONTAINED' | 'DISPERSED';
   center: [number, number]; // [lon, lat]
   centroid?: [number, number]; // [lat, lon]
+  origin_coordinates?: [number, number]; // [lon, lat]
   estimated_discharge_liters?: number;
   slick_type?: string;
   mask_data_url?: string;

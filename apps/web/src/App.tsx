@@ -16,6 +16,7 @@ import {
   VectorMatch,
   SARInferenceResponse,
   MetoceanData,
+  HindcastData,
   DashboardAlert,
   MapFocusTarget
 } from './types';
@@ -24,7 +25,8 @@ import {
   fetchCorrelations,
   fetchVectorMatches,
   fetchVessels,
-  fetchMetoceanData
+  fetchMetoceanData,
+  fetchHindcastData
 } from './lib/api';
 import {
   INITIAL_SPILLS,
@@ -51,6 +53,8 @@ export function App() {
   const [suspects, setSuspects] = useState<SuspectVessel[]>(INITIAL_SUSPECTS);
   const [vectorMatches, setVectorMatches] = useState<VectorMatch[]>(INITIAL_VECTOR_MATCHES);
   const [metocean, setMetocean] = useState<MetoceanData>(DEFAULT_METOCEAN.mediterranean_dartis || DEFAULT_METOCEAN.levantine || Object.values(DEFAULT_METOCEAN)[0]);
+  const [hindcastData, setHindcastData] = useState<HindcastData | null>(null);
+  const [detectionResult, setDetectionResult] = useState<SARInferenceResponse | null>(null);
   const [selectedSpillId, setSelectedSpillId] = useState<string>("DARTIS-ow-0001");
   const [selectedVesselMmsi, setSelectedVesselMmsi] = useState<number | null>(212000001);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -200,15 +204,17 @@ export function App() {
   const loadData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const [spillsData, vesselsData, suspectsData, vectorData, metoceanData] = await Promise.all([
+      const [spillsData, vesselsData, suspectsData, vectorData, metoceanData, hindcastRes] = await Promise.all([
         fetchSpills(),
         fetchVessels(),
         fetchCorrelations(selectedSpillId),
         fetchVectorMatches(selectedSpillId),
-        fetchMetoceanData('mediterranean_dartis')
+        fetchMetoceanData('mediterranean_dartis'),
+        fetchHindcastData(selectedSpillId, 6, 'mediterranean_dartis')
       ]);
 
       if (spillsData?.features?.length) setSpills(spillsData);
+      if (hindcastRes) setHindcastData(hindcastRes);
       if (vesselsData?.length) {
         const canonicalFleet = vesselsData
           .filter((v: Vessel) => CANONICAL_MMSIS.includes(getCanonicalMmsi(v.mmsi)))
@@ -387,6 +393,7 @@ export function App() {
 
   // Handle SAR Inference Result from Upload Modal
   const handleInferenceResult = (res: SARInferenceResponse) => {
+    setDetectionResult(res);
     if (res?.spill) {
       // 1. Use response.geojson_feature.geometry to render the detected oil-spill polygon
       const geometry = res.geojson_feature?.geometry || {
@@ -425,10 +432,11 @@ export function App() {
           area_sq_km: res.spill.area_sq_km,
           perimeter_km: res.spill.perimeter_km,
           confidence_score: res.spill.confidence_score,
-          segmentation_dice_score: res.metrics?.segmentation_dice_score || 0.7130,
-          segmentation_iou_score: res.metrics?.segmentation_iou_score || 0.5540,
-          max_probability: res.metrics?.max_probability || 0.982257,
-          oil_likelihood_score: res.metrics?.oil_likelihood_score || 0.982,
+          segmentation_dice_score: res.metrics?.segmentation_dice_score ?? res.spill.segmentation_dice_score ?? undefined,
+          segmentation_iou_score: res.metrics?.segmentation_iou_score ?? undefined,
+          max_probability: res.metrics?.max_probability ?? undefined,
+          oil_likelihood_score: res.metrics?.oil_likelihood_score ?? res.spill.oil_likelihood_score ?? res.spill.confidence_score,
+          damping_ratio_db: res.metrics?.damping_ratio_db ?? res.spill.damping_ratio_db ?? 8.9,
           source_scene: res.spill.source_scene,
           status: 'ACTIVE',
           center: [centerLon, centerLat],
@@ -510,6 +518,8 @@ export function App() {
             timeOffsetMinutes={timeOffsetMinutes}
             metocean={metocean}
             focusTarget={focusTarget}
+            hindcastData={hindcastData}
+            detectionResult={detectionResult}
             onOpenMobileDrawer={() => {
               setMobileActiveTab('threats');
               setIsMobileDrawerOpen(true);
@@ -543,6 +553,7 @@ export function App() {
             timeOffsetMinutes={timeOffsetMinutes}
             scrubbedVessels={scrubbedVessels}
             onFocusLocation={handleFocusLocation}
+            detectionResult={detectionResult}
           />
         </div>
       </div>
@@ -636,6 +647,7 @@ export function App() {
               scrubbedVessels={scrubbedVessels}
               initialTab={mobileActiveTab === 'map' ? 'overview' : mobileActiveTab}
               onFocusLocation={handleFocusLocation}
+              detectionResult={detectionResult}
             />
           </div>
         </div>

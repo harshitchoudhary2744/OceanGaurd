@@ -23,7 +23,17 @@ import {
   Home,
   Droplet
 } from 'lucide-react';
-import { SpillFeatureCollection, Vessel, SuspectVessel, MetoceanData, SpillGeoFeature, MaritimeSpatialAsset, MapFocusTarget } from '../types';
+import {
+  SpillFeatureCollection,
+  Vessel,
+  SuspectVessel,
+  MetoceanData,
+  SpillGeoFeature,
+  MaritimeSpatialAsset,
+  MapFocusTarget,
+  HindcastData,
+  SARInferenceResponse
+} from '../types';
 import {
   calculateSynchronizedOilSpill,
   moveCoordinate,
@@ -492,6 +502,8 @@ interface TacticalMapProps {
   scenario?: string;
   onOpenMobileDrawer?: () => void;
   focusTarget?: MapFocusTarget | null;
+  hindcastData?: HindcastData | null;
+  detectionResult?: SARInferenceResponse | null;
 }
 
 export const TacticalMap: React.FC<TacticalMapProps> = ({
@@ -508,6 +520,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   metocean,
   onOpenMobileDrawer,
   focusTarget,
+  hindcastData,
+  detectionResult,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -743,14 +757,25 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       return { type: "FeatureCollection" as const, features: [] };
     }
 
+    const originCoords: [number, number] = hindcastData?.reconstructed_origin
+      ? [hindcastData.reconstructed_origin.longitude, hindcastData.reconstructed_origin.latitude]
+      : baseOrigin;
+
     const hindcastCone = generateConeBetweenPoints(
       slickCentroid[0],
       slickCentroid[1],
-      baseOrigin[0],
-      baseOrigin[1],
+      originCoords[0],
+      originCoords[1],
       0.35,
       0.90
     );
+
+    const trackCoords = hindcastData?.hindcast_track?.length
+      ? hindcastData.hindcast_track.map((pt) => [pt.longitude, pt.latitude])
+      : [
+          [slickCentroid[0], slickCentroid[1]],
+          [originCoords[0], originCoords[1]],
+        ];
 
     return {
       type: "FeatureCollection" as const,
@@ -765,15 +790,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           properties: { type: "hindcast_vector", title: "Back-Track Drift Vector" },
           geometry: {
             type: "LineString" as const,
-            coordinates: [
-              [slickCentroid[0], slickCentroid[1]],
-              [baseOrigin[0], baseOrigin[1]],
-            ],
+            coordinates: trackCoords,
           },
         },
       ],
     };
-  }, [showHindcast, isPostDischarge, slickCentroid, baseOrigin]);
+  }, [showHindcast, isPostDischarge, slickCentroid, baseOrigin, hindcastData]);
 
   // Hydrodynamic +6h Drift Forecast Fan
   const forecastFeatures = useMemo(() => {
@@ -782,8 +804,8 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       return { type: "FeatureCollection" as const, features: [] };
     }
 
-    const driftBearing = metocean ? (metocean.current_direction_deg || 65) : 65;
-    const driftSpeed = metocean ? (metocean.current_speed_kts || 1.1) : 1.1;
+    const driftBearing = metocean?.net_drift_direction_deg ?? metocean?.current_direction_deg ?? 84.5;
+    const driftSpeed = metocean?.net_drift_speed_kts ?? metocean?.current_speed_kts ?? 1.35;
     const cone = generateForecastCone(slickCentroid[0], slickCentroid[1], driftBearing, driftSpeed, 6);
 
     return {
@@ -805,8 +827,14 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       return { type: "FeatureCollection" as const, features: [] };
     }
 
+    const originCoords: [number, number] = hindcastData?.reconstructed_origin
+      ? [hindcastData.reconstructed_origin.longitude, hindcastData.reconstructed_origin.latitude]
+      : baseOrigin;
+
     const breachEvent = currentIncident.events.find((e) => e.type === 'breach') || currentIncident.events[2];
-    const breachTimestamp = breachEvent?.timestamp_ist || "15:48 IST";
+    const breachTimestamp = hindcastData?.reconstructed_origin?.timestamp
+      ? new Date(hindcastData.reconstructed_origin.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' UTC'
+      : breachEvent?.timestamp_ist || "03:00 UTC";
 
     return {
       type: "FeatureCollection" as const,
@@ -818,11 +846,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             timestamp_ist: breachTimestamp,
             incident_id: currentIncident.id,
           },
-          geometry: { type: "Point" as const, coordinates: baseOrigin },
+          geometry: { type: "Point" as const, coordinates: originCoords },
         },
       ],
     };
-  }, [isPostDischarge, currentIncident, baseOrigin]);
+  }, [isPostDischarge, currentIncident, baseOrigin, hindcastData]);
 
   // Initialize MapLibre Engine
   useEffect(() => {
@@ -1329,12 +1357,12 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                 <span style="background: rgba(225,29,72,0.25); color: #fda4af; padding: 1.5px 6px; border-radius: 4px; font-weight: bold; border: 1px solid rgba(225,29,72,0.4); font-size: 9.5px;">${props?.status || 'ACTIVE'}</span>
               </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 6px;">
-                <div><span style="color: #94a3b8;">Area:</span> <b style="color: #e2e8f0;">${Number(props?.area_sq_km || 0).toFixed(2)} km²</b></div>
-                <div><span style="color: #94a3b8;">Perimeter:</span> <b style="color: #e2e8f0;">${props?.perimeter_km ? Number(props.perimeter_km).toFixed(1) : '11.4'} km</b></div>
-                <div><span style="color: #94a3b8;">AI Dice:</span> <b style="color: #34d399;">${(Number(props?.segmentation_dice_score || 0.7130) * 100).toFixed(1)}%</b></div>
-                <div><span style="color: #94a3b8;">Confidence:</span> <b style="color: #38bdf8;">${(Number(props?.confidence_score || 0.95) * 100).toFixed(1)}%</b></div>
-                <div><span style="color: #94a3b8;">Damping:</span> <b style="color: #fbbf24;">${props?.damping_ratio_db || '8.4'} dB</b></div>
-                <div><span style="color: #94a3b8;">Discharge:</span> <b style="color: #f43f5e;">${props?.estimated_discharge_liters ? Number(props.estimated_discharge_liters).toLocaleString() : '45,000'} L</b></div>
+                <div><span style="color: #94a3b8;">Area:</span> <b style="color: #e2e8f0;">${props?.area_sq_km ? Number(props.area_sq_km).toFixed(2) + ' km²' : 'N/A'}</b></div>
+                <div><span style="color: #94a3b8;">Perimeter:</span> <b style="color: #e2e8f0;">${props?.perimeter_km ? Number(props.perimeter_km).toFixed(2) + ' km' : 'N/A'}</b></div>
+                <div><span style="color: #94a3b8;">AI Dice:</span> <b style="color: #34d399;">${props?.segmentation_dice_score != null ? (Number(props.segmentation_dice_score) * 100).toFixed(1) + '%' : 'N/A'}</b></div>
+                <div><span style="color: #94a3b8;">Confidence:</span> <b style="color: #38bdf8;">${props?.oil_likelihood_score != null ? (Number(props.oil_likelihood_score) * 100).toFixed(1) + '%' : props?.confidence_score != null ? (Number(props.confidence_score) * 100).toFixed(1) + '%' : 'N/A'}</b></div>
+                <div><span style="color: #94a3b8;">Damping:</span> <b style="color: #fbbf24;">${props?.damping_ratio_db ? props.damping_ratio_db + ' dB' : 'N/A'}</b></div>
+                <div><span style="color: #94a3b8;">Discharge:</span> <b style="color: #f43f5e;">${props?.estimated_discharge_liters ? Number(props.estimated_discharge_liters).toLocaleString() + ' L' : 'N/A'}</b></div>
               </div>
               <div style="border-top: 1px solid #1e293b; padding-top: 5px; font-size: 9.5px; color: #94a3b8; display: flex; flex-direction: column; gap: 2px;">
                 <div><span style="color: #64748b;">Type:</span> ${props?.slick_type || 'Heavy Fuel Oil'}</div>
