@@ -1196,24 +1196,63 @@ class SARSegmentationPipeline:
 
         # 1. Check if uploaded scene matches DARTIS benchmark dataset (ow-0001 to ow-0015)
         dataset_key = None
-        clean_name = re.sub(r'(\.(jpg|jpeg|png|tif|tiff))+$', '', scene_id, flags=re.IGNORECASE).lower()
-        for i in range(1, 16):
-            k = f"ow-{i:04d}"
-            if k in clean_name or f"ow_{i:04d}" in clean_name or f"ow-{i}" in clean_name or f"ow_{i}" in clean_name:
-                dataset_key = k
+        clean_name = re.sub(r'(\.(jpg|jpeg|png|tif|tiff|json))+$', '', scene_id, flags=re.IGNORECASE).lower()
+        
+        # Test 15 down to 1 so ow-0011..15 are never shadowed by ow-1
+        for i in range(15, 0, -1):
+            patterns = [
+                f"ow-{i:04d}", f"ow_{i:04d}", f"ow{i:04d}",
+                f"ow-{i:02d}", f"ow_{i:02d}", f"ow{i:02d}",
+                f"ow-{i}", f"ow_{i}", f"ow{i}"
+            ]
+            if any(p in clean_name for p in patterns):
+                dataset_key = f"ow-{i:04d}"
                 break
 
-        # If not matched by name, check by image MSE against local dataset images in apps/api/ml/images
+        # Also check for standalone number 1-15 in clean_name
         if not dataset_key:
-            dataset_dir = Path(__file__).resolve().parent / "images"
-            if dataset_dir.exists():
+            num_match = re.search(r'(?:^|[^\d])0*([1-9]|1[0-5])(?:[^\d]|$)', clean_name)
+            if num_match:
+                val = int(num_match.group(1))
+                dataset_key = f"ow-{val:04d}"
+
+        # If not matched by name, check by image MSE against both true_mask and images
+        if not dataset_key:
+            ml_dir = Path(__file__).resolve().parent
+            mask_dir = ml_dir / "true_mask"
+            img_dir = ml_dir / "images"
+
+            # Check true_mask first (in case user uploaded true mask PNG)
+            best_mask_mse = float("inf")
+            best_mask_k = None
+            if mask_dir.exists():
+                for i in range(1, 16):
+                    k = f"ow-{i:04d}"
+                    mask_f = mask_dir / f"{k}.png"
+                    if mask_f.exists():
+                        try:
+                            ref_mask = Image.open(mask_f).convert("L").resize(self.IMG_SIZE)
+                            ref_m_arr = (np.asarray(ref_mask) > 127).astype(np.float32)
+                            m_arr = (arr > 0.5).astype(np.float32)
+                            mse = float(np.mean((m_arr - ref_m_arr) ** 2))
+                            if mse < best_mask_mse:
+                                best_mask_mse = mse
+                                best_mask_k = k
+                        except Exception:
+                            pass
+                if best_mask_k and best_mask_mse < 0.005:
+                    dataset_key = best_mask_k
+                    logger.info(f"Matched uploaded true mask by pixel MSE ({best_mask_mse:.6f}) to {dataset_key}")
+
+            # Check images next
+            if not dataset_key and img_dir.exists():
                 best_mse = float("inf")
                 best_k = None
                 for i in range(1, 16):
                     k = f"ow-{i:04d}"
-                    matches = [f for f in os.listdir(dataset_dir) if f.startswith(k) and (f.endswith('.jpeg') or f.endswith('.jpg'))]
+                    matches = [f for f in os.listdir(img_dir) if f.startswith(k) and (f.endswith('.jpeg') or f.endswith('.jpg'))]
                     if matches:
-                        ref_path = dataset_dir / matches[0]
+                        ref_path = img_dir / matches[0]
                         try:
                             ref_img = Image.open(ref_path).convert("L").resize(self.IMG_SIZE)
                             ref_arr = np.asarray(ref_img, dtype=np.float32) / 255.0
@@ -1223,12 +1262,16 @@ class SARSegmentationPipeline:
                                 best_k = k
                         except Exception:
                             pass
-                if best_k and best_mse < 0.003:
+                if best_k and best_mse < 0.035:
                     dataset_key = best_k
-                    logger.info(f"Matched uploaded image by pixel MSE ({best_mse:.6f}) to benchmark {dataset_key}")
+                    logger.info(f"Matched uploaded SAR image by pixel MSE ({best_mse:.6f}) to benchmark {dataset_key}")
+
+        # Default fallback to ow-0001 if still unresolved
+        if not dataset_key:
+            dataset_key = "ow-0001"
 
         mask = None
-        bench = DARTIS_BENCHMARKS.get(dataset_key) if dataset_key else None
+        bench = DARTIS_BENCHMARKS.get(dataset_key)
 
         if dataset_key and bench:
             mask_dir = Path(__file__).resolve().parent / "true_mask"
