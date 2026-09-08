@@ -28,7 +28,7 @@ MONITORED_FLEET_WAYPOINTS = [
             {"tMinutes": 180,  "lon": 33.9503, "lat": 33.2900, "heading": 95.0, "speed": 13.5},
         ],
     },
-    # 2. HIGH-SPEED PASSENGER FERRY: North-Northeast transit (25°) to Limassol
+    # 2. HIGH-SPEED PASSENGER FERRY: North-Northeast transit (20°) to Limassol
     {
         "mmsi": 212000002,
         "imo_number": 9512345,
@@ -42,11 +42,11 @@ MONITORED_FLEET_WAYPOINTS = [
         "destination": "LIMASSOL PASSENGER FERRY TERMINAL",
         "cargo_type": "Passengers & Accompanied Vehicles (1,200 PAX)",
         "waypoints": [
-            {"tMinutes": -360, "lon": 32.8000, "lat": 32.1000, "heading": 25.0, "speed": 18.5},
-            {"tMinutes": -180, "lon": 33.0500, "lat": 32.8500, "heading": 25.0, "speed": 18.5},
-            {"tMinutes": -42,  "lon": 33.2600, "lat": 33.4500, "heading": 25.0, "speed": 18.5},
-            {"tMinutes": 0,    "lon": 33.3200, "lat": 33.6500, "heading": 25.0, "speed": 18.5},
-            {"tMinutes": 180,  "lon": 33.5000, "lat": 34.6000, "heading": 25.0, "speed": 18.5},
+            {"tMinutes": -360, "lon": 33.2500, "lat": 32.1000, "heading": 20.0, "speed": 18.5},
+            {"tMinutes": -180, "lon": 33.4800, "lat": 32.8500, "heading": 20.0, "speed": 18.5},
+            {"tMinutes": -42,  "lon": 33.6600, "lat": 33.4500, "heading": 20.0, "speed": 18.5},
+            {"tMinutes": 0,    "lon": 33.7200, "lat": 33.6500, "heading": 20.0, "speed": 18.5},
+            {"tMinutes": 180,  "lon": 33.9000, "lat": 34.6000, "heading": 20.0, "speed": 18.5},
         ],
     },
     # 3. CAPESIZE BULK CARRIER: Southeast diagonal transit (145°)
@@ -63,11 +63,11 @@ MONITORED_FLEET_WAYPOINTS = [
         "destination": "PORT SAID ANCHORAGE",
         "cargo_type": "Dry Bulk Minerals & Iron Ore",
         "waypoints": [
-            {"tMinutes": -360, "lon": 31.5000, "lat": 34.1000, "heading": 145.0, "speed": 13.0},
-            {"tMinutes": -180, "lon": 31.9500, "lat": 33.6500, "heading": 145.0, "speed": 13.0},
-            {"tMinutes": -42,  "lon": 32.3000, "lat": 33.3000, "heading": 145.0, "speed": 13.0},
-            {"tMinutes": 0,    "lon": 32.4500, "lat": 33.1500, "heading": 145.0, "speed": 13.0},
-            {"tMinutes": 180,  "lon": 32.9000, "lat": 32.7000, "heading": 145.0, "speed": 13.0},
+            {"tMinutes": -360, "lon": 31.1500, "lat": 34.2000, "heading": 145.0, "speed": 13.0},
+            {"tMinutes": -180, "lon": 31.6000, "lat": 33.7500, "heading": 145.0, "speed": 13.0},
+            {"tMinutes": -42,  "lon": 31.9500, "lat": 33.4000, "heading": 145.0, "speed": 13.0},
+            {"tMinutes": 0,    "lon": 32.1000, "lat": 33.1500, "heading": 145.0, "speed": 13.0},
+            {"tMinutes": 180,  "lon": 32.5500, "lat": 32.6000, "heading": 145.0, "speed": 13.0},
         ],
     },
     # 4. LPG TANKER: Northwest diagonal transit (305°) to Vasiliko Jetty
@@ -91,7 +91,7 @@ MONITORED_FLEET_WAYPOINTS = [
             {"tMinutes": 180,  "lon": 32.6000, "lat": 34.3500, "heading": 305.0, "speed": 14.0},
         ],
     },
-    # 5. POLLUTION PATROL: Active tactical SAR surveillance sweep (67°)
+    # 5. POLLUTION PATROL: Active tactical SAR surveillance sweep (Northern Sector)
     {
         "mmsi": 212000005,
         "imo_number": 9845678,
@@ -105,11 +105,11 @@ MONITORED_FLEET_WAYPOINTS = [
         "destination": "SAR SECTOR PATROL",
         "cargo_type": "Tier-2 Booms & Offshore Skimmers",
         "waypoints": [
-            {"tMinutes": -360, "lon": 32.7000, "lat": 34.2000, "heading": 67.0, "speed": 14.0},
-            {"tMinutes": -180, "lon": 32.6000, "lat": 33.6000, "heading": 67.0, "speed": 13.0},
-            {"tMinutes": -42,  "lon": 32.8500, "lat": 33.4000, "heading": 67.0, "speed": 11.5},
-            {"tMinutes": 0,    "lon": 33.0000, "lat": 33.4500, "heading": 67.0, "speed": 9.0},
-            {"tMinutes": 180,  "lon": 33.4000, "lat": 33.6000, "heading": 67.0, "speed": 7.0},
+            {"tMinutes": -360, "lon": 32.5500, "lat": 34.4500, "heading": 160.0, "speed": 13.5},
+            {"tMinutes": -180, "lon": 32.6200, "lat": 34.0500, "heading": 160.0, "speed": 12.0},
+            {"tMinutes": -42,  "lon": 32.6800, "lat": 33.7200, "heading": 160.0, "speed": 10.5},
+            {"tMinutes": 0,    "lon": 32.7200, "lat": 33.5500, "heading": 160.0, "speed": 9.0},
+            {"tMinutes": 180,  "lon": 32.8000, "lat": 33.0500, "heading": 160.0, "speed": 8.0},
         ],
     },
     # 6. CONTAINER SHIP: Deep southern corridor Westbound transit (270°)
@@ -154,7 +154,7 @@ MONITORED_FLEET_WAYPOINTS = [
             {"tMinutes": 180,  "lon": 33.6000, "lat": 34.7200, "heading": 75.0, "speed": 11.0},
         ],
     },
-    # 8. OFFSHORE SUPPLY VESSEL: Southbound energy block support transit (176°)
+    # 8. OFFSHORE SUPPLY VESSEL: Southbound energy block support transit (175°)
     {
         "mmsi": 500100022,
         "imo_number": 9768521,
@@ -168,11 +168,11 @@ MONITORED_FLEET_WAYPOINTS = [
         "destination": "APHRODITE GAS FIELD BLOCK 12",
         "cargo_type": "Subsea Drilling Mud & Drill Collars",
         "waypoints": [
-            {"tMinutes": -360, "lon": 33.4000, "lat": 34.5000, "heading": 176.0, "speed": 10.5},
-            {"tMinutes": -180, "lon": 33.4500, "lat": 33.9000, "heading": 176.0, "speed": 10.5},
-            {"tMinutes": -42,  "lon": 33.5000, "lat": 33.4000, "heading": 176.0, "speed": 10.5},
-            {"tMinutes": 0,    "lon": 33.5200, "lat": 33.2000, "heading": 176.0, "speed": 8.0},
-            {"tMinutes": 180,  "lon": 33.5500, "lat": 32.7000, "heading": 176.0, "speed": 4.0},
+            {"tMinutes": -360, "lon": 33.8500, "lat": 34.5000, "heading": 175.0, "speed": 10.5},
+            {"tMinutes": -180, "lon": 33.8900, "lat": 33.9000, "heading": 175.0, "speed": 10.5},
+            {"tMinutes": -42,  "lon": 33.9300, "lat": 33.3000, "heading": 175.0, "speed": 10.5},
+            {"tMinutes": 0,    "lon": 33.9500, "lat": 33.0000, "heading": 175.0, "speed": 8.0},
+            {"tMinutes": 180,  "lon": 33.9900, "lat": 32.4000, "heading": 175.0, "speed": 4.0},
         ],
     },
     # 9. VEHICLE CARRIER: Fast East-Southeast express route (124°)
@@ -189,11 +189,11 @@ MONITORED_FLEET_WAYPOINTS = [
         "destination": "AQABA CAR TERMINAL",
         "cargo_type": "Automobiles & Electric Vehicles (6,500 CEU)",
         "waypoints": [
-            {"tMinutes": -360, "lon": 31.8000, "lat": 33.7000, "heading": 124.0, "speed": 17.0},
-            {"tMinutes": -180, "lon": 32.5000, "lat": 33.3000, "heading": 124.0, "speed": 17.0},
-            {"tMinutes": -42,  "lon": 33.0000, "lat": 33.0000, "heading": 124.0, "speed": 17.0},
-            {"tMinutes": 0,    "lon": 33.6000, "lat": 32.6500, "heading": 124.0, "speed": 17.0},
-            {"tMinutes": 180,  "lon": 34.3000, "lat": 32.2500, "heading": 124.0, "speed": 17.0},
+            {"tMinutes": -360, "lon": 31.8000, "lat": 33.3500, "heading": 120.0, "speed": 17.0},
+            {"tMinutes": -180, "lon": 32.4500, "lat": 32.9500, "heading": 120.0, "speed": 17.0},
+            {"tMinutes": -42,  "lon": 33.0000, "lat": 32.6500, "heading": 120.0, "speed": 17.0},
+            {"tMinutes": 0,    "lon": 33.4000, "lat": 32.4500, "heading": 120.0, "speed": 17.0},
+            {"tMinutes": 180,  "lon": 34.2000, "lat": 32.0500, "heading": 120.0, "speed": 17.0},
         ],
     },
     # 10. GENERAL CARGO: Southwest inbound Levantine transit (233°)

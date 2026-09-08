@@ -601,20 +601,18 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
           damping_ratio_db: backendFeature?.properties?.damping_ratio_db || config.false_positive_analysis?.marangoni_damping_db || 8.4,
           source_scene: backendFeature?.properties?.source_scene || config.sourceScene,
           status: (backendFeature?.properties?.status as any) || "ACTIVE",
-          center: offsetToUse === 0 && backendFeature?.properties?.center ? backendFeature.properties.center : live.center,
+          center: live.center,
           centroid: config.centroid,
           estimated_discharge_liters: backendFeature?.properties?.estimated_discharge_liters || config.volumeLiters,
           slick_type: backendFeature?.properties?.slick_type || config.slickType,
           mask_data_url: backendFeature?.properties?.mask_data_url || (config as any).mask_data_url || getDartisMaskDataUrl(config.sourceScene || config.id),
         },
-        geometry: (offsetToUse === 0 && backendFeature?.geometry?.coordinates?.length)
-          ? backendFeature.geometry
-          : {
-              type: "Polygon",
-              coordinates: live.hasDischarged && live.polygon.length > 0
-                ? [live.polygon]
-                : (backendFeature?.geometry?.coordinates || []),
-            },
+        geometry: {
+          type: "Polygon",
+          coordinates: live.hasDischarged && live.polygon.length > 0
+            ? [live.polygon]
+            : (backendFeature?.geometry?.coordinates || []),
+        },
       });
     });
 
@@ -628,18 +626,16 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             ...bf,
             properties: {
               ...bf.properties,
-              center: offsetToUse === 0 && bf.properties.center ? bf.properties.center : live.center,
+              center: live.center,
               area_sq_km: live.hasDischarged && offsetToUse !== 0 ? live.area : bf.properties.area_sq_km,
               perimeter_km: live.hasDischarged && offsetToUse !== 0 ? live.perimeter : (bf.properties.perimeter_km || 10.0),
               damping_ratio_db: bf.properties.damping_ratio_db || 8.2,
               mask_data_url: bf.properties.mask_data_url || getDartisMaskDataUrl(bf.properties.source_scene || bf.properties.id),
             },
-            geometry: (offsetToUse === 0 && bf.geometry?.coordinates?.length)
-              ? bf.geometry
-              : {
-                  type: "Polygon",
-                  coordinates: live.hasDischarged && live.polygon.length > 0 ? [live.polygon] : bf.geometry.coordinates,
-                },
+            geometry: {
+              type: "Polygon",
+              coordinates: live.hasDischarged && live.polygon.length > 0 ? [live.polygon] : bf.geometry.coordinates,
+            },
           });
         }
       });

@@ -220,16 +220,14 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
       centerLat = matchedBench.center[1];
     }
 
-    const polygon = matchedBench?.polygonCoordinates || [
-      [33.055625, 33.261205], [33.055705, 33.260903], [33.055786, 33.260601], [33.055867, 33.260299],
-      [33.055948, 33.259997], [33.056029, 33.259695], [33.05611, 33.259393], [33.056191, 33.259091],
-      [33.056976, 33.259302], [33.057761, 33.259513], [33.058546, 33.259724], [33.059331, 33.259935],
-      [33.060116, 33.260146], [33.060901, 33.260357], [33.061686, 33.260568], [33.061605, 33.26087],
-      [33.061524, 33.261172], [33.061443, 33.261474], [33.061362, 33.261776], [33.061281, 33.262078],
-      [33.0612, 33.26238], [33.061119, 33.262682], [33.061038, 33.262984], [33.060253, 33.262773],
-      [33.059468, 33.262562], [33.058683, 33.262351], [33.057898, 33.26214], [33.057113, 33.261929],
-      [33.056328, 33.261718], [33.055543, 33.261507], [33.055625, 33.261205]
-    ];
+    const targetArea = matchedBench ? matchedBench.areaSqKm : 0.3797;
+    const polygon = generateRealisticSpillPolygon(
+      centerLon,
+      centerLat,
+      95.0,
+      Math.max(1.0, Math.sqrt(targetArea) * 1.8),
+      Math.max(0.4, Math.sqrt(targetArea) * 0.7)
+    );
     const polyMetrics = calculatePolygonMetrics(polygon, 12.8);
 
     const fallbackArea = matchedBench ? matchedBench.areaSqKm : (polyMetrics.area_sq_km || 0.3797);

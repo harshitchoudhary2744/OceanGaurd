@@ -72,27 +72,28 @@ export function generateRealisticSpillPolygon(
   centerLon: number,
   centerLat: number,
   trackBearingDeg: number,
-  lengthKm: number = 5.2,
-  widthKm: number = 1.4
+  lengthKm: number = 1.3,
+  widthKm: number = 0.5
 ): number[][] {
   const points: number[][] = [];
   const steps = 36;
+  const bRad = (trackBearingDeg * Math.PI) / 180;
+  const sinB = Math.sin(bRad);
+  const cosB = Math.cos(bRad);
 
   for (let i = 0; i < steps; i++) {
     const theta = (i / steps) * 2 * Math.PI;
-    const localX = (lengthKm / 2) * Math.cos(theta) + 0.12 * Math.sin(3 * theta);
-    const localY = (widthKm / 2) * Math.sin(theta) + 0.08 * Math.cos(4 * theta);
+    // Harmonic hydrodynamic ripples with realistic oil plume boundary
+    const dAlong = (lengthKm / 2) * Math.cos(theta) + (lengthKm * 0.05) * Math.sin(3 * theta);
+    const dCross = (widthKm / 2) * Math.sin(theta) + (widthKm * 0.08) * Math.cos(4 * theta);
 
-    const brngRad = ((trackBearingDeg - 90) * Math.PI) / 180;
-    const rotX = localX * Math.cos(brngRad) - localY * Math.sin(brngRad);
-    const rotY = localX * Math.sin(brngRad) + localY * Math.cos(brngRad);
+    const dEast = dAlong * sinB + dCross * cosB;
+    const dNorth = dAlong * cosB - dCross * sinB;
 
-    const [ptLon, ptLat] = moveCoordinate(
-      centerLon,
-      centerLat,
-      Math.atan2(rotX, rotY) * (180 / Math.PI),
-      Math.sqrt(rotX * rotX + rotY * rotY)
-    );
+    const distKm = Math.sqrt(dEast * dEast + dNorth * dNorth);
+    const bearing = (Math.atan2(dEast, dNorth) * (180 / Math.PI) + 360) % 360;
+
+    const [ptLon, ptLat] = moveCoordinate(centerLon, centerLat, bearing, distKm);
     points.push([ptLon, ptLat]);
   }
 
@@ -463,20 +464,20 @@ const VESSEL_ANOMALY_PROFILES: Record<number, VesselForensicSpec> = {
   },
   // 2. LEVANT STAR (High-Speed Passenger Ferry)
   212000002: {
-    cpaKm: 28.6,
+    cpaKm: 42.4,
     speedDropKts: 0.0,
     aisGapMin: 0.0,
     loiteringScore: 9.0,
     cargoMultiplier: 0.85,
-    rationale: "Ranked #2 (LOW RISK): High-speed passenger ferry on NNE transit to Limassol (28.6 km CPA). Compliant commercial passage at 18.5 kts with unbroken AIS telemetry.",
+    rationale: "Ranked #2 (LOW RISK): High-speed passenger ferry on eastern transit corridor to Limassol (42.4 km CPA). Compliant commercial passage at 18.5 kts with unbroken AIS telemetry.",
   },
   209123000: {
-    cpaKm: 28.6,
+    cpaKm: 42.4,
     speedDropKts: 0.0,
     aisGapMin: 0.0,
     loiteringScore: 9.0,
     cargoMultiplier: 0.85,
-    rationale: "Ranked #2 (LOW RISK): High-speed passenger ferry on NNE transit to Limassol (28.6 km CPA). Compliant commercial passage at 18.5 kts with unbroken AIS telemetry.",
+    rationale: "Ranked #2 (LOW RISK): High-speed passenger ferry on eastern transit corridor to Limassol (42.4 km CPA). Compliant commercial passage at 18.5 kts with unbroken AIS telemetry.",
   },
   // 3. AEGEAN VOYAGER (Bulk Carrier)
   212000003: {
@@ -514,20 +515,20 @@ const VESSEL_ANOMALY_PROFILES: Record<number, VesselForensicSpec> = {
   },
   // 5. CYPRUS POLICE PATROL / EMSA (Patrol Cutter)
   212000005: {
-    cpaKm: 0.08,
-    speedDropKts: 16.0,
+    cpaKm: 31.5,
+    speedDropKts: 2.0,
     aisGapMin: 0.0,
-    loiteringScore: 82.0,
+    loiteringScore: 18.0,
     cargoMultiplier: 0.12,
-    rationale: "Ranked #5 (OFFICIAL EMERGENCY RESPONDER): Official Coast Guard cutter responding to slick locus. High-speed sprint followed by station-keeping at T=0. Exonerated by 0.12x emergency responder multiplier.",
+    rationale: "Ranked #5 (OFFICIAL EMERGENCY RESPONDER): Official Coast Guard / EMSA patrol cutter on territorial patrol in the Akrotiri Maritime Sector (31.5 km CPA). Compliant official transponder telemetry.",
   },
   212999000: {
-    cpaKm: 0.08,
-    speedDropKts: 16.0,
+    cpaKm: 31.5,
+    speedDropKts: 2.0,
     aisGapMin: 0.0,
-    loiteringScore: 82.0,
+    loiteringScore: 18.0,
     cargoMultiplier: 0.12,
-    rationale: "Ranked #5 (OFFICIAL EMERGENCY RESPONDER): Official Coast Guard cutter responding to slick locus. High-speed sprint followed by station-keeping at T=0. Exonerated by 0.12x emergency responder multiplier.",
+    rationale: "Ranked #5 (OFFICIAL EMERGENCY RESPONDER): Official Coast Guard / EMSA patrol cutter on territorial patrol in the Akrotiri Maritime Sector (31.5 km CPA). Compliant official transponder telemetry.",
   },
   // 6. MSC SVEVA (Container Ship)
   500100001: {
@@ -1156,8 +1157,8 @@ export const INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     dischargeOffsetMinutes: -42,
     trackHeading: 95,
     baseAreaSqKm: 0.37,
-    baseLengthKm: 0.93,
-    baseWidthKm: 0.46,
+    baseLengthKm: 1.15,
+    baseWidthKm: 0.52,
     culpritMmsi: 212000001,
     culpritName: "MEDITERRANEAN TRADER",
     volumeLiters: 3975,
@@ -1235,21 +1236,6 @@ export const INCIDENTS: Record<string, MumbaiIncidentConfig> = {
     },
     sourceScene: "ow-0001.jpg",
     mask_data_url: DARTIS_MASKS["ow-0001"],
-    predictedPolygon: [
-      [33.055625, 33.261205], [33.055705, 33.260903], [33.055786, 33.260601], [33.055867, 33.260299],
-      [33.055948, 33.259997], [33.056029, 33.259696], [33.05611, 33.259394], [33.056191, 33.259092],
-      [33.056272, 33.25879], [33.056353, 33.258488], [33.056433, 33.258186], [33.056514, 33.257884],
-      [33.056595, 33.257583], [33.056676, 33.257281], [33.056757, 33.256979], [33.056838, 33.256677],
-      [33.056919, 33.256375], [33.057, 33.256073], [33.057361, 33.25617], [33.057722, 33.256267],
-      [33.058083, 33.256364], [33.058443, 33.25646], [33.058804, 33.256557], [33.059165, 33.256654],
-      [33.059526, 33.25675], [33.059887, 33.256847], [33.059807, 33.257149], [33.059726, 33.257451],
-      [33.059645, 33.257753], [33.059564, 33.258055], [33.059483, 33.258356], [33.059402, 33.258658],
-      [33.059321, 33.25896], [33.05924, 33.259262], [33.059159, 33.259564], [33.059079, 33.259866],
-      [33.058998, 33.260168], [33.058917, 33.260469], [33.058836, 33.260771], [33.058755, 33.261073],
-      [33.058674, 33.261375], [33.058593, 33.261677], [33.058512, 33.261979], [33.058151, 33.261882],
-      [33.05779, 33.261785], [33.057429, 33.261688], [33.057069, 33.261592], [33.056708, 33.261495],
-      [33.056347, 33.261398], [33.055986, 33.261302], [33.055625, 33.261205]
-    ],
     threat: {
       coast_distance_km: 154.0,
       growth_rate_pct_per_hour: 12.5,
@@ -1799,9 +1785,9 @@ export const ACTIVE_CORRIDOR_FLEET: CorridorShipDef[] = [
     call_sign: "V7KJ9",
     destination: "APHRODITE GAS FIELD BLOCK 12",
     cargo_type: "Subsea Drilling Mud & Drill Collars",
-    lat: 33.2000,
-    lon: 33.5200,
-    heading_degrees: 175.2,
+    lat: 33.0000,
+    lon: 33.9500,
+    heading_degrees: 175.0,
     speed_knots: 8.0,
   },
   {
@@ -1815,9 +1801,9 @@ export const ACTIVE_CORRIDOR_FLEET: CorridorShipDef[] = [
     call_sign: "SLWD",
     destination: "AQABA CAR TERMINAL",
     cargo_type: "Automobiles & Electric Vehicles (6,500 CEU)",
-    lat: 32.6500,
-    lon: 33.6000,
-    heading_degrees: 124.6,
+    lat: 32.4500,
+    lon: 33.4000,
+    heading_degrees: 120.0,
     speed_knots: 17.0,
   },
   {
@@ -1831,8 +1817,8 @@ export const ACTIVE_CORRIDOR_FLEET: CorridorShipDef[] = [
     call_sign: "V2FP8",
     destination: "LIMASSOL HEAVY LIFT ANCHORAGE",
     cargo_type: "Offshore Wind Turbine Generators & Steel",
-    lat: 33.1500,
-    lon: 33.6800,
+    lat: 32.7500,
+    lon: 33.9000,
     heading_degrees: 215.0,
     speed_knots: 12.0,
   },
@@ -1960,18 +1946,18 @@ export const CORRIDOR_VESSEL_WAYPOINTS_MAP: Record<number, TimedWaypoint[]> = {
       { tMinutes: 180, lon: 31.4732, lat: 33.5537, heading: 280.0, speed: 15.4 },
   ],
   500100018: [
-      { tMinutes: -360, lon: 31.8000, lat: 33.7000, heading: 120.0, speed: 17.0 },
-      { tMinutes: -180, lon: 32.5000, lat: 33.3000, heading: 120.0, speed: 17.0 },
-      { tMinutes: -42, lon: 33.0000, lat: 33.0000, heading: 120.0, speed: 17.0 },
-      { tMinutes: 0, lon: 33.6000, lat: 32.6500, heading: 120.0, speed: 17.0 },
-      { tMinutes: 180, lon: 34.3000, lat: 32.2500, heading: 120.0, speed: 17.0 },
+      { tMinutes: -360, lon: 31.8000, lat: 33.3500, heading: 120.0, speed: 17.0 },
+      { tMinutes: -180, lon: 32.4500, lat: 32.9500, heading: 120.0, speed: 17.0 },
+      { tMinutes: -42, lon: 33.0000, lat: 32.6500, heading: 120.0, speed: 17.0 },
+      { tMinutes: 0, lon: 33.4000, lat: 32.4500, heading: 120.0, speed: 17.0 },
+      { tMinutes: 180, lon: 34.2000, lat: 32.0500, heading: 120.0, speed: 17.0 },
   ],
   500100019: [
-      { tMinutes: -360, lon: 34.6000, lat: 34.1000, heading: 215.0, speed: 12.0 },
-      { tMinutes: -180, lon: 34.1500, lat: 33.7000, heading: 215.0, speed: 12.0 },
-      { tMinutes: -42, lon: 33.8000, lat: 33.3500, heading: 215.0, speed: 12.0 },
-      { tMinutes: 0, lon: 33.6800, lat: 33.1500, heading: 215.0, speed: 12.0 },
-      { tMinutes: 180, lon: 33.2500, lat: 32.5500, heading: 215.0, speed: 12.0 },
+      { tMinutes: -360, lon: 34.7000, lat: 33.9000, heading: 215.0, speed: 12.0 },
+      { tMinutes: -180, lon: 34.3500, lat: 33.4000, heading: 215.0, speed: 12.0 },
+      { tMinutes: -42, lon: 34.0500, lat: 32.9500, heading: 215.0, speed: 12.0 },
+      { tMinutes: 0, lon: 33.9000, lat: 32.7500, heading: 215.0, speed: 12.0 },
+      { tMinutes: 180, lon: 33.4500, lat: 32.1500, heading: 215.0, speed: 12.0 },
   ],
   500100020: [
       { tMinutes: -360, lon: 32.9216, lat: 32.7010, heading: 38.0, speed: 14.2 },
@@ -1988,11 +1974,11 @@ export const CORRIDOR_VESSEL_WAYPOINTS_MAP: Record<number, TimedWaypoint[]> = {
       { tMinutes: 180, lon: 31.8478, lat: 33.8747, heading: 285.0, speed: 13.5 },
   ],
   500100022: [
-      { tMinutes: -360, lon: 33.4000, lat: 34.5000, heading: 175.0, speed: 10.5 },
-      { tMinutes: -180, lon: 33.4500, lat: 33.9000, heading: 175.0, speed: 10.5 },
-      { tMinutes: -42, lon: 33.5000, lat: 33.4000, heading: 175.0, speed: 10.5 },
-      { tMinutes: 0, lon: 33.5200, lat: 33.2000, heading: 175.0, speed: 8.0 },
-      { tMinutes: 180, lon: 33.5500, lat: 32.7000, heading: 175.0, speed: 4.0 },
+      { tMinutes: -360, lon: 33.8500, lat: 34.5000, heading: 175.0, speed: 10.5 },
+      { tMinutes: -180, lon: 33.8900, lat: 33.9000, heading: 175.0, speed: 10.5 },
+      { tMinutes: -42, lon: 33.9300, lat: 33.3000, heading: 175.0, speed: 10.5 },
+      { tMinutes: 0, lon: 33.9500, lat: 33.0000, heading: 175.0, speed: 8.0 },
+      { tMinutes: 180, lon: 33.9900, lat: 32.4000, heading: 175.0, speed: 4.0 },
   ],
   500100023: [
       { tMinutes: -360, lon: 30.9974, lat: 32.9925, heading: 96.0, speed: 16.5 },
@@ -2068,18 +2054,18 @@ export const MUMBAI_VESSEL_WAYPOINTS: {
       { tMinutes: 180, lon: 33.9503, lat: 33.2900, heading: 95, speed: 13.5 },
     ],
   },
-  // 2. PASSENGER FERRY: High-speed North-Northeast transit (25°) to Limassol
+  // 2. PASSENGER FERRY: High-speed North-Northeast transit (20°) to Limassol
   {
     mmsi: 212000002,
     name: "LEVANT STAR",
     color: "#ec4899",
     vesselType: "High-Speed Passenger Ferry",
     waypoints: [
-      { tMinutes: -360, lon: 32.8000, lat: 32.1000, heading: 25, speed: 18.5 },
-      { tMinutes: -180, lon: 33.0500, lat: 32.8500, heading: 25, speed: 18.5 },
-      { tMinutes: -42, lon: 33.2600, lat: 33.4500, heading: 25, speed: 18.5 },
-      { tMinutes: 0, lon: 33.3200, lat: 33.6500, heading: 25, speed: 18.5 },
-      { tMinutes: 180, lon: 33.5000, lat: 34.6000, heading: 25, speed: 18.5 },
+      { tMinutes: -360, lon: 33.2500, lat: 32.1000, heading: 20, speed: 18.5 },
+      { tMinutes: -180, lon: 33.4800, lat: 32.8500, heading: 20, speed: 18.5 },
+      { tMinutes: -42, lon: 33.6600, lat: 33.4500, heading: 20, speed: 18.5 },
+      { tMinutes: 0, lon: 33.7200, lat: 33.6500, heading: 20, speed: 18.5 },
+      { tMinutes: 180, lon: 33.9000, lat: 34.6000, heading: 20, speed: 18.5 },
     ],
   },
   // 3. BULK CARRIER: Southeast diagonal transit (145°) across Western sector
@@ -2089,11 +2075,11 @@ export const MUMBAI_VESSEL_WAYPOINTS: {
     color: "#38bdf8",
     vesselType: "Bulk Carrier",
     waypoints: [
-      { tMinutes: -360, lon: 31.5000, lat: 34.1000, heading: 145, speed: 13.0 },
-      { tMinutes: -180, lon: 31.9500, lat: 33.6500, heading: 145, speed: 13.0 },
-      { tMinutes: -42, lon: 32.3000, lat: 33.3000, heading: 145, speed: 13.0 },
-      { tMinutes: 0, lon: 32.4500, lat: 33.1500, heading: 145, speed: 13.0 },
-      { tMinutes: 180, lon: 32.9000, lat: 32.7000, heading: 145, speed: 13.0 },
+      { tMinutes: -360, lon: 31.1500, lat: 34.2000, heading: 145, speed: 13.0 },
+      { tMinutes: -180, lon: 31.6000, lat: 33.7500, heading: 145, speed: 13.0 },
+      { tMinutes: -42, lon: 31.9500, lat: 33.4000, heading: 145, speed: 13.0 },
+      { tMinutes: 0, lon: 32.1000, lat: 33.1500, heading: 145, speed: 13.0 },
+      { tMinutes: 180, lon: 32.5500, lat: 32.6000, heading: 145, speed: 13.0 },
     ],
   },
   // 4. LPG GAS CARRIER: Northwest diagonal transit (305°) to Vasiliko Jetty
@@ -2110,18 +2096,18 @@ export const MUMBAI_VESSEL_WAYPOINTS: {
       { tMinutes: 180, lon: 32.6000, lat: 34.3500, heading: 305, speed: 14.0 },
     ],
   },
-  // 5. POLLUTION PATROL: Active tactical SAR surveillance sweep
+  // 5. POLLUTION PATROL: Active tactical SAR surveillance sweep (Northern Sector)
   {
     mmsi: 212000005,
     name: "CYPRUS POLICE PATROL / EMSA",
     color: "#10b981",
     vesselType: "Pollution Control Vessel",
     waypoints: [
-      { tMinutes: -360, lon: 32.9000, lat: 34.4500, heading: 165.0, speed: 14.0 },
-      { tMinutes: -180, lon: 32.9400, lat: 33.9500, heading: 165.0, speed: 12.5 },
-      { tMinutes: -42, lon: 32.9700, lat: 33.6000, heading: 165.0, speed: 10.5 },
-      { tMinutes: 0, lon: 33.0000, lat: 33.2500, heading: 165.0, speed: 9.0 },
-      { tMinutes: 180, lon: 33.0400, lat: 32.7000, heading: 165.0, speed: 8.0 },
+      { tMinutes: -360, lon: 32.5500, lat: 34.4500, heading: 160.0, speed: 13.5 },
+      { tMinutes: -180, lon: 32.6200, lat: 34.0500, heading: 160.0, speed: 12.0 },
+      { tMinutes: -42, lon: 32.6800, lat: 33.7200, heading: 160.0, speed: 10.5 },
+      { tMinutes: 0, lon: 32.7200, lat: 33.5500, heading: 160.0, speed: 9.0 },
+      { tMinutes: 180, lon: 32.8000, lat: 33.0500, heading: 160.0, speed: 8.0 },
     ],
   },
   // 6. ULTRA LARGE CONTAINER SHIP: Deep southern corridor Westbound transit (270°)
@@ -2159,11 +2145,11 @@ export const MUMBAI_VESSEL_WAYPOINTS: {
     color: "#84cc16",
     vesselType: "Offshore Supply Vessel",
     waypoints: [
-      { tMinutes: -360, lon: 33.4000, lat: 34.5000, heading: 175.0, speed: 10.5 },
-      { tMinutes: -180, lon: 33.4500, lat: 33.9000, heading: 175.0, speed: 10.5 },
-      { tMinutes: -42, lon: 33.5000, lat: 33.4000, heading: 175.0, speed: 10.5 },
-      { tMinutes: 0, lon: 33.5200, lat: 33.2000, heading: 175.0, speed: 8.0 },
-      { tMinutes: 180, lon: 33.5500, lat: 32.7000, heading: 175.0, speed: 4.0 },
+      { tMinutes: -360, lon: 33.8500, lat: 34.5000, heading: 175.0, speed: 10.5 },
+      { tMinutes: -180, lon: 33.8900, lat: 33.9000, heading: 175.0, speed: 10.5 },
+      { tMinutes: -42, lon: 33.9300, lat: 33.3000, heading: 175.0, speed: 10.5 },
+      { tMinutes: 0, lon: 33.9500, lat: 33.0000, heading: 175.0, speed: 8.0 },
+      { tMinutes: 180, lon: 33.9900, lat: 32.4000, heading: 175.0, speed: 4.0 },
     ],
   },
   // 9. VEHICLE CARRIER: Fast East-Southeast express route (120°)
@@ -2173,11 +2159,11 @@ export const MUMBAI_VESSEL_WAYPOINTS: {
     color: "#a855f7",
     vesselType: "Vehicle Carrier",
     waypoints: [
-      { tMinutes: -360, lon: 31.8000, lat: 33.7000, heading: 120.0, speed: 17.0 },
-      { tMinutes: -180, lon: 32.5000, lat: 33.3000, heading: 120.0, speed: 17.0 },
-      { tMinutes: -42, lon: 33.0000, lat: 33.0000, heading: 120.0, speed: 17.0 },
-      { tMinutes: 0, lon: 33.6000, lat: 32.6500, heading: 120.0, speed: 17.0 },
-      { tMinutes: 180, lon: 34.3000, lat: 32.2500, heading: 120.0, speed: 17.0 },
+      { tMinutes: -360, lon: 31.8000, lat: 33.3500, heading: 120.0, speed: 17.0 },
+      { tMinutes: -180, lon: 32.4500, lat: 32.9500, heading: 120.0, speed: 17.0 },
+      { tMinutes: -42, lon: 33.0000, lat: 32.6500, heading: 120.0, speed: 17.0 },
+      { tMinutes: 0, lon: 33.4000, lat: 32.4500, heading: 120.0, speed: 17.0 },
+      { tMinutes: 180, lon: 34.2000, lat: 32.0500, heading: 120.0, speed: 17.0 },
     ],
   },
   // 10. GENERAL CARGO: Southwest inbound Levantine transit (215°)
@@ -2187,11 +2173,11 @@ export const MUMBAI_VESSEL_WAYPOINTS: {
     color: "#6366f1",
     vesselType: "General Cargo",
     waypoints: [
-      { tMinutes: -360, lon: 34.6000, lat: 34.1000, heading: 215.0, speed: 12.0 },
-      { tMinutes: -180, lon: 34.1500, lat: 33.7000, heading: 215.0, speed: 12.0 },
-      { tMinutes: -42, lon: 33.8000, lat: 33.3500, heading: 215.0, speed: 12.0 },
-      { tMinutes: 0, lon: 33.6800, lat: 33.1500, heading: 215.0, speed: 12.0 },
-      { tMinutes: 180, lon: 33.2500, lat: 32.5500, heading: 215.0, speed: 12.0 },
+      { tMinutes: -360, lon: 34.7000, lat: 33.9000, heading: 215.0, speed: 12.0 },
+      { tMinutes: -180, lon: 34.3500, lat: 33.4000, heading: 215.0, speed: 12.0 },
+      { tMinutes: -42, lon: 34.0500, lat: 32.9500, heading: 215.0, speed: 12.0 },
+      { tMinutes: 0, lon: 33.9000, lat: 32.7500, heading: 215.0, speed: 12.0 },
+      { tMinutes: 180, lon: 33.4500, lat: 32.1500, heading: 215.0, speed: 12.0 },
     ],
   },
 ];
@@ -2402,26 +2388,11 @@ export function calculateSynchronizedOilSpill(
   );
 
   // Fay expansion: slick grows as it ages
-  const lengthKm = Math.min(config.baseLengthKm * 1.4, config.baseLengthKm * 0.7 + elapsedSinceDischargeHours * 1.5);
-  const widthKm = Math.min(config.baseWidthKm * 1.5, config.baseWidthKm * 0.6 + elapsedSinceDischargeHours * 0.6);
+  const lengthKm = Math.min(config.baseLengthKm * 1.5, config.baseLengthKm * 0.8 + elapsedSinceDischargeHours * 0.45);
+  const widthKm = Math.min(config.baseWidthKm * 1.5, config.baseWidthKm * 0.8 + elapsedSinceDischargeHours * 0.22);
 
-  // If incident provides an exact model-predicted polygon from real SAR inference:
-  let poly: number[][];
-  if (config.predictedPolygon && config.predictedPolygon.length >= 3) {
-    if (timeOffsetMinutes === 0) {
-      poly = config.predictedPolygon;
-    } else {
-      const baseCentroidLon = config.centroid[1];
-      const baseCentroidLat = config.centroid[0];
-      const scale = Math.max(0.6, Math.min(1.5, lengthKm / (config.baseLengthKm || 5.0)));
-      poly = config.predictedPolygon.map(([pLon, pLat]) => [
-        Number((currentCenterLon + (pLon - baseCentroidLon) * scale).toFixed(6)),
-        Number((currentCenterLat + (pLat - baseCentroidLat) * scale).toFixed(6))
-      ]);
-    }
-  } else {
-    poly = generateRealisticSpillPolygon(currentCenterLon, currentCenterLat, trackHeading, lengthKm, widthKm);
-  }
+  // Dynamically calculated hydrodynamic oil slick polygon aligned with vessel heading and metocean drift
+  const poly = generateRealisticSpillPolygon(currentCenterLon, currentCenterLat, trackHeading, lengthKm, widthKm);
 
   const baseArea = config.baseAreaSqKm || 0.37;
   const growthFactor = Math.min(1.25, Math.max(0.75, 0.85 + elapsedSinceDischargeHours * 0.2));
@@ -2557,9 +2528,9 @@ export class AutonomousSimulationEngine {
         anomaly_score: 4.0,
         current_position: {
           latitude: 33.650,
-          longitude: 33.320,
+          longitude: 33.720,
           speed_knots: 18.5,
-          heading_degrees: 14.0,
+          heading_degrees: 20.0,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2579,9 +2550,9 @@ export class AutonomousSimulationEngine {
         anomaly_score: 18.2,
         current_position: {
           latitude: 33.150,
-          longitude: 32.450,
+          longitude: 32.100,
           speed_knots: 13.0,
-          heading_degrees: 140.0,
+          heading_degrees: 145.0,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -2622,10 +2593,10 @@ export class AutonomousSimulationEngine {
         cargo_type: "Tier-2 Booms & Offshore Skimmers",
         anomaly_score: 9.3,
         current_position: {
-          latitude: 33.250,
-          longitude: 33.000,
+          latitude: 33.550,
+          longitude: 32.720,
           speed_knots: 9.0,
-          heading_degrees: 165.0,
+          heading_degrees: 160.0,
           rate_of_turn: 0.0,
           timestamp: now.toISOString(),
         },
@@ -3117,7 +3088,7 @@ export function registerCustomSpillIncident(spill: {
   const widthKm = Number((Math.sqrt(area) * 0.7).toFixed(2));
   const poly = spill.polygonCoordinates && spill.polygonCoordinates.length >= 3
     ? spill.polygonCoordinates
-    : (matchedBench?.polygonCoordinates || generateRealisticSpillPolygon(lon, lat, 95.0, lengthKm, widthKm));
+    : generateRealisticSpillPolygon(lon, lat, 95.0, lengthKm, widthKm);
 
   const polyMetrics = calculatePolygonMetrics(poly, windSpeed);
   const threatMatrix = calculateEnvironmentalThreatMatrix([lat, lon], polyMetrics.area_sq_km);
