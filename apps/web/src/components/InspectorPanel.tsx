@@ -97,7 +97,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   const handleDownloadPdf = async () => {
     try {
       setIsExporting(true);
-      const url = await downloadPdfReportUrl(incidentId, spillFeature, suspects);
+      const url = await downloadPdfReportUrl(incidentId, spillFeature, suspects, metocean, vectorMatches);
       const a = document.createElement('a');
       a.href = url;
       a.download = `OceanGuard_Forensic_${incidentId}.pdf`;

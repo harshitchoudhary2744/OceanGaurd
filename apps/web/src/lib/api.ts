@@ -331,7 +331,9 @@ export async function uploadSarScene(formData: FormData): Promise<SARInferenceRe
 export async function downloadPdfReportUrl(
   spillId: string,
   spillFeature?: SpillGeoFeature | null,
-  suspects?: SuspectVessel[]
+  suspects?: SuspectVessel[],
+  metocean?: MetoceanData,
+  vectorMatches?: VectorMatch[]
 ): Promise<string> {
   try {
     const controller = new AbortController();
@@ -346,7 +348,7 @@ export async function downloadPdfReportUrl(
   } catch (err) {
     // Universal client-side fallback: generates identical evidence dossier directly in the browser
     const { generateClientSidePdfDossier } = await import('./pdfReport');
-    const blob = generateClientSidePdfDossier(spillId, spillFeature, suspects);
+    const blob = generateClientSidePdfDossier(spillId, spillFeature, suspects, metocean, vectorMatches);
     return window.URL.createObjectURL(blob);
   }
 }

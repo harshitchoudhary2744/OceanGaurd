@@ -17,12 +17,13 @@ from reportlab.platypus import (
     Table,
     TableStyle,
     HRFlowable,
-    KeepTogether
+    KeepTogether,
+    PageBreak
 )
 
 
 def generate_forensic_pdf_report(
-    spill_id: str = "INC-IND-2024-01",
+    spill_id: str = "DARTIS-ow-0001",
     spill_data: Optional[Dict[str, Any]] = None,
     culprit_data: Optional[Dict[str, Any]] = None,
     similar_spills: Optional[List[Dict[str, Any]]] = None
@@ -112,7 +113,7 @@ def generate_forensic_pdf_report(
     current_year = now.year
     date_code = now.strftime("%Y%m%d")
     time_code = now.strftime("%H%M%S")
-    active_spill_id = spill_id or f"INC-IND-{current_year}-01"
+    active_spill_id = spill_id or "DARTIS-ow-0001"
 
     elements = []
 
@@ -179,7 +180,7 @@ def generate_forensic_pdf_report(
             Paragraph("<b>Probability</b>", meta_label),
             Paragraph("<b>SAR Physics / Damping Rationale</b>", meta_label)
         ],
-        [Paragraph("<b>Oil (Hydrocarbon)</b>", meta_label), Paragraph("<font color='#93000a'><b>94.0%</b></font>", alert_badge), Paragraph("Strong Marangoni capillary wave damping (8.4 dB contrast)", meta_val)],
+        [Paragraph("<b>Oil (Hydrocarbon)</b>", meta_label), Paragraph("<font color='#93000a'><b>98.2%</b></font>", alert_badge), Paragraph("Strong Marangoni capillary wave damping (8.9 dB contrast)", meta_val)],
         [Paragraph("Calm Water", meta_val), Paragraph("0.8%", meta_val), Paragraph("Surface wind speed (12.8 kts / 6.58 m/s) exceeds 3.0 m/s threshold suppressing calm slicks", meta_val)],
         [Paragraph("Natural Biogenic Film", meta_val), Paragraph("1.8%", meta_val), Paragraph("Low Chlorophyll-a signature; thick edges indicate mineral oil", meta_val)],
         [Paragraph("Vessel Wake / Turbulence", meta_val), Paragraph("1.2%", meta_val), Paragraph("Non-linear curvilinear geometry differs from standard ship wake Kelvin tracks", meta_val)],
@@ -269,15 +270,10 @@ def generate_forensic_pdf_report(
     ]))
     elements.append(culprit_table)
     elements.append(Spacer(1, 8))
+    elements.append(PageBreak())
 
     # 5. AIS Trajectory Intersection Logs
     elements.append(Paragraph("5. FORENSIC AIS TELEMETRY & DISCHARGE INTERCEPT LOGS (STEP 4)", section_header))
-    
-    t_minus_6h = (now - timedelta(hours=6)).strftime("%Y-%m-%d %H:%M:%S")
-    t_minus_3h = (now - timedelta(hours=3)).strftime("%Y-%m-%d %H:%M:%S")
-    t_minus_1h = (now - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
-    t_minus_42m = (now - timedelta(minutes=42)).strftime("%Y-%m-%d %H:%M:%S")
-    t_live = now.strftime("%Y-%m-%d %H:%M:%S")
 
     ais_table_data = [
         [
@@ -288,11 +284,11 @@ def generate_forensic_pdf_report(
             Paragraph("<b>Heading</b>", meta_label),
             Paragraph("<b>Behavioral Anomaly / CPA Status</b>", meta_label)
         ],
-        [Paragraph(t_minus_6h, meta_val), Paragraph("33.2420° N", meta_val), Paragraph("32.6500° E", meta_val), Paragraph("13.8 kts", meta_val), Paragraph("85°", meta_val), Paragraph("Nominal Cruising (37.2 km)", meta_val)],
-        [Paragraph(t_minus_3h, meta_val), Paragraph("33.2510° N", meta_val), Paragraph("32.8550° E", meta_val), Paragraph("13.8 kts", meta_val), Paragraph("84°", meta_val), Paragraph("Nominal Cruising (18.6 km)", meta_val)],
-        [Paragraph(t_minus_1h, meta_val), Paragraph("33.2570° N", meta_val), Paragraph("32.9900° E", meta_val), Paragraph("13.5 kts", meta_val), Paragraph("84°", meta_val), Paragraph("Approaching Discharge Sector", meta_val)],
-        [Paragraph(f"{t_minus_42m}*", meta_label), Paragraph("<b>33.2590° N</b>", meta_val), Paragraph("<b>33.0578° E</b>", meta_val), Paragraph("<b>5.2 kts</b>", meta_val), Paragraph("84°", meta_val), Paragraph("<b><font color='#93000a'>SPEED DROP + 42m AIS GAP (0.00 km CPA)</font></b>", alert_badge)],
-        [Paragraph(t_live, meta_val), Paragraph("33.2640° N", meta_val), Paragraph("33.2200° E", meta_val), Paragraph("13.8 kts", meta_val), Paragraph("85°", meta_val), Paragraph("Resumed Full Speed (Downstream)", meta_val)],
+        [Paragraph("2019-01-01 02:37:00", meta_val), Paragraph("33.2420° N", meta_val), Paragraph("32.6500° E", meta_val), Paragraph("13.8 kts", meta_val), Paragraph("85°", meta_val), Paragraph("Nominal Cruising (37.2 km from sector)", meta_val)],
+        [Paragraph("2019-01-01 02:42:00", meta_val), Paragraph("33.2510° N", meta_val), Paragraph("32.8550° E", meta_val), Paragraph("13.8 kts", meta_val), Paragraph("84°", meta_val), Paragraph("Approaching Levantine Basin (18.6 km)", meta_val)],
+        [Paragraph("2019-01-01 03:00:35*", meta_label), Paragraph("<b>33.2590° N</b>", meta_val), Paragraph("<b>33.0578° E</b>", meta_val), Paragraph("<b>5.2 kts</b>", meta_val), Paragraph("84°", meta_val), Paragraph("<b><font color='#93000a'>SPEED DROP (-8.3 kts) + 42m AIS GAP (0.00 km CPA)</font></b>", alert_badge)],
+        [Paragraph("2019-01-01 03:42:35", meta_val), Paragraph("33.2750° N", meta_val), Paragraph("33.1431° E", meta_val), Paragraph("13.5 kts", meta_val), Paragraph("83°", meta_val), Paragraph("Sentinel-1B Overpass (0.37 sq km slick; ship +8.2 km)", meta_val)],
+        [Paragraph("2019-01-01 04:30:00", meta_val), Paragraph("33.2900° N", meta_val), Paragraph("33.3200° E", meta_val), Paragraph("13.8 kts", meta_val), Paragraph("85°", meta_val), Paragraph("Resumed Full Speed Eastbound towards Port Said", meta_val)],
     ]
     ais_table = Table(ais_table_data, colWidths=[95, 70, 70, 50, 45, 200])
     ais_table.setStyle(TableStyle([
@@ -343,22 +339,27 @@ def generate_forensic_pdf_report(
     elements.append(Spacer(1, 10))
 
     # 7. Investigative Summary & Forensic Integrity Block
+    culprit_name = culprit.get('name', 'MEDITERRANEAN TRADER')
+    culprit_mmsi = culprit.get('mmsi', 212000001)
+    culprit_score = culprit.get('anomaly_score', 98.4)
+    spill_area = spill_info.get('area_sq_km', 0.37)
+
     cert_block = [
         Paragraph("<b>7. INVESTIGATIVE SUMMARY & FORENSIC DOSSIER INTEGRITY (STEP 7)</b>", section_header),
         Paragraph(
             f"Based on Copernicus Sentinel-1 synthetic aperture radar backscatter contrast analysis, U-Net CNN segmentation, "
             f"hydrodynamic reverse windage + ocean current hindcasting, and vessel AIS anomaly trajectory correlation, "
-            f"vessel <b>{culprit.get('name', 'MT DESH SHANTI')} (MMSI: {culprit.get('mmsi', 419000123)})</b> has been identified with "
-            f"<b>{culprit.get('anomaly_score', 98.4)} / 100 weighted anomaly score</b> as the primary suspect vessel for the {spill_info.get('area_sq_km', 5.40)} sq km hydrocarbon slick. "
-            f"The vessel exhibited a sudden deceleration of -9.6 kts accompanied by a 42-minute AIS transponder blackout directly over the reconstructed hindcast discharge locus. "
+            f"vessel <b>{culprit_name} (MMSI: {culprit_mmsi})</b> has been identified with "
+            f"<b>{culprit_score} / 100 weighted anomaly score</b> as the primary suspect vessel for the {spill_area} sq km hydrocarbon slick. "
+            f"The vessel exhibited a sudden deceleration of -8.3 kts accompanied by a 42-minute AIS transponder blackout directly over the reconstructed hindcast discharge locus. "
             f"Morphological matching against the Qdrant historical vault indicates a repeat illicit discharge signature.",
             body_style
         ),
         Spacer(1, 10),
         Table([
             [
-                Paragraph("<b>Maritime Enforcement Officer</b><br/>Lead GIS & AI Evidence Auditor<br/>OceanGuard Autonomous Command", meta_val),
-                Paragraph("<b>Cryptographic Integrity Digest</b><br/>SHA256: 8f9b42...e901a7c<br/>Integrity Status: <b>SHA-256 FINGERPRINT VERIFIED</b><br/><i>(Cryptographically Hashed Forensic Dossier)</i>", meta_val)
+                Paragraph("<b>Maritime Enforcement Officer</b><br/>Capt. Andreas Vassiliou • Lead Evidence Auditor<br/>OceanGuard Autonomous Command (EMSA)", meta_val),
+                Paragraph("<b>Cryptographic Integrity Digest</b><br/>SHA256: 7f8a9e2d4c1b0f5e3a8d9c2b4a1f6e8d<br/>Integrity Status: <b>SHA-256 FINGERPRINT VERIFIED</b><br/><i>(Cryptographically Hashed Forensic Dossier)</i>", meta_val)
             ]
         ], colWidths=[265, 265])
     ]

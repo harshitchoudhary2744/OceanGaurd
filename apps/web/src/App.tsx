@@ -687,6 +687,9 @@ export function App() {
         isOpen={isForensicOpen}
         onClose={() => setIsForensicOpen(false)}
         spillId={selectedSpillId}
+        spillFeature={selectedSpillFeature}
+        suspects={suspects}
+        metocean={metocean}
       />
     </div>
   );

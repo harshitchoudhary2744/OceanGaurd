@@ -48,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   const handleExportPdf = async () => {
     try {
       setIsExporting(true);
-      const url = await downloadPdfReportUrl(selectedSpillId, spillFeature, suspects);
+      const url = await downloadPdfReportUrl(selectedSpillId, spillFeature, suspects, metocean);
       const a = document.createElement('a');
       a.href = url;
       a.download = `OceanGuard_Forensic_${selectedSpillId}.pdf`;

@@ -3,24 +3,28 @@ import { X, Sparkles, FileText, History, ShieldAlert, Gauge, ZapOff, Navigation,
 import { downloadPdfReportUrl } from '../lib/api';
 import { INITIAL_SUSPECTS } from '../lib/mockData';
 import { MUMBAI_INCIDENTS, calculateVesselKinematicAnomaly } from '../lib/simulationEngine';
-import { SuspectVessel } from '../types';
+import { SuspectVessel, SpillGeoFeature, MetoceanData } from '../types';
 
 interface ForensicModalProps {
   isOpen: boolean;
   onClose: () => void;
   spillId: string;
+  spillFeature?: SpillGeoFeature | null;
+  suspects?: SuspectVessel[];
+  metocean?: MetoceanData;
 }
 
-export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, spillId }) => {
+export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, spillId, spillFeature, suspects, metocean }) => {
   if (!isOpen) return null;
 
   const currentIncident = MUMBAI_INCIDENTS[spillId] || MUMBAI_INCIDENTS["DARTIS-ow-0001"] || Object.values(MUMBAI_INCIDENTS)[0];
   const falsePositive = currentIncident.false_positive_analysis;
-  const culprit: SuspectVessel = INITIAL_SUSPECTS.find((s: SuspectVessel) => s.mmsi === currentIncident.culpritMmsi) || INITIAL_SUSPECTS[0];
+  const vesselList = (suspects && suspects.length > 0) ? suspects : INITIAL_SUSPECTS;
+  const culprit: SuspectVessel = vesselList.find((s: SuspectVessel) => s.mmsi === currentIncident.culpritMmsi) || vesselList[0];
   const anomalyBreakdown = culprit?.anomaly_breakdown || calculateVesselKinematicAnomaly(culprit, currentIncident.originCoords, currentIncident.dischargeOffsetMinutes);
 
   const handleDownload = async () => {
-    const url = await downloadPdfReportUrl(spillId);
+    const url = await downloadPdfReportUrl(spillId, spillFeature, suspects, metocean);
     const a = document.createElement('a');
     a.href = url;
     a.download = `OceanGuard_Forensic_${spillId}.pdf`;
