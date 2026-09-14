@@ -8,6 +8,7 @@ from pathlib import Path
 import io
 import json
 import math
+import hashlib
 import asyncio
 import logging
 from datetime import datetime, timedelta
@@ -485,12 +486,15 @@ def download_forensic_audit_pdf(spill_id: str):
     )
 
     filename = f"OceanGuard_Forensic_Report_{spill_id}.pdf"
+    dossier_sha256 = hashlib.sha256(pdf_bytes).hexdigest()
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"attachment; filename={filename}",
-            "Access-Control-Expose-Headers": "Content-Disposition"
+            "X-Dossier-SHA256": dossier_sha256,
+            "X-Integrity-Standard": "NIST-FIPS-PUB-180-4-SHA256",
+            "Access-Control-Expose-Headers": "Content-Disposition, X-Dossier-SHA256, X-Integrity-Standard"
         }
     )
 

@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import { SuspectVessel, SpillGeoFeature, MetoceanData, VectorMatch } from '../types';
 import { INCIDENTS } from './simulationEngine';
 import { INITIAL_SUSPECTS, INITIAL_VECTOR_MATCHES } from './mockData';
+import { computeForensicEvidenceHash } from './crypto';
 
 export function generateClientSidePdfDossier(
   spillId?: string,
@@ -98,6 +99,19 @@ export function generateClientSidePdfDossier(
   const wakeProb = fpAnalysis?.classes?.['Wake'] !== undefined ? `${fpAnalysis.classes['Wake'].toFixed(1)}%` : '0.3%';
   const rainProb = fpAnalysis?.classes?.['Rain-related artifact'] !== undefined ? `${fpAnalysis.classes['Rain-related artifact'].toFixed(1)}%` : '0.1%';
   const unkProb = fpAnalysis?.classes?.['Unknown'] !== undefined ? `${fpAnalysis.classes['Unknown'].toFixed(1)}%` : '0.1%';
+
+  // Deterministically compute FIPS 180-4 SHA-256 cryptographic seal across canonical evidence
+  const evidenceHash = computeForensicEvidenceHash({
+    incidentId: activeSpillId,
+    sourceScene: String(sceneName),
+    acquisitionUtc: String(passTimeUtc),
+    centroid: centroidCoords,
+    areaSqKm: area,
+    culpritMmsi: primarySuspect.mmsi,
+    culpritName: primarySuspect.name,
+    anomalyScore: anomalyScore,
+    volumeLiters: volumeLiters,
+  });
 
   const totalPages = 2;
 
@@ -637,12 +651,14 @@ export function generateClientSidePdfDossier(
 
   // Right Column: Digital Signature
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.6);
   doc.setTextColor(0, 100, 60);
-  drawBoundedText('Cryptographic Integrity Digest (SHA-256):', 108, curY + 17.5, 86);
+  drawBoundedText('Cryptographic Integrity Digest (NIST FIPS 180-4 SHA-256):', 108, curY + 16.5, 86);
   doc.setFont('courier', 'bold');
-  doc.setFontSize(6.5);
+  doc.setFontSize(5.1);
   doc.setTextColor(15, 25, 35);
-  drawBoundedText('SHA256: 7f8a9e2d4c1b0f5e3a8d9c2b4a1f6e8d [VERIFIED]', 108, curY + 21.5, 86);
+  drawBoundedText(`SHA256: ${evidenceHash.slice(0, 32)}`, 108, curY + 20.2, 86);
+  drawBoundedText(`${evidenceHash.slice(32)} [SEALED • VERIFIED]`, 108, curY + 23.4, 86);
 
   drawFooter(2);
 

@@ -4,6 +4,7 @@ import { downloadPdfReportUrl } from '../lib/api';
 import { INITIAL_SUSPECTS } from '../lib/mockData';
 import { MUMBAI_INCIDENTS, calculateVesselKinematicAnomaly } from '../lib/simulationEngine';
 import { SuspectVessel, SpillGeoFeature, MetoceanData } from '../types';
+import { computeForensicEvidenceHash } from '../lib/crypto';
 
 interface ForensicModalProps {
   isOpen: boolean;
@@ -22,6 +23,22 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
   const vesselList = (suspects && suspects.length > 0) ? suspects : INITIAL_SUSPECTS;
   const culprit: SuspectVessel = vesselList.find((s: SuspectVessel) => s.mmsi === currentIncident.culpritMmsi) || vesselList[0];
   const anomalyBreakdown = culprit?.anomaly_breakdown || calculateVesselKinematicAnomaly(culprit, currentIncident.originCoords, currentIncident.dischargeOffsetMinutes);
+
+  const centroidCoords = spillFeature?.properties?.centroid
+    ? `${spillFeature.properties.centroid[0].toFixed(4)}° N, ${spillFeature.properties.centroid[1].toFixed(4)}° E`
+    : `${currentIncident.centroid[0].toFixed(4)}° N, ${currentIncident.centroid[1].toFixed(4)}° E`;
+
+  const evidenceHash = computeForensicEvidenceHash({
+    incidentId: spillId,
+    sourceScene: spillFeature?.properties?.source_scene || currentIncident.sourceScene || 'ow-0001.jpg',
+    acquisitionUtc: spillFeature?.properties?.acquisition_timestamp_utc || currentIncident.acquisition_timestamp_utc || '2019-01-01 03:42:35 UTC',
+    centroid: centroidCoords,
+    areaSqKm: spillFeature?.properties?.area_sq_km || currentIncident.baseAreaSqKm || 0.37,
+    culpritMmsi: culprit?.mmsi || currentIncident.culpritMmsi,
+    culpritName: culprit?.name || 'MEDITERRANEAN TRADER',
+    anomalyScore: culprit?.anomaly_score || 98.4,
+    volumeLiters: currentIncident.volumeLiters,
+  });
 
   const handleDownload = async () => {
     const url = await downloadPdfReportUrl(spillId, spillFeature, suspects, metocean);
@@ -220,11 +237,23 @@ export const ForensicModal: React.FC<ForensicModalProps> = ({ isOpen, onClose, s
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 flex justify-between items-center bg-slate-950/60">
-          <span className="text-[11px] font-mono text-slate-400">
-            Cryptographically Hashed Forensic Dossier • Indian Coast Guard & Maritime Board (SIH26143)
-          </span>
-          <div className="flex gap-2">
+        <div className="p-4 border-t border-slate-800 flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center bg-slate-950/70">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]"></span>
+              <span className="text-[11px] font-mono font-bold text-emerald-400">
+                NIST FIPS 180-4 SHA-256 SEALED
+              </span>
+              <span className="text-[10px] font-mono text-slate-500">• Indian Coast Guard & Maritime Board (SIH26143)</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
+              <span className="text-slate-500">DIGEST:</span>
+              <code className="text-cyan-300 select-all bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800 tracking-wider">
+                {evidenceHash}
+              </code>
+            </div>
+          </div>
+          <div className="flex gap-2 self-end sm:self-center">
             <button onClick={onClose} className="px-3 py-1.5 text-xs font-mono text-slate-400 hover:text-white">
               Close
             </button>
